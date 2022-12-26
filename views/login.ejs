@@ -1,0 +1,77 @@
+<meta name="viewport" content="width=device-width,height=device-height,initial-scale=1.0"/>
+<meta name = "apple-mobile-web-app-capable" content = "yes">
+<meta name = "apple-mobile-web-app-status-bar-style" content = "black">
+<head>
+    <link href="/css/bootstrap.min.css" rel="stylesheet" >
+    <link href="/manifest.json" rel="manifest" >
+    <link rel="apple-touch-icon" sizes="266x196" href="/icons/LOGOUNO.png">
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@700&family=Poppins:wght@400;500;600&display=swap');
+      *{
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Poppins", sans-serif;
+      }
+      body{
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(120deg,#2980b9, #8e44ad);
+        height: 100vh;
+        overflow: hidden;
+      }
+      .center{
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 400px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 10px 10px 15px rgba(0,0,0,0.05);
+      }
+      .center h1{
+        text-align: center;
+        padding: 20px 0;
+        border-bottom: 1px solid silver;
+      }
+      .center form{
+        padding: 0 40px;
+        box-sizing: border-box;
+      }
+      .container{
+        width: 40%,  !important;
+      }
+    @media only screen 
+    and (min-device-width : 768px) 
+    and (max-device-width : 1024px) {
+      /* Styles */
+    }
+  </style>
+
+	<script src="/js/bootstrap.min.js" ></script>
+  <title>Test Database Server</title>
+</head>
+<body>
+
+
+  <div class="center ">  
+    <h1>Login</h1>
+    <form action="/" method="POST" class="validated-form row g-3" novalidate>
+        <div class="mb-3">
+ 
+          <label class="form-label" for="username">Username</label>
+            <input class="form-control" type="text" id="username" name="Login" required>     
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="password">Password</label>
+            <input class="form-control" type="password" id="password" name="Password" required>
+        </div>
+      <div class="col-12">
+        <button class="btn btn-success">Login</button>
+      </div>
+    </form>
+    <%- include('flash')%>
+  </div>  
+ 
+</body>  

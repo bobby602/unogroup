@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+  <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1.0"/>
+<meta name = "apple-mobile-web-app-capable" content = "yes">
+<meta name = "apple-mobile-web-app-status-bar-style" content = "black">
+<head>
+    <link href="/css/bootstrap.min.css" rel="stylesheet" >
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@100;200;400&display=swap" rel="stylesheet">
+    <link href="/manifest.json" rel="manifest" >
+    <link rel="apple-touch-icon" sizes="266x196" href="/icons/LOGOUNO.png">
+    
+    <style>
+      #ince {
+            background-color: #80ced6 ;
+            text-shadow: 0px 4px 3px rgba(0,0,0,0.4),
+                 0px 8px 13px rgba(0,0,0,0.7),
+                 0px 18px 23px rgba(0,0,0,0.4);
+      }
+      *{
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Kanit', sans-serif;
+        }
+        @media only screen 
+        and (min-device-width : 768px) 
+        and (max-device-width : 1024px) {
+        }
+        table , tr , td{
+          border:1px solid black;
+        }
+        #sale-text{
+          padding-left:50px;
+          margin-right:50px;
+        }
+        .h1{
+            text-align: center;
+        }
+        .point{
+          background-color:orange!important;
+        }
+        .sum{
+            color:blue;
+        }
+  </style>
+  <%
+
+  const x = (number)=>{
+              if(number !=null){
+                 
+                  number = number.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                  return number;
+  %> 
+   <%           }else{  %>
+      <%
+                  return '0.00';
+              }
+          }
+      %>   
+<head>
+	<script src="/js/bootstrap.min.js" ></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+  <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js" ></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.js" ></script>
+  <script src="https://cdn.datatables.net/1.12.0/js/jquery.dataTables.min.js" ></script>
+  <title>Test Database Server</title>
+</head>
+<body>
+  <div class="pic">
+  <nav id = "ince" class="navbar navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/users/pageOne" style="font-family: Lato;">
+          <img src="/icons/logo-header2.png" alt="" width="40" height="35"> UNOGROUP
+      </a>
+    </div>
+  </nav>
+  
+  <img src="/icons/LOGOUNO.png" class="rounded mx-auto my-5 d-block" alt="..."width="300" height="200">
+</div> 
+
+    <div class = "d-flex flex-row mb-3 mr-2" >
+      <h2  id = "sale-text"class = "mr-3">ผลประกอบการบริษัท และ ฝ่ายขายไตรมาศ ที่ <%=monthFil%></h2>
+      <form action="/users/salesQuater" method="POST" class="validated-form" validate>
+        <div class="input-group mb-3 mr-3"> 
+            <select name="month" id="month" class="form-select" aria-label="Default select example">
+              <option selected>เลือกไตรมาส</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+            </select>
+            <div class="input-group-append ml-3">
+              <button type = "submit" class="btn btn-warning submit">Search</button>
+            </div> 
+        </div>     
+      </form>
+    </div>
+ 
+  <table id="example" class="table display nowrap" style="width:100%">
+    <thead >
+      <tr class="table borderTable " style = "background-color:#008080;color:white;"> 
+          <!-- <th style="text-align:center;width:5%;" scope="col">Row Number</th> -->
+          <th scope="col">พนักงาน</th>
+          <th scope="col">ยอดขาย</th>
+          <th scope="col">PB</th>
+          <th class = "point" scope="col">คะแนนสะสม</th>
+          <th scope="col">Rate COM</th>
+          <th scope="col">PBH1</th>
+          <th scope="col">PBH2</th>
+          <th scope="col">PB-(PBH1 + PBH2)</th>
+          <!-- <th scope="col">PB - PB วัชพืช</th> -->
+          <th class = "point" scope="col">Com ยอดขาย</th>
+          <th class = "point" scope="col">Com PBH1</th>
+          <th class = "point" scope="col">Com PBH2</th>
+          <th scope="col">คอมยาพิเศษ</th>
+          <th scope="col">Incentive</th>
+          <th class = "point" scope="col">รวม Com</th>
+          <th scope="col">CUMS</th>
+      </tr>
+    </thead>  
+    
+    <%
+      if(testData.length!=0){
+      var i=1;
+      testData.forEach(function(data){
+          
+    %>
+    <tr class="table" style="background-color: #F0FFF0;">
+        <!-- <td style="text-align:center;"><%=i; %></td> -->
+        <% 
+            if(data.NameG =="รวมทั้งหมด"){
+        %>
+            <td class = "sum" style = "width:12%;text-align: right;"><%=data.NameG%></td>
+            <td class = "sum"><%=x(data.sales)%></td>
+            <td class = "sum"><%=x(data.PB)%></td>
+            <td class = "sum"><%=x(data.POINTSALE)%></td>
+            <td class = "sum"><%=data.RateCom%></td>
+            <td class = "sum"><%=x(data.PBH1)%></td>
+            <td class = "sum"><%=x(data.PBI)%></td>
+            <td class = "sum"><%=x(data.PBCal)%></td>
+            <!-- <td></td> -->
+            <td class = "sum"><%=x(data.AmtPoint)%></td>
+            <td class = "sum"><%=x(data.ComPBH1)%></td>
+            <td class = "sum"><%=x(data.ComPBI)%></td>
+            <td class = "sum"><%=x(data.COMSP)%></td>
+            <td class = "sum"><%=x(data.incentive)%></td>
+            <td class = "sum"><%=x(data.SumCOMSP)%></td>
+            <td class = "sum"><%=x(data.CUMS)%></td>
+        <% } else{ %>
+            <td style = "width:12%;"><%=data.NameG%></td>
+            <td><%=x(data.sales)%></td>
+            <td><%=x(data.PB)%></td>
+            <td><%=x(data.POINTSALE)%></td>
+            <td><%=data.RateCom%></td>
+            <td><%=x(data.PBH1)%></td>
+            <td><%=x(data.PBI)%></td>
+            <td><%=x(data.PBCal)%></td>
+            <!-- <td><%=x(data.PP)%></td> -->
+            <td><%=x(data.AmtPoint)%></td>
+            <td><%=x(data.ComPBH1)%></td>
+            <td><%=x(data.ComPBI)%></td>
+            <td><%=x(data.COMSP)%></td>
+            <td><%=x(data.incentive)%></td>
+            <td><%=x(data.SumCOMSP)%></td>
+            <td><%=x(data.CUMS)%></td>
+            <% } %>   
+    </tr>
+    <%  i++; }) %>
+    <% } else{ %>
+    <tr>
+      <td style = "width:12%;">-</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+    </tr>
+    <% } %>
+</table>
+</div>
+</body>
+<style>
+  div.dataTables_wrapper {
+    width: 100%;
+    height:100%;
+    margin: 0 auto;
+}
+</style>
+<script>
+  $(document).ready(function () {
+    $('#example').DataTable({
+      paging: false,
+      info: false,
+        ordering: false,
+        scrollY: true,
+        scrollX: true,
+    });
+  });
+</script>
+</html>

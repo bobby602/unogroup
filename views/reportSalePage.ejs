@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="/css/bootstrap.min.css" rel="stylesheet" >
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@100;200;400&display=swap" rel="stylesheet">
+    <link href="/manifest.json" rel="manifest" >
+    <link rel="apple-touch-icon" sizes="266x196" href="/icons/LOGOUNO.png">
+    
+    <style>
+      #ince {
+            background-color: #80ced6 ;
+            text-shadow: 0px 4px 3px rgba(0,0,0,0.4),
+                 0px 8px 13px rgba(0,0,0,0.7),
+                 0px 18px 23px rgba(0,0,0,0.4);
+      }
+      *{
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Kanit', sans-serif;
+        }
+        @media only screen 
+        and (min-device-width : 768px) 
+        and (max-device-width : 1024px) {
+        }
+        table , tr , td{
+          border:1px solid black;
+        }
+        #sale-text{
+          padding-left:50px;
+          margin-right:50px;
+        }
+        .h1{
+            text-align: center;
+        }
+        .point{
+          background-color:orange!important;
+        }
+  </style>
+  <%
+
+  const x = (number)=>{
+              if(number !=null){
+                 
+                  number = number.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                  return number;
+  %> 
+   <%           }else{  %>
+      <%
+                  return ' ';
+              }
+          }
+      %>   
+<head>
+	<script src="/js/bootstrap.min.js" ></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+  <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js" ></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.js" ></script>
+  <script src="https://cdn.datatables.net/1.12.0/js/jquery.dataTables.min.js" ></script>
+  <title>Test Database Server</title>
+</head>
+<body>
+  <div class="pic">
+  <nav id = "ince" class="navbar navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/users/pageOne" style="font-family: Lato;">
+          <img src="/icons/logo-header2.png" alt="" width="40" height="35"> UNOGROUP
+      </a>
+    </div>
+  </nav>
+  
+  <img src="/icons/LOGOUNO.png" class="rounded mx-auto my-5 d-block" alt="..."width="300" height="200">
+</div> 
+
+  
+<p class="h2" style="text-align:center;font-weight: bold;">ชื่อ พนักงาน&ensp;<%=surName%>&ensp;<%=lastName%></p>
+ 
+  <table id="example" class="table display nowrap" style="width:100%">
+    <thead >
+      <tr class="table borderTable " style = "background-color:#008080;color:white;"> 
+          <!-- <th style="text-align:center;width:5%;" scope="col">Row Number</th> -->
+          <th scope="col">รหัสลูกค้า</th>
+          <th scope="col">ชื่อ</th>
+          <th  scope="col">ยอดขายรวม</th>
+          <th scope="col">CU</th>
+          <th scope="col">MS</th>
+          <th scope="col">PB รวม</th>
+          <th scope="col">ยอดขาย ยาปกติ</th>
+          <th  scope="col">CUMS ยาปกติ</th>
+          <th  scope="col">PB ยาปกติ</th>
+          <th scope="col">ยอดขาย ยาพิเศษ</th>
+          <th  scope="col">CUMS ยาพิเศษ</th>
+          <th scope="col">PB ยาพิเศษ</th>
+      </tr>
+    </thead>  
+    
+    <%
+      if(testData.length!=0){
+      var i=1;
+      testData.forEach(function(data){
+          
+    %>
+    <tr class="table" style="background-color: #F0FFF0;">
+        <!-- <td style="text-align:center;"><%=i; %></td> -->
+        <td style = "width:12%;"><%=data.custCode%></td>
+        <td><%=data.custName%></td>
+        <td><%=x(data.NetOne)%></a></td>
+        <td><%=x(data.CuOne)%></td>
+        <td><%=x(data.msOne)%></td>
+        <td><%=x(data.PBOne)%></td>
+        <td><%=x(data.NetTwo)%></td>
+        <td><%=x(data.cumsTwo)%></td>
+        <td><%=x(data.PBTwo)%></td>
+        <td><%=x(data.NetThree)%></td>
+        <td><%=x(data.CUMSThree)%></td>
+        <td><%=x(data.PBThree)%></td>
+    </tr>
+    <%  i++; }) %>
+    <% } else{ %>
+    <tr>
+      <td style = "width:12%;">-</td>
+      <td>0.00</td>
+      <td>0.00</a></td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+    </tr>
+    <% } %>
+</table>
+</div>
+</body>
+<style>
+  div.dataTables_wrapper {
+    width: 100%;
+    height:100%;
+    margin: 0 auto;
+}
+</style>
+<script>
+  $(document).ready(function () {
+    $('#example').DataTable({
+      paging: false,
+      info: false,
+        // ordering: false,
+        scrollY: true,
+        scrollX: true,
+    });
+  });
+</script>
+</html>

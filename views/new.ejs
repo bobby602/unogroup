@@ -1,0 +1,68 @@
+<html>
+  <head>
+    <link href="/css/bootstrap.min.css" rel="stylesheet" >
+    <title>PDF Viewer</title>
+    <script src="/js/bootstrap.min.js" ></script>
+  </head>
+  <!-- <style>
+    .desktop-pdf {
+    display: none;
+}
+
+.mobile-pdf {
+    display: block;
+}
+@media only screen  and (min-width : 1025px) {
+
+  .mobile-pdf {
+      display: none;
+  }
+
+  .desktop-pdf {
+      display: block;
+  }
+}
+  </style> -->
+  <body>
+
+    <!--
+      Place the following <div> element where you want the PDF to be displayed in your website. You can change the size using the width and height attributes.
+    -->
+    <!-- <iframe 
+          title = "PDF"
+          src = {`/pdfjs-2.5.207-es5-dist/web/viewer.html?file=${/pdf/Catalog.pdf}`}
+          width = "100%"
+          height = "700px"
+    ></iframe> -->
+    <div class="embed-responsive embed-responsive-21by9">
+      <iframe class="embed-responsive-item" src="/pdf/Catalog.pdf" allowfullscreen></iframe>
+    </div>
+    <div>
+      <!-- <object
+        data='/pdf/Catalog.pdf'
+        type="application/pdf"
+        width="900"
+        height="100%"
+        allowfullscreen
+      > -->
+      <!-- <iframe class="desktop-pdf" scrolling="auto" src="/pdf/Catalog.pdf" width="100%" height="90%" type='application/pdf' title="Title">
+        <p style="font-size: 110%;">Thanks for your patience!</p>
+    </iframe>
+    <iframe class="mobile-pdf" scrolling="auto" src="/pdf/Catalog.pdf" width="100%" height="90%" type='application/pdf' title="Title">
+        <p style="font-size: 110%;">Thanks for your patience!</p>
+    </iframe> -->
+
+        <!-- <iframe
+          src='/pdf/Catalog.pdf'
+          width="900"
+          height="1000"
+          allowfullscreen
+        >
+        <p>This browser does not support PDF!</p>
+        </iframe> -->
+
+      <!-- </object> -->
+    </div>
+  </body>
+ 
+</html>

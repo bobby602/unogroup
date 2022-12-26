@@ -1,0 +1,49 @@
+<%- include('partial') %>
+    <div class="center container-fluid">
+        <img src="/icons/LOGOUNO.png" class="rounded mx-auto my-5 d-block" alt="..."width="300" height="200"> 
+        <p class="h1">รายงานการขาย</p> 
+        <p class="h1 date" style="font-weight: bold;">วันที่</p>
+        <div class= "link mt-5">
+           
+            <a class = "tablePage" href="#" role="button">รายละเอียดสินค้า List Product</a>
+            <a class = "tablePage" href="#" role="button">รายละเอียดราคา Price List</a>
+            <a class = "tablePage" href="#" role="button">รายละเอียดคะแนน Point Product</a>
+            <a class = "tablePage" href="#" role="button">ตาราง คะแนน ค่าคอมมืสชั่น</a>
+            <a class = "tablePage" href="#" role="button"> รายงานการขาย</a>
+            
+        </div>
+        <nav id = "footer" class = 'pageNum' aria-label="Page navigation example">
+            <ul class="pagination justify-content-end">
+            <li class="page-item ">
+                <a class="page-link" href="/users/pageOne">Previous</a>
+            </li>
+            <li class="page-item"><a class="page-link" href="/users/pageOne">1</a></li>
+            <li class="page-item active" aria-current="page"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <li class="page-item">
+                <a class="page-link" href="#">Next</a>
+            </li>
+            </ul>
+        </nav>
+    </div>    
+</body>  
+<script>
+    
+    function toThaiDateString(date) {
+        let monthNames = [
+                "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน",
+                "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม.",
+                "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+                ];
+        let year = date.getFullYear() + 543;
+        let month = monthNames[date.getMonth()];
+        let numOfDay = date.getDate();
+        return `วันที่ ${numOfDay} ${month} ${year} `;
+    }
+    let date1 = new Date();
+    let date = document.querySelector(".date");
+    console.log(toThaiDateString(date1));
+
+    date.innerHTML = toThaiDateString(date1);
+
+</script> 

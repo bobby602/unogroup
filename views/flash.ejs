@@ -1,0 +1,12 @@
+<link href="/css/bootstrap.min.css" rel="stylesheet" >
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@100;200;400&display=swap" rel="stylesheet">
+<script src="/js/bootstrap.min.js" ></script>
+<div class =" col-12">
+    <% if(error && error.length) {%>
+    <div class = "alert alert-danger alert-dismissible fade show" role = "alert">
+            <%= error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>    
+    </div>  
+    <% } %>
+</div>    
+    

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="/css/bootstrap.min.css" rel="stylesheet" >
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@100;200;400&display=swap" rel="stylesheet">
+    <link href="/manifest.json" rel="manifest" >
+    <link rel="apple-touch-icon" sizes="266x196" href="/icons/LOGOUNO.png">
+    
+    <style>
+      #ince {
+            background-color: #80ced6 ;
+            text-shadow: 0px 4px 3px rgba(0,0,0,0.4),
+                 0px 8px 13px rgba(0,0,0,0.7),
+                 0px 18px 23px rgba(0,0,0,0.4);
+      }
+      *{
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Kanit', sans-serif;
+        }
+        @media only screen 
+        and (min-device-width : 768px) 
+        and (max-device-width : 1024px) {
+        }
+        table , tr , .td-border,.sum{
+          border:1px solid black;
+        }
+        #sale-text{
+          padding-left:50px;
+          margin-right:50px;
+        }
+        .table{
+            margin-bottom:0;
+        }
+        .sum{
+            padding:0.5rem 0.5rem;
+        }
+  </style>
+<head>
+	<script src="/js/bootstrap.min.js" ></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+  <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js" ></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.js" ></script>
+  <script src="https://cdn.datatables.net/1.12.0/js/jquery.dataTables.min.js" ></script>
+  <script src="//cdn.rawgit.com/ashl1/datatables-rowsgroup/v1.0.0/dataTables.rowsGroup.js"></script>
+
+  <title>Test Database Server</title>
+</head>
+<body>
+  <%
+
+  const x = (number)=>{
+              if(number !=null){
+                 
+                  number = number.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                  return number;
+  %> 
+   <%           }else{  %>
+      <%
+                  return ' ';
+              }
+          }
+      %>  
+    <div class="pic">
+    <nav id = "ince" class="navbar navbar-dark bg-primary">
+        <div class="container-fluid">
+        <a class="navbar-brand" href="/users/pageOne" style="font-family: Lato;">
+            <img src="/icons/logo-header2.png" alt="" width="40" height="35"> UNOGROUP
+        </a>
+        </div>
+    </nav>
+    <img src="/icons/LOGOUNO.png" class="rounded mx-auto my-5 d-block" alt="..."width="300" height="200">
+    </div> 
+    <div>
+       
+        <p class = "h2" style= "text-align: center;" >บริษัท&ensp;&ensp; <%=testData[0].Name%></p>
+
+    </div>
+
+    <table id="example" class="table display nowrap" style="width:100%">
+        <thead>
+        <tr class="table borderTable" style = "background-color:#008080;color:white;"> 
+            <th style="text-align:center;" scope="col ">Order No</th>
+            <th scope="col">Doc Date</th>
+            <th scope="col">Package</th>
+            <th scope="col">Item Name</th>
+            <th scope="col">Price</th>
+            <th scope="col">QTY</th>
+            <th scope="col">Amt</th>
+            <th scope="col">PB</th>
+            <th scope="col">Cu</th>
+            <th scope="col">MS</th>
+        </tr>
+        </thead>  
+        <%
+        let sum = 0.00 ;
+        if(testData.length!=0){
+        var i=1;
+        testData.forEach(function(data){
+        %>
+        <tr class="table" style="background-color: #F0FFF0;">
+            <td class = "td-border"style="width:5%;text-align:center;"><a href = "/users/subInfo?orderNo=<%=data.OrderNo%>"><%=data.OrderNo%></a></td>
+            <td class = "td-border"><%=data.DateDoc%></td>
+            <td class = "td-border"><%=data.Package%></td>
+            <td style= "width:30%;"class = "td-border"><%=data.ItemName%></td> 
+            <td class = "td-border"><%=x(data.Price)%></td>
+            <td class = "td-border"><%=x(data.Qty)%></td>
+            <td class = "td-border"><%=x(data.Amt)%></td>
+            <td class = "td-border"><%=x(data.PB)%></td>
+            <td class = "td-border"><%=x(data.cu)%></td>
+            <td class = "td-border"><%=x(data.MS)%></td>
+        </tr>
+        <% 
+        sum += data.Amt  
+        %>
+        <%  i++; }) %>
+        <% sum = sum.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",") %>
+        <% } else{ %>
+        <tr>
+        <td>No Data Found</td>
+        </tr>
+        <% } %>
+    </table>
+    
+    <p style = "width:100%;background-color: #1E90FF; color:white;"class = "h5 sum">ยอดรวม :&ensp;&ensp;  <%= sum%> บาท</p>
+</body>
+<style>
+    div.dataTables_wrapper {
+      width: 100%;
+      height:100%;
+      margin: 0 auto;
+  }
+  </style>
+  <script>
+    $(document).ready(function () {
+      $('#example').DataTable({
+        paging: false,
+        info: false,
+          ordering: false,
+          scrollY: true,
+          scrollX: true,
+          rowsGroup: [0,1]
+      });
+    });
+  </script>
+</html>

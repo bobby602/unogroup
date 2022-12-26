@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="/css/bootstrap.min.css" rel="stylesheet" >
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@100;200;400&display=swap" rel="stylesheet">
+    <link href="/manifest.json" rel="manifest" >
+    <link rel="apple-touch-icon" sizes="266x196" href="/icons/LOGOUNO.png">
+    
+    <style>
+      #ince {
+            background-color: #80ced6 ;
+            text-shadow: 0px 4px 3px rgba(0,0,0,0.4),
+                 0px 8px 13px rgba(0,0,0,0.7),
+                 0px 18px 23px rgba(0,0,0,0.4);
+      }
+      *{
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Kanit', sans-serif;
+        }
+        @media only screen 
+        and (min-device-width : 768px) 
+        and (max-device-width : 1024px) {
+        }
+        table , tr , .td-border,.sum{
+          border:1px solid black;
+        }
+        #sale-text{
+          padding-left:50px;
+          margin-right:50px;
+        }
+        .table{
+            margin-bottom:0;
+        }
+        .sum{
+            padding:0.5rem 0.5rem;
+        }
+  </style>
+<head>
+	<script src="/js/bootstrap.min.js" ></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+  <link href="https://www.jqueryscript.net/css/jquerysctipttop.css" rel="stylesheet" type="text/css">
+
+  <title>UnoGroup</title>
+</head>
+<body>
+    <%
+
+  const x = (number)=>{
+              if(number !=null){
+                 
+                  number = number.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                  return number;
+  %> 
+   <%           }else{  %>
+      <%
+                  return ' ';
+              }
+          }
+      %>
+
+     
+        
+    <div class="pic">
+    <nav id = "ince" class="navbar navbar-dark bg-primary">
+        <div class="container-fluid">
+        <a class="navbar-brand" href="/users/pageOne" style="font-family: Lato;">
+            <img src="/icons/logo-header2.png" alt="" width="40" height="35"> UNOGROUP
+        </a>
+        </div>
+    </nav>
+    <img src="/icons/LOGOUNO.png" class="rounded mx-auto my-5 d-block" alt="..."width="300" height="200">
+    </div> 
+    <div>
+       
+        <p class = "h2" style= "text-align: center;" >บริษัท&ensp;&ensp; <%=testData[0].CustName%></p>
+
+    </div>
+
+    <table id="textTable" class="table">
+        <thead>
+        <tr class="table borderTable" style = "background-color:#008080;color:white;"> 
+            <th scope="col">Doc Date</th>
+            <th scope="col">Cust Name</th>
+            <th scope="col">Send No</th>
+            <th scope="col">Doc No</th>
+            <th style ="text-align: center;" scope="col">ลำดับ</th>
+            <th scope="col">รายการผลิตภัณฑ์</th>
+            <th scope="col">คำนวณ PB</th>
+            <th scope="col">ขนาดบรรจุ</th>
+            <th scope="col">จำนวน</th>
+            <th scope="col">หน่วย</th>
+            <th scope="col">ราคา</th>
+        </tr>
+        </thead>  
+        <%
+        let sum = 0.00 ;
+        if(testData.length!=0){
+        var i=1;
+        testData.forEach(function(data){
+        %>
+        <tr class="table" style="background-color: #F0FFF0;">
+            <td class = "td-border"><%=data.DocDate%></td>
+            <td class = "td-border" style= "width:20%"><%=data.CustName%></td>
+            <td class = "td-border"><%=data.SendNo%></td> 
+            <td class = "td-border"><%=data.DocNo%></td>
+            <td style = "text-align: center;"class = "td-border"><%=data.num%></td>  
+            <td class = "td-border"><%=data.itemName1%></td>
+            <td class = "td-border"><%=data.PB%></td>
+            <td class = "td-border"><%=data.Package%></td>
+            <td class = "td-border"><%=data.amt%></td>
+            <td class = "td-border"><%=data.packd%></td>
+            <td class = "td-border"><%=data.Price%></td>
+        </tr>
+        <% 
+        sum += data.Amt
+        %>
+        <%  i++; }) %>
+        <% sum = sum.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",") %>
+        <% } else{ %>
+        <tr>
+        <td>No Data Found</td>
+        </tr>
+        <% } %>      
+    </table>
+    <% if(testData2.length!=0){
+        var i=1;
+        testData2.forEach(function(data){
+    %>
+    <p style = "width:100%;background-color: #1E90FF; color:white;"class = "h5 sum">Note <%=i%> :&ensp;&ensp;  <%=data.note%> </p>
+    <%  i++;}) %>
+    <% } else{%>  
+        <p style = "width:100%;background-color: #1E90FF; color:white;"class = "h5 sum">Note :&ensp;&ensp;  - </p> 
+    <% } %>         
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ" crossorigin="anonymous"></script>
+    <script src="/js/jquery.table.marge.js"></script>
+    <script>
+        $( document ).ready(function() {
+            //$('#textTable').margetable({
+            //    colindex:[{
+            //        index:0
+            //    },{
+            //        index:1,
+            //        dependent:[0]
+            //    },{
+            //        index:2,
+            //        dependent:[0,1]
+            //    }]
+            //});
+            $('#textTable').margetable({
+                type: 2,
+                colindex: [4,5,1,0,2,3,6,7,9,10]
+            });
+        });
+    </script>
+    
+    
+</body>
+</html>

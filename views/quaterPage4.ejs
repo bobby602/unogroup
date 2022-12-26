@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="/css/bootstrap.min.css" rel="stylesheet" >
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@100;200;400&display=swap" rel="stylesheet">
+    <link href="/manifest.json" rel="manifest" >
+    <link rel="apple-touch-icon" sizes="266x196" href="/icons/LOGOUNO.png">
+    
+    <style>
+      #ince {
+            background-color: #80ced6 ;
+            text-shadow: 0px 4px 3px rgba(0,0,0,0.4),
+                 0px 8px 13px rgba(0,0,0,0.7),
+                 0px 18px 23px rgba(0,0,0,0.4);
+      }
+      *{
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Kanit', sans-serif;
+        }
+        @media only screen 
+        and (min-device-width : 768px) 
+        and (max-device-width : 1024px) {
+        }
+        /* table , tr , td{
+          border:1px solid black;
+        } */
+        #sale-text{
+          padding-left:50px;
+          margin-right:50px;
+        }
+        .h1{
+            text-align: center;
+        }
+        .table{
+        margin-top :20px;
+        margin-left: auto; 
+        margin-right: auto;
+        width:60%
+        }
+        .td-value{
+          background-color:orange!important;
+          color:white;
+          font-size: 20px;
+        }
+        .td-label{
+          font-size: 20px;
+          background-color: #F0FFF0!important;
+        }
+        .submit{
+          margin-left: 30px;
+        }
+  </style>
+
+  <%
+
+  const x = (number)=>{
+              if(number !=null){
+                 
+                  number = number.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                  return number;
+  %> 
+   <%           }else{  %>
+      <%
+                  return ' ';
+              }
+          }
+      %>   
+<head>
+	<script src="/js/bootstrap.min.js" ></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+  <title>Test Database Server</title>
+</head>
+<body>
+  <div class="pic">
+  <nav id = "ince" class="navbar navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/users/pageOne" style="font-family: Lato;">
+          <img src="/icons/logo-header2.png" alt="" width="40" height="35"> UNOGROUP
+      </a>
+    </div>
+  </nav>
+  
+  <img src="/icons/LOGOUNO.png" class="rounded mx-auto my-5 d-block" alt="..."width="300" height="200">
+</div>
+
+
+
+
+  <div class = "d-flex flex-row mb-3 mr-2" >
+    <h2  id = "sale-text"class = "mr-3">คะแนนประจำเดือน UNOGROUP เดือน <%=monthFil%></h2>
+    <form action="/users/pageTable2" method="POST" class="validated-form" validate>
+      <div class="input-group mb-3 mr-3"> 
+          <select name="month" id="monthOp" class="form-select" aria-label="Default select example">
+            <option selected>เลือกเดือน</option>
+            <option value="01">มกราคม</option>
+            <option value="02">กุมภาพันธุ์</option>
+            <option value="03">มีนาคม</option>
+            <option value="04">เมษายน</option>
+            <option value="05">พฤษภาคม</option>
+            <option value="06">มิถุนายน</option>
+            <option value="07">กรกฏาคม</option>
+            <option value="08">สิงหาคม</option>
+            <option value="09">กันยายน</option>
+            <option value="10">ตุลาคม</option>
+            <option value="11">พฤศจิกายน</option>
+            <option value="12">ธันวาคม</option>
+          </select> 
+          <!-- <select name="month" id="month" class="form-select" aria-label="Default select example">
+            <option selected>เลือกไตรมาส</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select> -->
+          <div class="input-group-append ml-3">
+            <button id = "submit"type = "submit" class="btn btn-warning submit">Search</button>
+          </div> 
+      </div>     
+    </form>
+  </div>
+
+  <table class="table">
+    <!-- <thead >
+      <tr class="table borderTable " style = "background-color:#008080;color:white;"> 
+          <th style="text-align:center;width:5%;" scope="col">Row Number</th>
+          <th scope="col">ยอดขาย PB</th>
+          <th scope="col">Point PB</th>
+          <th scope="col">COMSP PB</th>
+          <th scope="col">CUMS PB</th>
+          <th scope="col">Point PO</th>
+          <th scope="col">ยอดขาย PO+PB</th>
+          <th scope="col">POINT PO+PB</th>
+          <th scope="col">COMSP PO+PB</th>
+          <th scope="col">CUMS PO+PB</th>
+      </tr>
+    </thead>   -->
+   
+    <%
+      <!-- console.log(dataMerge) -->
+      if(testData.length!=0){
+       <!-- for(let data in dataMerge ) { -->
+         <!-- console.log(data) -->
+      var i=1;
+      testData.forEach(function(data){
+          
+    %>
+      <!-- <div class="d-flex justify-content-center"> -->
+        <!-- <tr class="table " style="background-color: #F0FFF0;">
+          <td style="text-align:center;width:5%;" scope="col">Row Number</td>
+          <td style="text-align:center;"><%=i; %></td>
+        </tr>  -->
+      <!-- </div>  -->
+      <tr class="table" >
+        <td class = "td-label"scope="col">ยอดขาย</td>
+        <td class = "td-label"style="text-align:center;"><%=x(data.sales)%></td>
+      </tr> 
+      <tr class="table" >
+        <td class = "td-label"scope="col">ยอดขาย(PB)</td>
+        <td class = "td-label"style="text-align:center;"><%=x(data.PB)%></td>
+      </tr> 
+      <tr class="table" >
+        <td class = "td-label"scope="col">POINT</td>
+        <td class = "td-value"style="text-align:center;"><%=x(data.POINTSALE)%></td>
+      </tr>
+      <tr class="table" >
+        <td class = "td-label"scope="col">Rate ค่าคอม</td>
+        <td class = "td-label"style="text-align:center;"><%=data.RateCom%></td>
+      </tr> 
+      <tr class="table" >
+        <td class = "td-label"scope="col">ค่าคอม</td>
+        <td class = "td-label"style="text-align:center;"><%=x(data.incentive)%></td>
+      </tr>
+      <tr class="table" >
+        <td class = "td-label"scope="col">คอมยาพิเศษ(SP)</td>
+        <td class = "td-label"style="text-align:center;"><%=x(data.COMSP)%></td>
+      </tr>
+      <tr class="table" >
+        <td class = "td-label"scope="col">รวม 1+2</td>
+        <td class = "td-value"style="text-align:center;"><%=x(data.SumCOMSP)%></td>
+      </tr>
+      <tr class="table" >
+        <td class = "td-label"scope="col">CUMS</td>
+        <td class = "td-value"style="text-align:center;"><%=x(data.CUMS)%></td>
+      </tr>
+      <!-- <tr class="table" >
+        <td class = "td-label"scope="col">ยอด PO</td>
+        <td class = "td-label"style="text-align:center;"><%=x(data.CUMS)%></td>
+      </tr>
+      <tr class="table" >
+        <td class = "td-label"scope="col">คะแนนสะสม PO+PB</td>
+        <td class = "td-value"style="text-align:center;"><%=x(data.PBPOPOINT)%></td>
+      </tr>
+      <tr class="table">
+        <td class = "td-label"scope="col">คอมสะสม PO+PB</td>
+        <td class = "td-value"style="text-align:center;"><%=x(data.COMPBPO)%></td>
+      </tr>
+      <tr>
+        <td class = "td-label"scope="col">คอมยาพิเศษ PO+PB</td>
+        <td class = "td-label"style="text-align:center;"><%=x(data.COMSPPBPO)%></td>
+      </tr>
+      <tr class="table" >
+        <td class = "td-label"scope="col">CUMS PO+PB</td>
+        <td class = "td-label"style="text-align:center;"><%=x(data.cumsPoPB)%></td> -->
+      </tr>
+       
+    <%  i++; }) %>
+    <% } else{ %>
+      <!-- <tr class="table" >
+        <td class = "td-label"scope="col">ยอดขาย(PB)</td>
+        <td class = "td-label"style="text-align:center;">0.00</td>
+      </tr> 
+      <tr class="table" >
+        <td class = "td-label"scope="col">คะแนนสะสม(PB)</td>
+        <td class = "td-value"style="text-align:center;">0.00</td>
+      </tr> 
+      <tr class="table" >
+        <td class = "td-label"scope="col">คอมสะสม PB</td>
+        <td class = "td-label"style="text-align:center;">0.00</td>
+      </tr>
+      <tr class="table" >
+        <td class = "td-label"scope="col">คอมยาพิเศษ PB</td>
+        <td class = "td-label"style="text-align:center;">0.00</td>
+      </tr>
+      <tr class="table" >
+        <td class = "td-label"scope="col">CUMS PB</td>
+        <td class = "td-label"style="text-align:center;">0.00</td>
+      </tr>
+      <tr class="table" >
+        <td class = "td-label"scope="col">ยอดขายสะสม PO</td>
+        <td class = "td-value"style="text-align:center;">0.00</td>
+      </tr>
+      <tr class="table" >
+        <td class = "td-label"scope="col">คะแนนสะสม PO</td>
+        <td class = "td-value"style="text-align:center;">0.00</td>
+      </tr>
+      <tr class="table" >
+        <td class = "td-label"scope="col">ยอดขาย PO+PB</td>
+        <td class = "td-label"style="text-align:center;">0.00</td>
+      </tr>
+      <tr class="table" >
+        <td class = "td-label"scope="col">คะแนนสะสม PO+PB</td>
+        <td class = "td-value"style="text-align:center;">0.00</td>
+      </tr>
+      <tr class="table" >
+        <td class = "td-label"scope="col">คอมสะสม PO+PB</td>
+        <td class = "td-value"style="text-align:center;">0.00</td>
+      </tr>
+      <tr  >
+        <td class = "td-label"scope="col">คอมยาพิเศษ PO+PB</td>
+        <td class = "td-label"style="text-align:center;">0.00</td>
+      </tr>
+      <tr class="table" >
+        <td class = "td-label"scope="col">CUMS PO+PB</td>
+        <td class = "td-label"style="text-align:center;">0.00</td> -->
+        <tr class="table" >
+          <td class = "td-label"scope="col">ยอดขาย</td>
+          <td class = "td-label"style="text-align:center;">0.00</td>
+        </tr> 
+        <tr class="table" >
+          <td class = "td-label"scope="col">ยอดขาย(PB)</td>
+          <td class = "td-label"style="text-align:center;">0.00</td>
+        </tr> 
+        <tr class="table" >
+          <td class = "td-label"scope="col">POINT</td>
+          <td class = "td-value"style="text-align:center;">0.00</td>
+        </tr>
+        <tr class="table" >
+          <td class = "td-label"scope="col">Rate ค่าคอม</td>
+          <td class = "td-label"style="text-align:center;">0.00</td>
+        </tr> 
+        <tr class="table" >
+          <td class = "td-label"scope="col">ค่าคอม</td>
+          <td class = "td-label"style="text-align:center;">0.00</td>
+        </tr>
+        <tr class="table" >
+          <td class = "td-label"scope="col">คอมยาพิเศษ(SP)</td>
+          <td class = "td-label"style="text-align:center;">0.00</td>
+        </tr>
+        <tr class="table" >
+          <td class = "td-label"scope="col">รวม 1+2</td>
+          <td class = "td-value"style="text-align:center;">0.00</td>
+        </tr>
+        <tr class="table" >
+          <td class = "td-label"scope="col">CUMS</td>
+          <td class = "td-value"style="text-align:center;">0.00</td>
+        </tr>
+    <% } %>
+  
+</table>
+
+</div>
+
+</body>
+
+<script>
+    
+  function toThaiMonthString() {
+    let monthNames = [
+          "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน",
+          "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม.",
+          "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+        ];
+    let month = monthNames[date.getMonth()];
+    let numOfDay = date.getDate();
+    return ` ${month}`;
+  }
+
+</script> 
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1.0"/>
+<meta name = "apple-mobile-web-app-capable" content = "yes">
+<meta name = "apple-mobile-web-app-status-bar-style" content = "black">
+<head>
+    <link href="/css/bootstrap.min.css" rel="stylesheet" >
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@100;200;400&display=swap" rel="stylesheet">
+    <link href="/manifest.json" rel="manifest" >
+    <link rel="apple-touch-icon" sizes="266x196" href="/icons/LOGOUNO.png">
+    
+    <style>
+      #ince {
+            background-color: #80ced6 ;
+            text-shadow: 0px 4px 3px rgba(0,0,0,0.4),
+                 0px 8px 13px rgba(0,0,0,0.7),
+                 0px 18px 23px rgba(0,0,0,0.4);
+      }
+      *{
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Kanit', sans-serif;
+        }
+        @media only screen 
+        and (min-device-width : 768px) 
+        and (max-device-width : 1024px) {
+        }
+        table , tr , td{
+          border:1px solid black;
+        }
+        #sale-text{
+          padding-left:50px;
+          margin-right:50px;
+        }
+        .h1{
+            text-align: center;
+        }
+        .point{
+          background-color:orange!important;
+        }
+  </style>
+  <%
+  const x = (number)=>{
+              if(number !=null){
+                 
+                  number = number.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                  return number;
+  %> 
+   <%           }else{  %>
+      <%
+                  return '0.00';
+              }
+          }
+      %>   
+<head>
+	<script src="/js/bootstrap.min.js" ></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+  <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js" ></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.js" ></script>
+  <script src="https://cdn.datatables.net/1.12.0/js/jquery.dataTables.min.js" ></script>
+  <title>Test Database Server</title>
+</head>
+<body>
+  <div class="pic">
+  <nav id = "ince" class="navbar navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/users/pageOne" style="font-family: Lato;">
+          <img src="/icons/logo-header2.png" alt="" width="40" height="35"> UNOGROUP
+      </a>
+    </div>
+  </nav> 
+  <img src="/icons/LOGOUNO.png" class="rounded mx-auto my-5 d-block" alt="..."width="300" height="200">
+</div> 
+    <div class = "d-flex flex-row mb-3 mr-2" >
+      <h2  id = "sale-text"class = "mr-3">รายงานยอดขายสะสม UNOGROUP ประจำเดือน <%=monthFil%></h2>
+      <form action="/users/pageTable3" method="POST" class="validated-form" validate>
+        <div class="input-group mb-3 mr-3"> 
+            <select name="month" id="month" class="form-select" aria-label="Default select example">
+              <option selected>เลือกเดือน</option>
+              <option value="01">มกราคม</option>
+              <option value="02">กุมภาพันธุ์</option>
+              <option value="03">มีนาคม</option>
+              <option value="04">เมษายน</option>
+              <option value="05">พฤษภาคม</option>
+              <option value="06">มิถุนายน</option>
+              <option value="07">กรกฏาคม</option>
+              <option value="08">สิงหาคม</option>
+              <option value="09">กันยายน</option>
+              <option value="10">ตุลาคม</option>
+              <option value="11">พฤศจิกายน</option>
+              <option value="12">ธันวาคม</option>
+            </select>
+            <div class="input-group-append ml-3">
+              <button type = "submit" class="btn btn-warning submit">Search</button>
+            </div> 
+        </div>     
+      </form>
+    </div>
+ 
+  <table id="example" class="table display nowrap" style="width:100%">
+    <thead >
+      <tr class="table borderTable " style = "background-color:#008080;color:white;"> 
+          <!-- <th style="text-align:center;width:5%;" scope="col">Row Number</th> -->
+          <th scope="col">พนักงาน</th>
+          <th scope="col">ยอดขาย PB</th>
+          <th class = "point" scope="col">คะแนนสะสม PB</th>
+          <th scope="col">คอมสะสม PB</th>
+          <th scope="col">คอมยาพิเศษ PB</th>
+          <th scope="col">CUMS PB</th>
+          <th class = "point" scope="col">ยอดขาย PO</th>
+          <th class = "point" scope="col">คะแนนสะสม PO</th>
+          <th scope="col">ยอดขาย PO+PB</th>
+          <th class = "point" scope="col">คะแนนสะสม PO+PB</th>
+          <th scope="col">คอมสะสม PO+PB</th>
+          <th scope="col">คอมยาพิเศษ PO+PB</th>
+          <th scope="col">CUMS PO+PB</th>
+      </tr>
+    </thead>  
+    
+    <%
+      if(testData.length!=0){
+      var i=1;
+      testData.forEach(function(data){
+          
+    %>
+    <tr class="table" style="background-color: #F0FFF0;">
+        <!-- <td style="text-align:center;"><%=i; %></td> -->
+        <td style = "width:12%;"><%=data.NameG%></td>
+        <td><%=x(data.PB)%></td>
+        <td><%=x(data.AMTPOINT)%></a></td>
+        <td><%=x(data.COMPB)%></td>
+        <td><%=x(data.comSP)%></td>
+        <td><%=x(data.cums)%></td>
+        <td><%=x(data.PO)%></td>
+        <td><%=x(data.POPOINT)%></td>
+        <td><%=x(data.PBPO)%></td>
+        <td><%=x(data.PBPOPOINT)%></td>
+        <td><%=x(data.COMPBPO)%></td>
+        <td><%=x(data.COMSPPBPO)%></td>
+        <td><%=x(data.cumsPoPB)%></td>
+    </tr>
+    <%  i++; }) %>
+    <% } else{ %>
+    <tr>
+      <td style = "width:12%;">-</td>
+      <td>0.00</td>
+      <td>0.00</a></td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+    </tr>
+    <% } %>
+</table>
+</div>
+</body>
+<style>
+  div.dataTables_wrapper {
+    width: 100%;
+    height:100%;
+    margin: 0 auto;
+}
+</style>
+<script>
+  $(document).ready(function () {
+    $('#example').DataTable({
+      paging: false,
+      info: false,
+      ordering: false,
+         scrollY: true,
+        scrollX: true,
+    });
+  });
+</script>
+</html>
