@@ -1878,7 +1878,7 @@ router.post('/quaterPage4',async function(req,res){
     " Select  round(Sum(PB) ,2) as S1,CodeG   " +
     " From V802    " +
     " inner join itemcomPI on v802.itemcode = itemcomPI.itemcode     " +
-    " Where      year(Docdate) = YEAR(GETDATE())     " +
+    " Where     year(Docdate) = YEAR(GETDATE())     " +
     " Group by CodeG   " +
     " )b on b.CodeG = a.codeG  " +
     " left join (  " +

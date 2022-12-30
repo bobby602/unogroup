@@ -11,6 +11,7 @@ var usersRouter = require('./routes/users');
 var loginRouter = require('./routes/login');
 var quaterRouter = require('./routes/quater');
 var quater2Router = require('./routes/quater2');
+var priceList = require('./routes/priceList');
 // var testRouter = require('./routes/users/test');
 
 // app.use('/css', express.static(path.join('/public/stylesheets', 'bootsrap.min.css')));
@@ -25,6 +26,7 @@ app.use('/', loginRouter);
 app.use('/users', usersRouter);
 app.use('/quater', quaterRouter);
 app.use('/quater2', quater2Router);
+app.use('/priceList', priceList);
 
 // app.get('/test/new',(req,res)=>{
 //     res.render('/test/new');

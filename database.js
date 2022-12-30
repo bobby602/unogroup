@@ -39,8 +39,8 @@ let result;
 
 
    var conn1 = {
-    server: '192.168.11.148', // Replace with your host name
-    //server:'25.32.222.7',
+    // server: '192.168.11.148', // Replace with your host name
+    server:'25.32.222.7',
     database:'UNOGROUP',
     user: 'sa',
       port:1433,      // Replace with your database username
