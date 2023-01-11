@@ -31,6 +31,7 @@
         #sale-text{
           padding-left:50px;
           margin-right:50px;
+          text-align: center;
         }
         .h1{
             text-align: center;
@@ -80,20 +81,72 @@
         <img src="/icons/LOGOUNO.png" class="rounded mx-auto my-5 d-block" alt="..." width="300" height="200">
     </div> 
 
-    <div class = "d-flex flex-row mb-3 mr-1" >
-      <h2 id = "sale-text"class = "mr-1">UNO GROUP</h2><br>
-      <h2 id = "sale-text"class = "mr-1">PriceList ประจำเดือน <%=monthFil%></h2><br>
+    <div class = "d-flex  align-items: center flex-row mb-3 mr-1" >
+      <h2 id = "sale-text"class = "mr-1 text-center">UNO GROUP</h2><br>
+      <h2 id = "sale-text"class = "mr-1">PriceList ประจำเดือน <%=monthFil%>&ensp;&ensp; <%=yearThai%></h2> <br>
+      <h2 id = "sale-text"class = "mr-1">ครั้งที่ 03</h2><br>
     </div>
+    <%
+    let arr = [];
+    for(var i = 0; i< dataNameCat.length;i++){ 
+    %>
+      <div  class="d-flex  align-items: center flex-row p-1 mb-2 text-dark">
+        <table id='table' class="table display nowrap" style="width:100%">
+          <thead >
+            <tr class="table borderTable bg-warning " style = "color:white;"> 
+              <!-- <th style="text-align:center;width:5%;" scope="col">Row Number</th> -->
+              <th scope="col"><%=dataNameCat[i].NameCat%></th>
+          </tr>
+            <tr class="table borderTable " style = "background-color:#008080;color:white;"> 
+                <!-- <th style="text-align:center;width:5%;" scope="col">Row Number</th> -->
+                <th scope="col">ชื่อสามัญ</th>
+                <th scope="col">แพ็คกิ้ง</th>
+                <th scope="col">แต้ม</th>
+                <th scope="col">ขนาดบรรจุ</th>
+                <th scope="col">Price</th>
+                <th scope="col">Price25</th>
+                <th scope="col">Price50</th>
+                <th scope="col">Price100</th>
+                <th scope="col">Price120</th>
+                <th scope="col">Price240</th>
+                <th scope="col">Price360</th>
+                <th scope="col">Price600</th>
+                <th scope="col">Note</th>
+            </tr>
+          </thead>  
+            <%
+            for(var j = 0; j< dataSName.length;j++){        
+            %>  
+                <tr class="table" style="background-color: #F0FFF0;">
+                  <td class="table borderTable " style = "background-color:white;color:black;width:12%;"><%=dataSName[j].Name%></td>
+                  <td class="table borderTable " style = "background-color:white;color:black;width:12%;"><%=dataSName[j].NoteF%></td>
+                  <td class="table borderTable " style = "background-color:white;color:black;width:12%;"><%=dataSName[j].Point%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;width:12%;"><%=dataSName[j].Package%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;width:12%;"><%=x(dataSName[j].Pricelist)%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;width:12%;"><%=x(dataSName[j].Price25)%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;width:12%;"><%=x(dataSName[j].Price50)%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;width:12%;"><%=x(dataSName[j].Price100)%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;width:12%;"><%=x(dataSName[j].Price120)%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;width:12%;"><%=x(dataSName[j].Price240)%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;width:12%;"><%=x(dataSName[j].Price360)%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;width:12%;"><%=x(dataSName[j].Price600)%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;width:12%;"><%=dataSName[j].Note%></td>
+                </tr>
+            <% } %>
+        </table>
+      </div>
+    <% } %>
+
 </body>
 <script>
     let date1 = new Date();
   $(document).ready(function () {
-    $('#example').DataTable({
+    $('table').DataTable({
       paging: false,
       info: false,
-        ordering: false,
-        scrollY: true,
-        scrollX: true,
+      ordering: false,
+      scrollY: true,
+      scrollX: true,
     });
   });
  
