@@ -69,33 +69,38 @@ function toThaiMonthString(date) {
                         " OVER (  PARTITION BY tmp.mainName  Order by  tmp.rowReal) as num  ,tmp.Name,tmp.mainName ,CAST(ISNULL(tmp.Pricelist,0) AS DECIMAL(30,2)) as Pricelist , CAST(ISNULL(tmp.Price10,0) AS DECIMAL(30,2)) as Price10 , CAST(ISNULL(tmp.Price25,0) AS DECIMAL(30,2)) as Price25, CAST(ISNULL(tmp.Price50,0) AS DECIMAL(30,2)) as Price50, CAST(ISNULL(tmp.Price100,0) AS DECIMAL(30,2)) as Price100, CAST(ISNULL(tmp.Price120,0) AS DECIMAL(30,2)) as Price120 , CAST(ISNULL(tmp.Price240,0) AS DECIMAL(30,2)) as Price240, CAST(ISNULL(tmp.Price360,0) AS DECIMAL(30,2)) as Price360,CAST(ISNULL(tmp.Price600,0) AS DECIMAL(30,2)) as Price600 ,tmp.NameCat ,tmp.Note,tmp.Point,tmp.Package "+
     " from( "+
                 " select ROW_NUMBER ( )  "+  
-                               "  OVER (  PARTITION BY tmp.mainName  Order by  tmp.row) as num1, case when tmp.row is null then tmp2.row else tmp.row end as rowReal ,tmp.Name ,case when tmp.mainName is null then tmp2.mainName else tmp.mainName end as mainName  ,tmp2.row ,tmp2.mainName as mainTmp2,Pricelist,Price10 ,Price25, Price50, Price100,Price120 , Price240,Price360,Price600 ,case when tmp2.NameCat is null then tmp.NameCat else tmp2.NameCat end as NameCat,Note,tmp.Point,Package "+
+                               "  OVER (  PARTITION BY tmp.mainName  Order by  tmp.row) as num1, case when tmp.row is null then tmp2.row else tmp.row end as rowReal ,tmp.Name ,case when tmp.mainName is null then tmp2.mainName else tmp.mainName end as mainName  ,tmp2.row ,tmp2.mainName as mainTmp2,Pricelist,Price10 ,Price25, Price50, Price100,Price120 , Price240,Price360,Price600 ,case when tmp2.NameCat is null then tmp.NameCat else tmp2.NameCat end as NameCat,Note,case when tmp2.Point is null then tmp.Point else tmp2.Point end as Point,Package "+
                            "  from( "+
-                               "  select 1 as row ,Name as Name ,Name as mainName,NameCat,Point "+
-                               "  from ItemCalPSub  "+
-                               "  where StGroup = '1' and Sname1 != ''  "+
-                               "  GROUP BY Name ,NameCat,Point"+
-                               "  union ALL "+
-                               "  select 2 as row ,SName1 as Name ,Name as  mainName,NameCat,Point "+
-                               "  from ItemCalPSub "+
-                               "  where StGroup = '1' and Sname1 != '' "+
-                               "  GROUP BY SName1,Name,NameCat,Point "+
-                               "  union all  "+
-                               "  select 3 as row ,SName2 as Name ,Name as mainName,NameCat,Point "+
-                               "  from ItemCalPSub "+
-                               "  where StGroup = '1' and Sname1 != '' "+
-                               "  GROUP BY SName2,Name,NameCat,Point "+
-                               "  union all  "+
-                               "  select 4 as row ,SName3 as Name ,Name as mainName,NameCat,Point "+
-                               "  from ItemCalPSub "+
-                               "  where StGroup = '1' and Sname1 != '' "+
-                                " GROUP BY SName3,Name,NameCat,Point "+
+                                    " select tmp.* " +
+                                    " FROM " +
+                                        " ( " +
+                                            " select 1 as row ,Name as Name ,Name as mainName,NameCat,Point " +
+                                            "  from ItemCalPSub " +
+                                            " where StGroup = '1' and Sname1 != ''  " +
+                                            " GROUP BY Name ,NameCat,Point " +
+                                                " union ALL " +
+                                            " select 2 as row ,SName1 as Name ,Name as  mainName,NameCat,Point " +
+                                            " from ItemCalPSub " +
+                                            " where StGroup = '1' and Sname1 != '' " +
+                                            " GROUP BY SName1,Name,NameCat,Point "+
+                                                " union all  " +
+                                            " select 3 as row ,SName2 as Name ,Name as mainName,NameCat,Point " +
+                                            " from ItemCalPSub  " +
+                                            " where StGroup = '1' and Sname1 != ''  " +
+                                            " GROUP BY SName2,Name,NameCat,Point " + 
+                                            " union all   " +
+                                            " select 4 as row ,SName3 as Name ,Name as mainName,NameCat,Point " + 
+                                            " from ItemCalPSub  " +
+                                            " where StGroup = '1' and Sname1 != ''  " +
+                                            " GROUP BY SName3,Name,NameCat,Point  " +
+                                            " )Tmp " +
+                                        " where tmp.Name <> '' " + 
                             " )tmp  "+
                             " full join ( "+
                                 " select  ROW_NUMBER ( )  "+  
                                                 " OVER (  PARTITION BY Name Order by  Name) as row ,NoteF as Name ,Name as mainName,Pricelist,Price10 ,Price25, Price50, Price100,Price120 , Price240,Price360,Price600,NameCat,Note,Point,Package "+
                                 " from ItemCalPSub "+
-                                " where StGroup = '1' and Sname1 != '' "+
+                                " where StGroup = '1' and Sname1 != '' " +
                                 " GROUP BY NoteF,Name,Pricelist,Price10 ,Price25, Price50, Price100,Price120 , Price240,Price360,Price600,NameCat,Note,Point ,Package"+
                             " )tmp2 on tmp2.mainName = tmp.mainName and tmp2.row = tmp.row "+
                         " )tmp	 "+
