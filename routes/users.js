@@ -1278,8 +1278,9 @@ router.get('/salesQuater',requireLogin,function(req,res){
 " when c.point >= 3900   then (1*(e.s1-d.s1)/100)   " +
 " end  ),0) as DECIMAL(30,2))) ),0) AS DECIMAL(30,2)) as SumCOMSP,  " +
                                " CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, " +
-                                " case when  @quater = '1' then '0.00' " +
-                                    " else (e.s1-d.s1) end as PBH1, " +
+                               // " case when  @quater1 = '1' then '0.00' " +
+                                //     " else (e.s1-d.s1) end as PBH1, " +
+                                " (ISNULL(e.s1,0)-ISNULL(d.s1,0))  as PBH1, "+
                                 "(ISNULL(Sum(PB),0)-ISNULL((e.s1),0)) as PBCal, " +
                                 " case  " +
                                 " when c.point <1050 then '0' "+ 
@@ -1381,15 +1382,16 @@ router.get('/salesQuater',requireLogin,function(req,res){
 " when c.point >= 3900   then (1*(e.s1-d.s1)/100)   " +
 " end  ),0) as DECIMAL(30,2))) ),0) AS DECIMAL(30,2)) as SumCOMSP,  " +
 " CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, " +
-" case when @quater = '1' then '0.00'  " +
-            " else (e.s1-d.s1) end as PBH1, " +
+ // " case when  @quater1 = '1' then '0.00' " +
+                                //     " else (e.s1-d.s1) end as PBH1, " +
+    " (ISNULL(e.s1,0)-ISNULL(d.s1,0))  as PBH1, "+
  " (ISNULL(Sum(PB),0)-ISNULL((e.s1),0)) as PBCal, " +
   " case  " + 
 " when c.point <1050 then '0'  "+ 
-" when c.point >= 1050  and c.point < 1950  then (0.5*(e.s1-d.s1)/100) "+
-" when c.point >= 1950   and c.point < 3000  then (1*(e.s1-d.s1)/100)  "+ 
-" when c.point >= 3000   and c.point < 3900  then (1*(e.s1-d.s1)/100)  "+ 
-" when c.point >= 3900   then (1*(e.s1-d.s1)/100) " +   
+" when c.point >= 1050  and c.point < 1950  then (0.5*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100) "+
+" when c.point >= 1950   and c.point < 3000  then (1*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100)  "+ 
+" when c.point >= 3000   and c.point < 3900  then (1*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100)  "+ 
+" when c.point >= 3900   then (1*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100) " +   
 " end as ComPBH1 " +
 " From V802 a  " +
 " left join ( " +
@@ -1500,8 +1502,9 @@ router.post('/salesQuater',function(req,res){
 " when c.point >= 3900   then (1*(e.s1-d.s1)/100)   " +
 " end  ),0) as DECIMAL(30,2))) ),0) AS DECIMAL(30,2)) as SumCOMSP,  " +
                                " CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, " +
-                                " case when  @quater1 = '1' then '0.00' " +
-                                    " else (e.s1-d.s1) end as PBH1, " +
+                                // " case when  @quater1 = '1' then '0.00' " +
+                                //     " else (e.s1-d.s1) end as PBH1, " +
+                               " (ISNULL(e.s1,0)-ISNULL(d.s1,0))  as PBH1, "+
                                 "(ISNULL(Sum(PB),0)-ISNULL((e.s1),0)) as PBCal, " +
                                 " case  " +
                                 " when c.point <1050 then '0' "+ 
@@ -1603,8 +1606,9 @@ router.post('/salesQuater',function(req,res){
 " when c.point >= 3900   then (1*(e.s1-d.s1)/100)   " +
 " end  ),0) as DECIMAL(30,2))) ),0) AS DECIMAL(30,2)) as SumCOMSP,  " +
 " CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, " +
-" case when @quater1 = '1' then '0.00'  " +
-            " else (e.s1-d.s1) end as PBH1, " +
+ // " case when  @quater1 = '1' then '0.00' " +
+                                //     " else (e.s1-d.s1) end as PBH1, " +
+                                " (ISNULL(e.s1,0)-ISNULL(d.s1,0))  as PBH1, "+
  " (ISNULL(Sum(PB),0)-ISNULL((e.s1),0)) as PBCal, " +
   " case  " + 
 " when c.point <1050 then '0'  "+ 

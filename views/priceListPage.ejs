@@ -84,7 +84,24 @@
     <div class = "d-flex  align-items: center flex-row mb-3 mr-1" >
       <h2 id = "sale-text"class = "mr-1 text-center">UNO GROUP</h2><br>
       <h2 id = "sale-text"class = "mr-1">PriceList ประจำเดือน <%=monthFil%>&ensp;&ensp; <%=yearThai%></h2> <br>
-      <h2 id = "sale-text"class = "mr-1">ครั้งที่ 03</h2><br>
+      <h2 id = "sale-text"class = "mr-1">ครั้งที่  <%=dataMaxQno[0].QNo%></h2><br>
+    </div>
+    <div class = "d-flex flex-row mb-3 mr-2 justify-content-center" >
+      <form action="/priceList" method="POST" class="validated-form" validate>
+        <div class="input-group mb-3 mr-3"> 
+            <select name="stGroup" id="stGroup" class="form-select" aria-label="Default select example">
+              <option selected>เลือกกลุ่ม</option>
+              <%
+                for(var i = 0; i< dataStGroup.length;i++){
+              %>
+              <option value="<%=dataStGroup[i].StGroup%>"><%=dataStGroup[i].StGroup%></option>
+              <%}%>
+            </select>
+            <div class="input-group-append ml-3">
+              <button type = "submit" class="btn btn-warning submit">Search</button>
+            </div> 
+        </div>     
+      </form>
     </div>
     <%
     let number = 0;
@@ -100,20 +117,20 @@
           </tr>
             <tr class="table borderTable " style = "background-color:#008080;color:white;"> 
                 <th style="text-align:center;display: none;" scope="col">Hide</th>
-                <th scope="col">ชื่อสามัญ</th>
-                <th scope="col">แพ็คกิ้ง</th>
+                <th scope="col" style="text-align: center" >ชื่อสามัญ</th>
+                <th scope="col" style="text-align: center" >แพ็คกิ้ง</th>
                 <th scope="col" style="text-align: center;width:15%;">แต้ม</th>
-                <th scope="col">ขนาดบรรจุ</th>
-                <th scope="col">Price</th>
-                <th scope="col">Price15</th>
-                <th scope="col">Price25</th>
-                <th scope="col">Price50</th>
-                <th scope="col">Price100</th>
-                <th scope="col">Price120</th>
-                <th scope="col">Price240</th>
-                <th scope="col">Price360</th>
-                <th scope="col">Price480</th>
-                <th scope="col">Note</th>
+                <th scope="col" style="text-align: center">ขนาดบรรจุ</th>
+                <th scope="col" style="text-align: center">Price</th>
+                <th scope="col" style="text-align: center">Price15</th>
+                <th scope="col" style="text-align: center">Price25</th>
+                <th scope="col" style="text-align: center">Price50</th>
+                <th scope="col" style="text-align: center">Price100</th>
+                <th scope="col" style="text-align: center">Price120</th>
+                <th scope="col" style="text-align: center">Price240</th>
+                <th scope="col" style="text-align: center">Price360</th>
+                <th scope="col" style="text-align: center">Price480</th>
+                <th scope="col" style="text-align: center">Note</th>
             </tr>
           </thead>  
             <%
@@ -121,14 +138,14 @@
               if(dataNameCat[i].NameCat == dataSName[j].NameCat){    
                 number++;  
             %>  
-                <tr id = "headData" class="table" style="background-color: #F0FFF0;">
-                  <td class="table borderTable "  style = "background-color:white;color:black;display: none;"><%=dataSName[j].mainName%></td>
+                <tr id = "headData" class="table" style="background-color: #F0FFF0;text-align: center">
+                  <td class="table borderTable "  style = "background-color:white;color:black;display: none;text-align: center"><%=dataSName[j].mainName%></td>
                   <% if(dataSName[j].num == '1'){ %>
-                    <td class="table borderTable "  style = "background-color:rgb(68, 228, 228);color:black;"><%=dataSName[j].Name%></td>
+                    <td class="table borderTable "  style = "background-color:rgb(68, 228, 228);color:black;text-align: center"><%=dataSName[j].Name%></td>
                   <% }else{ %>
-                    <td class="table borderTable " style = "background-color:white;color:black;"><%=dataSName[j].Name%></td>
+                    <td class="table borderTable " style = "background-color:white;color:black;text-align: center"><%=dataSName[j].Name%></td>
                   <% } %>
-                  <td class="table borderTable " style = "background-color:white;color:black;"><%=dataSName[j].NoteF%></td>
+                  <td class="table borderTable " style = "background-color:white;color:black;text-align: center"><%=dataSName[j].NoteF%></td>
                   <% if(dataSName[j].num == '1'){ %>
               
                       <!-- <div class="value-button" id="decrease" onclick="decreaseValue()" value="Decrease Value">-</div> -->
@@ -137,19 +154,19 @@
                     <!-- </form> -->
                    
                   <% }else{ %>
-                    <td class="table borderTable "  style = "background-color:white;color:black;width:12%;"><span id = "valuePoint"></span></td>
+                    <td class="table borderTable "  style = "background-color:white;color:black;width:12%;text-align: center"><span id = "valuePoint"></span></td>
                   <% } %>
-                  <td class="table borderTable "  style = "background-color:white;color:black;"><%=dataSName[j].Package%></td>
-                  <td class="table borderTable "  style = "background-color:white;color:black;"><%=x(dataSName[j].Pricelist)%></td>
-                  <td class="table borderTable "  style = "background-color:white;color:black;"><%=x(dataSName[j].Price10)%></td>
-                  <td class="table borderTable "  style = "background-color:white;color:black;"><%=x(dataSName[j].Price25)%></td>
-                  <td class="table borderTable "  style = "background-color:white;color:black;"><%=x(dataSName[j].Price50)%></td>
-                  <td class="table borderTable "  style = "background-color:white;color:black;"><%=x(dataSName[j].Price100)%></td>
-                  <td class="table borderTable "  style = "background-color:white;color:black;"><%=x(dataSName[j].Price120)%></td>
-                  <td class="table borderTable "  style = "background-color:white;color:black;"><%=x(dataSName[j].Price240)%></td>
-                  <td class="table borderTable "  style = "background-color:white;color:black;"><%=x(dataSName[j].Price360)%></td>
-                  <td class="table borderTable "  style = "background-color:white;color:black;"><%=x(dataSName[j].Price600)%></td>
-                  <td class="table borderTable "  style = "background-color:white;color:black;"><%=dataSName[j].Note%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;text-align: center"><%=dataSName[j].Package%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;text-align: center"><%=x(dataSName[j].Pricelist)%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;text-align: center"><%=x(dataSName[j].Price10)%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;text-align: center"><%=x(dataSName[j].Price25)%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;text-align: center"><%=x(dataSName[j].Price50)%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;text-align: center"><%=x(dataSName[j].Price100)%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;text-align: center"><%=x(dataSName[j].Price120)%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;text-align: center"><%=x(dataSName[j].Price240)%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;text-align: center"><%=x(dataSName[j].Price360)%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;text-align: center"><%=x(dataSName[j].Price600)%></td>
+                  <td class="table borderTable "  style = "background-color:white;color:black;text-align: center"><%=dataSName[j].Note%></td>
                 </tr>
                 <% } %>
             <% } %>
@@ -174,7 +191,7 @@
   let arrSecondAfterMinusVal = new Array(table.length);
   let arrOne = new Array(table.length);
 
-  // positive[2].style.display = 'block';
+  
   const minusFunction  = (a,b,c,d)=>{
     let  tableNum = c-1;
     let checkNameValue;
@@ -192,9 +209,10 @@
     }
 
     if(tableNum == 0){
+      console.log(table[tableNum].innerHTML);
       checkNameValue = table[tableNum].innerHTML;
     }else{
-      tableNum = tableNum*14;
+      tableNum = tableNum*15;
       console.log(table[tableNum].innerHTML);
       checkNameValue = table[tableNum].innerHTML;
     }
@@ -202,7 +220,7 @@
 
     for(var i = 0; i<table.length;i++){
       if(table[tableNum].innerHTML == checkNameValue){
-        
+        // console.log(table[tableNum+5].innerHTML);
         table[tableNum+5].innerHTML = table[tableNum+5].innerHTML.replaceAll(",","");
         table[tableNum+6].innerHTML =  table[tableNum+6].innerHTML.replaceAll(",","");
         table[tableNum+7].innerHTML =  table[tableNum+7].innerHTML.replaceAll(",","");
@@ -232,7 +250,7 @@
           table[tableNum+11].innerHTML =  table[tableNum+11].innerHTML - ((table[tableNum+11].innerHTML *7)/100);
           table[tableNum+12].innerHTML =  table[tableNum+12].innerHTML -((table[tableNum+12].innerHTML *7)/100);
         }else if(arrValue[c-1] == 3 && arrCountValue[c-1] == -2){
-          valuePoint[c-1].innerHTML = "0.5";
+          valuePoint[c-1].innerHTML = "1.5";
 
           arrThirdSecondVal[tableNum+5] = table[tableNum+5].innerHTML;
           arrThirdSecondVal[tableNum+6] =  table[tableNum+6].innerHTML;
@@ -243,14 +261,14 @@
           arrThirdSecondVal[tableNum+11] = table[tableNum+11].innerHTML;
           arrThirdSecondVal[tableNum+12] = table[tableNum+12].innerHTML;
 
-          table[tableNum+5].innerHTML =  table[tableNum+5].innerHTML- (table[tableNum+5].innerHTML *10)/100
-          table[tableNum+6].innerHTML =  table[tableNum+6].innerHTML -(table[tableNum+6].innerHTML *10)/100
-          table[tableNum+7].innerHTML =  table[tableNum+7].innerHTML -(table[tableNum+7].innerHTML *10)/100
-          table[tableNum+8].innerHTML =  table[tableNum+8].innerHTML - (table[tableNum+8].innerHTML *10)/100
-          table[tableNum+9].innerHTML =  table[tableNum+9].innerHTML -(table[tableNum+9].innerHTML *10)/100
-          table[tableNum+10].innerHTML =   table[tableNum+10].innerHTML -(table[tableNum+10].innerHTML *10)/100
-          table[tableNum+11].innerHTML =  table[tableNum+11].innerHTML - (table[tableNum+11].innerHTML *10)/100
-          table[tableNum+12].innerHTML =  table[tableNum+12].innerHTML -(table[tableNum+12].innerHTML *10)/100
+          table[tableNum+5].innerHTML =  (table[tableNum+5].innerHTML- (table[tableNum+5].innerHTML *10)/100).toFixed(2)
+          table[tableNum+6].innerHTML =  (table[tableNum+6].innerHTML -(table[tableNum+6].innerHTML *10)/100).toFixed(2)
+          table[tableNum+7].innerHTML =  (table[tableNum+7].innerHTML -(table[tableNum+7].innerHTML *10)/100).toFixed(2)
+          table[tableNum+8].innerHTML =  (table[tableNum+8].innerHTML - (table[tableNum+8].innerHTML *10)/100).toFixed(2)
+          table[tableNum+9].innerHTML =  (table[tableNum+9].innerHTML -(table[tableNum+9].innerHTML *10)/100).toFixed(2)
+          table[tableNum+10].innerHTML =   (table[tableNum+10].innerHTML -(table[tableNum+10].innerHTML *10)/100).toFixed(2)
+          table[tableNum+11].innerHTML =  (table[tableNum+11].innerHTML - (table[tableNum+11].innerHTML *10)/100).toFixed(2)
+          table[tableNum+12].innerHTML =  (table[tableNum+12].innerHTML -(table[tableNum+12].innerHTML *10)/100).toFixed(2)
         }else if(arrValue[c-1] == 2 && arrCountValue[c-1] == -1){
           valuePoint[c-1].innerHTML = "1.5";
 
@@ -272,7 +290,7 @@
           table[tableNum+11].innerHTML =  table[tableNum+11].innerHTML - (table[tableNum+11].innerHTML *4)/100
           table[tableNum+12].innerHTML =  table[tableNum+12].innerHTML -(table[tableNum+12].innerHTML *4)/100
         }else if(arrValue[c-1] == 2 && arrCountValue[c-1] == -2){
-          valuePoint[c-1].innerHTML = "0.5";
+          valuePoint[c-1].innerHTML = "1";
 
           arrSecondAfterMinusVal[tableNum+5] = table[tableNum+5].innerHTML;
           arrSecondAfterMinusVal[tableNum+6] = table[tableNum+6].innerHTML;
@@ -283,14 +301,14 @@
           arrSecondAfterMinusVal[tableNum+11] = table[tableNum+11].innerHTML;
           arrSecondAfterMinusVal[tableNum+12] = table[tableNum+12].innerHTML;
 
-          table[tableNum+5].innerHTML =  table[tableNum+5].innerHTML- (table[tableNum+5].innerHTML *7)/100
-          table[tableNum+6].innerHTML =  table[tableNum+6].innerHTML -(table[tableNum+6].innerHTML *7)/100
-          table[tableNum+7].innerHTML =  table[tableNum+7].innerHTML -(table[tableNum+7].innerHTML *7)/100
-          table[tableNum+8].innerHTML =  table[tableNum+8].innerHTML - (table[tableNum+8].innerHTML *7)/100
-          table[tableNum+9].innerHTML =  table[tableNum+9].innerHTML -(table[tableNum+9].innerHTML *7)/100
-          table[tableNum+10].innerHTML =   table[tableNum+10].innerHTML -(table[tableNum+10].innerHTML *7)/100
-          table[tableNum+11].innerHTML =  table[tableNum+11].innerHTML - (table[tableNum+11].innerHTML *7)/100
-          table[tableNum+12].innerHTML =  table[tableNum+12].innerHTML -(table[tableNum+12].innerHTML *7)/100
+          table[tableNum+5].innerHTML =  (table[tableNum+5].innerHTML- (table[tableNum+5].innerHTML *7)/100).toFixed(2)
+          table[tableNum+6].innerHTML =  (table[tableNum+6].innerHTML -(table[tableNum+6].innerHTML *7)/100).toFixed(2)
+          table[tableNum+7].innerHTML =  (table[tableNum+7].innerHTML -(table[tableNum+7].innerHTML *7)/100).toFixed(2)
+          table[tableNum+8].innerHTML =  (table[tableNum+8].innerHTML - (table[tableNum+8].innerHTML *7)/100).toFixed(2)
+          table[tableNum+9].innerHTML =  (table[tableNum+9].innerHTML -(table[tableNum+9].innerHTML *7)/100).toFixed(2)
+          table[tableNum+10].innerHTML =   (table[tableNum+10].innerHTML -(table[tableNum+10].innerHTML *7)/100).toFixed(2)
+          table[tableNum+11].innerHTML =  (table[tableNum+11].innerHTML - (table[tableNum+11].innerHTML *7)/100).toFixed(2)
+          table[tableNum+12].innerHTML =  (table[tableNum+12].innerHTML -(table[tableNum+12].innerHTML *7)/100).toFixed(2)
         }else if(arrValue[c-1] == 1 && arrCountValue[c-1] == -1){
           valuePoint[c-1].innerHTML = "0.5";
           arrOne[tableNum+5] = table[tableNum+5].innerHTML;
@@ -312,7 +330,7 @@
           table[tableNum+12].innerHTML = table[tableNum+12].innerHTML -(table[tableNum+12].innerHTML *4)/100;
         }
       }
-      tableNum +=14;
+      tableNum +=15;
     }
 
   }
@@ -337,7 +355,7 @@
     if(tableNum == 0){
       checkNameValue = table[tableNum].innerHTML;
     }else{
-      tableNum = tableNum*14;
+      tableNum = tableNum*15;
       checkNameValue = table[tableNum].innerHTML;
     }
     
@@ -414,7 +432,7 @@
           table[tableNum+12].innerHTML =  arrOne[tableNum+12];
         }
       }
-      tableNum +=14;
+      tableNum +=15;
     }
 
   }
@@ -431,5 +449,12 @@
   });
  
 </script>
+<style>
+  #table_filter{
+      float: left !important;
+      border: 10px solid #0d6efd;
+      padding: 20px;
+  }
+  </style>
 
 </html>

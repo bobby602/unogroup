@@ -109,7 +109,7 @@ const x = (number)=>{
                     <a  class = "tablePage" href="https://drive.google.com/file/d/1JPNJKyL_1PAJ3BVOlZmanqTRQTP1y2Sl/view?usp=sharing" role="button">Catalog Zu</a>
                 </div>    
                 <div class = "link mt-5  ">
-                        <a  class = "tablePage" href="https://docs.google.com/spreadsheets/d/1MUGMKhv3TQSVjn5XD6aFh32HgRzxFAoCrdrG17Z5D0Y/edit?usp=sharing" role="button">รายละเอียดราคา Price List</a>
+                        <!-- <a  class = "tablePage" href="https://docs.google.com/spreadsheets/d/1MUGMKhv3TQSVjn5XD6aFh32HgRzxFAoCrdrG17Z5D0Y/edit?usp=sharing" role="button">รายละเอียดราคา Price List</a> -->
                         <a target="_self" class = "tablePage" href="/users/detailPoint" role="button">รายละเอียดประวัติการขายลูกค้า</a>
                         <!-- <a  class = "tablePage" href="#" role="button">ตาราง คะแนน ค่าคอมมืสชั่น</a> -->
                         <a  class = "tablePage" href="/users/reportSalePage" role="button"> รายงานการขาย</a>
@@ -132,6 +132,7 @@ const x = (number)=>{
   </div> 
             </div>         
 </body>   
+
 <script>
          window.onload = function exampleFunction() {
             console.log('The Script will load now.');
@@ -156,6 +157,5 @@ const x = (number)=>{
 		}
 		let date1 = new Date();
 		let date = document.querySelector(".date");
-		console.log(toThaiDateString(date1));
 		date.innerHTML = toThaiDateString(date1);
 </script> 
