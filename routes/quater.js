@@ -20,8 +20,8 @@ let month2;
 let month3;
 const quater = (month)=>{
     const quater = month+1;
-    const quaterNum = Math.floor(quater/3);
-    console.log(quaterNum);
+    const quaterNum = Math.ceil(quater/4);
+    console.log(quater+"ccc");
     if(quaterNum ==1){
         monthFil = '1';
         month1 = '1';
@@ -1440,6 +1440,13 @@ function toThaiMonthString(date) {
            let surName = req.session.surName;
            let lastName = req.session.lastName;
            const username = req.session.Login;
+           const currentMonth = new Date().getMonth();
+
+           
+           
+            quater(currentMonth);
+            console.log(monthFil+"var1");
+            console.log(username+"var2");
            await pool.connect()
            const request = pool.request();
            const result = await request
@@ -1493,6 +1500,7 @@ function toThaiMonthString(date) {
                }
            }
            
+    
            let data = result.recordset;
            let data2 = result2.recordset;
            console.log(data2)
@@ -1501,10 +1509,13 @@ function toThaiMonthString(date) {
            let data5 = [];
            let data6 = result5.recordset;
            let data7 = result6.recordset;
+           console.log(result6)
+
            checkResult(data);
            checkResult(data2);
            checkResult(data3);
            checkResult(data4);
+           
            data = [{...data[0],
             ComSumH1NH2:data[0].ComPBI + data[0].ComPBH1,
             PointSumH1NH2:data[0].PBH1+data[0].PBI
@@ -1542,11 +1553,9 @@ function toThaiMonthString(date) {
                 rateComSum = 1.5;
                 break;         
         }
-        // let sumPB = data[0].PB+ data2[0].PB+data3[0].PB+data4[0].PB;
-        // let AmtPoint = (sumPB*rateComSum)/100;
-        // if(AmtPoint != null){
-        //     AmtPoint = AmtPoint.toFixed(2);
-        // }
+        console.log(result6.recordset)
+            console.log(data7[0].AmtPoint)
+            
 
            data5.push({
                num: 0,
@@ -1570,8 +1579,7 @@ function toThaiMonthString(date) {
                ComSumH1NH2:data[0].ComSumH1NH2 + data2[0].ComSumH1NH2+ data3[0].ComSumH1NH2+ data4[0].ComSumH1NH2,
                PointSumH1NH2:data[0].PointSumH1NH2 +data2[0].PointSumH1NH2+data3[0].PointSumH1NH2+data4[0].PointSumH1NH2
            })
-           console.log(data)
-           console.log(data5)
+           
            res.render('quaterPage3',{data,data2,data3,data4,data5,data6,surName,lastName});
            } catch (err) {
              // ... handle it locally
