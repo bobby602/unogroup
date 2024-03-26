@@ -241,67 +241,68 @@ router.get('/pageTable2',requireLogin,function(req,res){
     //                         "sumPoPb.COMSPPBPO,sumPoPb.cumsPoPB " +
     //                         "order by Pb.AMTPOINT DESC " ; 
     const sql =  " Select   " +
-" 0 as num, " +
-"  NameG, " +
-" ROW_NUMBER() OVER(ORDER BY sum(Amt) DESC) AS Row, " +
-" CAST(ISNULL(Sum(Amt),0) AS DECIMAL(30,2)) as sales , " +
-" CAST(ISNULL(Sum(PB),0) AS DECIMAL(30,2)) as PB,  " +
-" CAST(ISNULL(Sum(PPoint),0) AS DECIMAL(30,2)) as POINTSALE , " +
-" case  " +
-"when sum(PPoint) <1050 then '0'  " +
-"when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'   " +
-"when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1'  " +
-"when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5'  " +
-"when sum(PPoint) >= 3900   then '1.5'  " +
-"end as RateCom , " +
-" case  " +
-" when sum(PPoint) <1050 then 0   " +
- " when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   " +
-   " when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000  " +
-     " when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000  " +
-         " when sum(PPoint) >= 3900   then 60000 " +
-" end as incentive, " +        
-" CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI, "+ 
-" CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP, " +
-" CAST(ISNULL(((Sum(PB) - ISNULL(b.s1,0))*c.RateCom/100),0) as DECIMAL(30,2)) as AmtPoint, " +
-" case when sum(PPoint) <1050 then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , " +
-" CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP, " +
-" CAST(ISNULL((Sum(ComSP)+((Sum(PB) - ISNULL(b.s1,0))*c.RateCom/100)+(ISNULL(b.s1,0) * 0.5 /100)+c.incentive),0) AS DECIMAL(30,2)) as SumCOMSP, " +
-" CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, " +
-" case when (month(GETDATE())  = '1'  or  month(GETDATE()) = '2' or  month(GETDATE()) = '3') then '0.00'  " +
-            " else (e.s1-d.s1) end as PBH1, " +
- " (ISNULL(Sum(PB),0)-(e.s1)) as PBCal, " +
-  " case  " + 
-" when sum(PPoint) <1050 then '0'  "+ 
-" when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then (0.5*(e.s1-d.s1)/100) "+
-" when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then (1*(e.s1-d.s1)/100)  "+ 
-" when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then (1*(e.s1-d.s1)/100)  "+ 
-" when sum(PPoint) >= 3900   then (1*(e.s1-d.s1)/100) " +   
-" end as ComPBH1 " +
+    " 0 as num, " +
+    "  NameG, " +
+    " ROW_NUMBER() OVER(ORDER BY sum(Amt) DESC) AS Row, " +
+    " CAST(ISNULL(Sum(Amt),0) AS DECIMAL(30,2)) as sales , " +
+    " CAST(ISNULL(Sum(PB),0) AS DECIMAL(30,2)) as PB,  " +
+    " CAST(ISNULL(Sum(PPoint),0) AS DECIMAL(30,2)) as POINTSALE , " +
+    " c.RateCom, "+ 
+    " c.incentive, "+      
+    " CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI, "+ 
+    " CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP, " +
+    " CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100),0) as DECIMAL(30,2)) as AmtPoint,  " +
+    "case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , " +
+    " CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP, " +
+    " CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100) ,0) as DECIMAL(30,2)))+(1*(e.s1-ISNULL(d.s1,0))/100) +  case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP, " +
+    " CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, " +
+    " (e.s1-ISNULL(d.s1,0))  as PBH1, "+
+    " (ISNULL(Sum(PB),0)-(e.s1)) as PBCal, " +
+    " (1*(e.s1-ISNULL(d.s1,0))/100) as ComPBH1  " +
 " From V802 a  " +
 " left join ( " +
-" Select  round(Sum(PB) ,2) as S1,CodeG  " +
-" From V802   " +
-" Where   MONTH(docDate) = Month(GETDATE())  and year(Docdate) = YEAR(GETDATE()) and  (V802.ItemCode = 'NGHGLYP48'  or V802.ItemCode = 'NGHGLYP48'  )    " +
-" Group by CodeG  " +
+                " Select  round(Sum(PB) ,2) as S1,CodeG  " +
+                " From V802   " +
+                "     inner join itemcomPI on v802.itemcode = itemcomPI.itemcode   " +
+                " Where  codeG = 'uno16' and Month(DocDate) = '01' and   year(Docdate) = YEAR(GETDATE())  " +
+                "  Group by CodeG " +
 " )b on b.CodeG = a.codeG " +
 " left join ( " +
-"Select  case  "+
-" when sum(PPoint) <1050 then '0'  "+
-" when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'  "+
-" when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1' "+
-" when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5' "+
-" when sum(PPoint) >= 3900   then '1.5' "+
-" end as RateCom ,CodeG ,  " +
-    " case    when sum(PPoint) <1050 then 0   " +
-              " when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   " +
-                 " when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000  " +
-                  " when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000  " +
-                  " when sum(PPoint) >= 3900   then 60000 " +
-        " end as incentive " +
-" From V802   " +
-" Where  MONTH(docDate) = Month(GETDATE())  and year(Docdate) = YEAR(GETDATE())   " +
-" Group by CodeG  " +
+" Select  case when tier = '1' then " +
+" case when sum(PPoint) <350  then '0'  " +
+"             when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+
+"             when sum(PPoint) >=500 and sum(PPoint) < 750 then '1'  "+
+"             when sum(PPoint) >=750 then '1.5'  "+
+"             end   "+
+" when tier = '2' then  "+
+"     case when sum(PPoint) <350  then '0' "+
+"             when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+
+"             when sum(PPoint) >=500 and sum(PPoint) < 700 then '1' "+
+"             when sum(PPoint) >=700 then '1.5' "+
+"             end  "+
+" when tier = '3' then "+
+"     case when sum(PPoint) <350  then '0' "+
+"             when sum(PPoint) >=350 and sum(PPoint) < 450 then '0.5' "+ 
+"             when sum(PPoint) >=450 and sum(PPoint) < 550 then '1'  "+
+"             when sum(PPoint) >=550 then '1.5'"+
+"             end  "+
+" when tier = '4' then  "+
+"     case when sum(PPoint) <350  then '0' "+
+"             when sum(PPoint) >=350 and sum(PPoint) < 400 then '0.5' "+
+"             when sum(PPoint) >=400 and sum(PPoint) < 450 then '1' "+
+"             when sum(PPoint) >=450 then '1.5'  "+
+"             end "+
+" end as RateCom "+
+" ,CodeG , "+
+" case   when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000  "+
+" when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+
+" when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000  "+
+" when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000  "+
+" else 0  "+
+"  end as incentive  , sum(PPoint) as point "+
+" From V802   "+
+" Where   codeG = @Login and Month(DocDate) =  Month(GETDATE()) and  year(Docdate) = YEAR(GETDATE())   "+
+" Group by CodeG, tier " +
 " )c on c.CodeG = a.codeG " +
 " left join ( "+
     " select sum(tmp.S1) as s1 ,tmp.CodeG " +
@@ -326,7 +327,7 @@ router.get('/pageTable2',requireLogin,function(req,res){
         " GROUP BY tmp.CodeG " +    
         " )e on e.CodeG = a.CodeG " +
 " Where MONTH(docDate) = Month(GETDATE())  and year(Docdate) = YEAR(GETDATE())   and a.CodeG = @Login   "+
-" Group by NameG,b.S1,c.RateCom,a.CodeG,c.incentive,e.s1,d.s1 " ;
+" Group by NameG,b.S1,c.RateCom,a.CodeG,c.incentive,e.s1,ISNULL(d.s1,0) " ;
         const customer = req.query.customer;
         const username = req.session.Login;
         // quater(month);
@@ -467,61 +468,62 @@ router.post('/pageTable2',function(req,res){
 " CAST(ISNULL(Sum(Amt),0) AS DECIMAL(30,2)) as sales , " +
 " CAST(ISNULL(Sum(PB),0) AS DECIMAL(30,2)) as PB,  " +
 " CAST(ISNULL(Sum(PPoint),0) AS DECIMAL(30,2)) as POINTSALE , " +
-" case  " +
-"when sum(PPoint) <1050 then '0'  " +
-"when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'   " +
-"when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1'  " +
-"when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5'  " +
-"when sum(PPoint) >= 3900   then '1.5'  " +
-"end as RateCom , " +
-" case  " +
-" when sum(PPoint) <1050 then 0   " +
- " when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   " +
-   " when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000  " +
-     " when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000  " +
-         " when sum(PPoint) >= 3900   then 60000 " +
-" end as incentive, " +        
+" c.RateCom, "+ 
+" c.incentive, "+      
 " CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI, "+ 
 " CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP, " +
-" CAST(ISNULL(((Sum(PB) - ISNULL(b.s1,0))*c.RateCom/100),0) as DECIMAL(30,2)) as AmtPoint, " +
-" case when sum(PPoint) <1050 then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , " +
+" CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100),0) as DECIMAL(30,2)) as AmtPoint,  " +
+"case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , " +
 " CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP, " +
-" CAST(ISNULL((Sum(ComSP)+((Sum(PB) - ISNULL(b.s1,0))*c.RateCom/100)+(ISNULL(b.s1,0) * 0.5 /100)+c.incentive),0) AS DECIMAL(30,2)) as SumCOMSP, " +
+" CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100) ,0) as DECIMAL(30,2)))+(1*(e.s1-ISNULL(d.s1,0))/100) +  case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP, " +
 " CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, " +
-" case when @quater1 = '1' then '0.00'  " +
-            " else (e.s1-d.s1) end as PBH1, " +
- " (ISNULL(Sum(PB),0)-(e.s1)) as PBCal, " +
-  " case  " + 
-" when sum(PPoint) <1050 then '0'  "+ 
-" when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then (0.5*(e.s1-d.s1)/100) "+
-" when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then (1*(e.s1-d.s1)/100)  "+ 
-" when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then (1*(e.s1-d.s1)/100)  "+ 
-" when sum(PPoint) >= 3900   then (1*(e.s1-d.s1)/100) " +   
-" end as ComPBH1 " +
+" (e.s1-ISNULL(d.s1,0))  as PBH1, "+
+" (ISNULL(Sum(PB),0)-(e.s1)) as PBCal, " +
+" (1*(e.s1-ISNULL(d.s1,0))/100) as ComPBH1  " +
 " From V802 a  " +
 " left join ( " +
-" Select  round(Sum(PB) ,2) as S1,CodeG   " +
-" From V802   " +
-" Where   MONTH(docDate) = @month1 and year(Docdate) = YEAR(GETDATE()) and  (V802.ItemCode = 'NGHGLYP48'  or V802.ItemCode = 'NGHGLYP48'  )    " +
-" Group by CodeG  " +
+                " Select  round(Sum(PB) ,2) as S1,CodeG  " +
+                " From V802   " +
+                "     inner join itemcomPI on v802.itemcode = itemcomPI.itemcode   " +
+                " Where  codeG = 'uno16' and Month(DocDate) = '01' and   year(Docdate) = YEAR(GETDATE())  " +
+                "  Group by CodeG " +
 " )b on b.CodeG = a.codeG " +
 " left join ( " +
-"Select  case  "+
-" when sum(PPoint) <1050 then '0'  "+
-" when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'  "+
-" when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1' "+
-" when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5' "+
-" when sum(PPoint) >= 3900   then '1.5' "+
-" end as RateCom ,CodeG ,  " +
-    " case    when sum(PPoint) <1050 then 0   " +
-              " when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   " +
-                 " when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000  " +
-                  " when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000  " +
-                  " when sum(PPoint) >= 3900   then 60000 " +
-        " end as incentive " +
-" From V802   " +
-" Where   MONTH(docDate) = @month1   and year(Docdate) = YEAR(GETDATE())   " +
-" Group by CodeG  " +
+" Select  case when tier = '1' then " +
+" case when sum(PPoint) <350  then '0'  " +
+"             when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+
+"             when sum(PPoint) >=500 and sum(PPoint) < 750 then '1'  "+
+"             when sum(PPoint) >=750 then '1.5'  "+
+"             end   "+
+" when tier = '2' then  "+
+"     case when sum(PPoint) <350  then '0' "+
+"             when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+
+"             when sum(PPoint) >=500 and sum(PPoint) < 700 then '1' "+
+"             when sum(PPoint) >=700 then '1.5' "+
+"             end  "+
+" when tier = '3' then "+
+"     case when sum(PPoint) <350  then '0' "+
+"             when sum(PPoint) >=350 and sum(PPoint) < 450 then '0.5' "+ 
+"             when sum(PPoint) >=450 and sum(PPoint) < 550 then '1'  "+
+"             when sum(PPoint) >=550 then '1.5'"+
+"             end  "+
+" when tier = '4' then  "+
+"     case when sum(PPoint) <350  then '0' "+
+"             when sum(PPoint) >=350 and sum(PPoint) < 400 then '0.5' "+
+"             when sum(PPoint) >=400 and sum(PPoint) < 450 then '1' "+
+"             when sum(PPoint) >=450 then '1.5'  "+
+"             end "+
+" end as RateCom "+
+" ,CodeG , "+
+" case   when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000  "+
+" when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+
+" when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000  "+
+" when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000  "+
+" else 0  "+
+"  end as incentive  , sum(PPoint) as point "+
+" From V802   "+
+" Where   codeG = @Login and Month(DocDate) = @month1 and  year(Docdate) = YEAR(GETDATE())   "+
+" Group by CodeG, tier " +
 " )c on c.CodeG = a.codeG " +
 " left join ( "+
     " select sum(tmp.S1) as s1 ,tmp.CodeG " +
@@ -546,7 +548,7 @@ router.post('/pageTable2',function(req,res){
         " GROUP BY tmp.CodeG " +    
         " )e on e.CodeG = a.CodeG " +
 " Where MONTH(docDate) = @month1   and year(Docdate) = YEAR(GETDATE()) and a.CodeG = @Login  "+
-" Group by NameG,b.S1,c.RateCom,a.CodeG,c.incentive,e.s1,d.s1 " ;
+" Group by NameG,b.S1,c.RateCom,a.CodeG,c.incentive,e.s1,ISNULL(d.s1,0) " ;
     const username= req.session.Login;
     let monthFil = req.body.month;
     console.log(req.body.month);
@@ -1235,216 +1237,117 @@ router.get('/reportSalePage',requireLogin,function(req,res){
 })
 
 router.get('/salesQuater',requireLogin,function(req,res){
-     const sql =  "with sumAll as ( " +
-    "select 1 as num,'รวมทั้งหมด' as NameG,'' as Row,sum(tmp.sales) as sales , sum(PB) as PB , sum(POINTSALE) as POINTSALE, '' as RateCom,  sum(incentive) as incentive,sum(PBI) as PBI , 0 as PP , sum(AmtPoint) as  AmtPoint ,sum(ComPBI) as ComPBI, " +
-    "sum(COMSP) as COMSP , sum(SumCOMSP) as sumCOMSP,sum(CUMS) as CUMS, sum(PBH1) as PBH1 , sum(PBCal) as PBCal , sum(ComPBH1) as ComPBH1 " +
-    "from ( " +
-                " Select   " +
-                                "NameG, " +
-                                "CAST(ISNULL(Sum(Amt),0) AS DECIMAL(30,2)) as sales , " +
-                                "CAST(ISNULL(Sum(PB),0) AS DECIMAL(30,2)) as PB,  " +
-                                "CAST(ISNULL(Sum(PPoint),0) AS DECIMAL(30,2)) as POINTSALE , " +
-                                " case  " +
-                                        " when sum(PPoint) <1050 then '0'  " +
-                                        " when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'  " +
-                                        " when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1' " +
-                                        " when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5' " +
-                                        " when sum(PPoint) >= 3900   then '1.5' " +
-                                    " end as RateCom, " +
-                                " case  " +
-                                             " when sum(PPoint) <1050 then 0   " +
-                                              " when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   " +
-                                              " when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000  " +
-                                              " when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000  " +
-                                             " when sum(PPoint) >= 3900   then 60000 " +
-                                         " end as incentive, " +
-                              "  CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI, " +
-                               " CAST(ISNULL((Sum(PB) - b.s1),0) as DECIMAL(30,2)) as PP, " +
-//                                " CAST(ISNULL(((Sum(PB) - ISNULL(b.s1,0)-  case when @quater = '1' then '0.00' else (e.s1-d.s1) end  )*c.RateCom/100 + case when c.point <1050 then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end + case  " +
-//  " when c.point <1050 then '0'  " +
-//  " when c.point >= 1050  and c.point < 1950  then (0.5*(e.s1-d.s1)/100) " +
-//  " when c.point >= 1950   and c.point < 3000  then (1*(e.s1-d.s1)/100)  " +
-// "  when c.point >= 3000   and c.point < 3900  then (1*(e.s1-d.s1)/100)  " +
-// " when c.point >= 3900   then (1*(e.s1-d.s1)/100)   " +
-//  " end  ),0) as DECIMAL(30,2)) as AmtPoint, " +
-" CAST(ISNULL(((ISNULL(Sum(PB),0)-ISNULL((e.s1),0))*c.RateCom/100   ),0) as DECIMAL(30,2)) as AmtPoint,  " +
-                               " case when c.point <1050 then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , " +
-                               " CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP, " +
-                               "  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - ISNULL(b.s1,0)-  case when @quater = '1' then '0.00' else (e.s1-d.s1) end  )*c.RateCom/100 + case when sum(PPoint) <1050 then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end + case  " +
-" when c.point <1050 then '0'  " +
-" when c.point >= 1050  and c.point < 1950  then (0.5*(e.s1-d.s1)/100) " +
-" when c.point >= 1950   and c.point < 3000  then (1*(e.s1-d.s1)/100)  " +
-" when c.point >= 3000   and c.point < 3900  then (1*(e.s1-d.s1)/100)  " +
-" when c.point >= 3900   then (1*(e.s1-d.s1)/100)   " +
-" end  ),0) as DECIMAL(30,2))) ),0) AS DECIMAL(30,2)) as SumCOMSP,  " +
-                               " CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, " +
-                               // " case when  @quater1 = '1' then '0.00' " +
-                                //     " else (e.s1-d.s1) end as PBH1, " +
-                                " (ISNULL(e.s1,0)-ISNULL(d.s1,0))  as PBH1, "+
-                                "(ISNULL(Sum(PB),0)-ISNULL((e.s1),0)) as PBCal, " +
-                                " case  " +
-                                " when c.point <1050 then '0' "+ 
-                                " when c.point >= 1050  and c.point < 1950  then (0.5*(e.s1-d.s1)/100)"+
-                                " when c.point >= 1950   and c.point < 3000  then (1*(e.s1-d.s1)/100) "+ 
-                                " when c.point >= 3000   and c.point < 3900  then (1*(e.s1-d.s1)/100)  "+
-                                " when c.point >= 3900   then (1*(e.s1-d.s1)/100)  "+ 
-                                " end as ComPBH1 " +
-               " From V802 a  " +
-                        "left join ( " +
-                                               " Select  round(Sum(PB) ,2) as S1,CodeG   "+
-                                               " From V802   " +
-                                               " inner join itemcomPI on v802.itemcode = itemcomPI.itemcode    " +
-                                               " Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())  " +
-                                               " Group by CodeG  " +
-                                           " )b on b.CodeG = a.codeG " +
-                       " left join ( " +
-                                                "Select  case  " +
-                                                            " when sum(PPoint) <1050 then '0'  " +
-                                                            " when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'  " +
-                                                            " when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1' " +
-                                                            " when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5' " +
-                                                            " when sum(PPoint) >= 3900   then '1.5' " +
-                                                            " end as RateCom,CodeG,  " +
-                                                        " case    when sum(PPoint) <1050 then 0   " +
-                                                                 " when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   " +
-                                                                 " when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000  " +
-                                                                 " when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000  " +
-                                                                 " when sum(PPoint) >= 3900   then 60000 " +
-                                                        " end as incentive, sum(PPoint) as point " +
-                                               " From V802   " +
-                                               " Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())   " +
-                                               " Group by CodeG  " +
-                                               " )c on c.CodeG = a.codeG " +
-                                               " left join ( " +
-                                                " select sum(tmp.S1) as s1 ,tmp.CodeG " +
-                                                " from( " + 
-                                                       "  select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
-                                                        " from v802  " +
-                                                            " inner join itemcomPI on v802.itemcode = itemcomPI.itemcode   " +
-                                                        " Where    MONTH(docDate) between @month1 and @month2 and year(Docdate) = YEAR(GETDATE())  " + 
-                                                        " group by codeG,V802.ItemCode " +
-                                                        " )tmp " +
-                                                " GROUP BY tmp.CodeG " +    
-                                                    " )d on d.CodeG = a.CodeG   " +
-                                " left join ( " +
-                                                    " select sum(tmp.S1) as s1 ,tmp.CodeG " +
-                                                    " from( " +
-                                                            " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
-                                                            " from v802  " +
-                                                                " inner join Item on v802.itemcode = item.code  " + 
-                                                            " Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   " +
-                                                            " group by codeG,V802.ItemCode   " +
-                                                        " )tmp  " +
-                                                    " GROUP BY tmp.CodeG " +    
-                                                    " )e on e.CodeG = a.CodeG " +
-                       " Where MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())   " +
-                       " Group by NameG,b.S1,c.RateCom,c.incentive,e.s1,d.s1,c.point " +
-                       " )tmp " +
-       " ) " +
-" Select   " +
-" 0 as num, " +
-"  NameG, " +
-" ROW_NUMBER() OVER(ORDER BY sum(Amt) DESC) AS Row, " +
-" CAST(ISNULL(Sum(Amt),0) AS DECIMAL(30,2)) as sales , " +
-" CAST(ISNULL(Sum(PB),0) AS DECIMAL(30,2)) as PB,  " +
-" CAST(ISNULL(Sum(PPoint),0) AS DECIMAL(30,2)) as POINTSALE , " +
-" case  " +
-"when sum(PPoint) <1050 then '0'  " +
-"when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'   " +
-"when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1'  " +
-"when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5'  " +
-"when sum(PPoint) >= 3900   then '1.5'  " +
-"end as RateCom , " +
-" case  " +
-" when sum(PPoint) <1050 then 0   " +
- " when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   " +
-   " when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000  " +
-     " when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000  " +
-         " when sum(PPoint) >= 3900   then 60000 " +
-" end as incentive, " +        
-" CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI, "+ 
-" CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP, " +
-// " CAST(ISNULL(((Sum(PB) - ISNULL(b.s1,0)-  case when @quater = '1' then '0.00' else (e.s1-d.s1) end  )*c.RateCom/100 + case when c.point <1050 then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end + case  " +
-//  " when c.point <1050 then '0'  " +
-//  " when c.point >= 1050  and c.point < 1950  then (0.5*(e.s1-d.s1)/100) " +
-//  " when c.point >= 1950   and c.point < 3000  then (1*(e.s1-d.s1)/100)  " +
-// "  when c.point >= 3000   and c.point < 3900  then (1*(e.s1-d.s1)/100)  " +
-// " when c.point >= 3900   then (1*(e.s1-d.s1)/100)   " +
-//  " end  ),0) as DECIMAL(30,2)) as AmtPoint, " +
-" CAST(ISNULL(((ISNULL(Sum(PB),0)-ISNULL((e.s1),0))*c.RateCom/100   ),0) as DECIMAL(30,2)) as AmtPoint,  " +
-" case when c.point <1050 then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , " +
-" CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP, " +
-"  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - ISNULL(b.s1,0)-  case when @quater = '1' then '0.00' else (e.s1-d.s1) end  )*c.RateCom/100 + case when sum(PPoint) <1050 then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end + case  " +
-" when c.point <1050 then '0'  " +
-" when c.point >= 1050  and c.point < 1950  then (0.5*(e.s1-d.s1)/100) " +
-" when c.point >= 1950   and c.point < 3000  then (1*(e.s1-d.s1)/100)  " +
-" when c.point >= 3000   and c.point < 3900  then (1*(e.s1-d.s1)/100)  " +
-" when c.point >= 3900   then (1*(e.s1-d.s1)/100)   " +
-" end  ),0) as DECIMAL(30,2))) ),0) AS DECIMAL(30,2)) as SumCOMSP,  " +
-" CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, " +
- // " case when  @quater1 = '1' then '0.00' " +
-                                //     " else (e.s1-d.s1) end as PBH1, " +
-    " (ISNULL(e.s1,0)-ISNULL(d.s1,0))  as PBH1, "+
- " (ISNULL(Sum(PB),0)-ISNULL((e.s1),0)) as PBCal, " +
-  " case  " + 
-" when c.point <1050 then '0'  "+ 
-" when c.point >= 1050  and c.point < 1950  then (0.5*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100) "+
-" when c.point >= 1950   and c.point < 3000  then (1*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100)  "+ 
-" when c.point >= 3000   and c.point < 3900  then (1*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100)  "+ 
-" when c.point >= 3900   then (1*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100) " +   
-" end as ComPBH1 " +
-" From V802 a  " +
-" left join ( " +
-" Select  round(Sum(PB) ,2) as S1,CodeG   " +
-" From V802   " +
-" inner join itemcomPI on v802.itemcode = itemcomPI.itemcode    " +
-" Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())    " +
-" Group by CodeG  " +
-" )b on b.CodeG = a.codeG " +
-" left join ( " +
-"Select  case  "+
-" when sum(PPoint) <1050 then '0'  "+
-" when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'  "+
-" when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1' "+
-" when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5' "+
-" when sum(PPoint) >= 3900   then '1.5' "+
-" end as RateCom ,CodeG ,  " +
-    " case    when sum(PPoint) <1050 then 0   " +
-              " when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   " +
-                 " when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000  " +
-                  " when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000  " +
-                  " when sum(PPoint) >= 3900   then 60000 " +
-        " end as incentive   , sum(PPoint) as point" +
-" From V802   " +
-" Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())   " +
-" Group by CodeG  " +
-" )c on c.CodeG = a.codeG " +
-" left join ( "+
-    " select sum(tmp.S1) as s1 ,tmp.CodeG " +
-    " from( " +
-            " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode  " + 
-            " from v802  " +
-                " inner join itemcomPI on v802.itemcode = itemcomPI.itemcode  " + 
-            " Where    MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE()) " +  
-            " group by codeG,V802.ItemCode " + 
-            " )tmp " +
-    " GROUP BY tmp.CodeG " +    
-        " )d on d.CodeG = a.CodeG " +   
-" left join ( " +
-        " select sum(tmp.S1) as s1 ,tmp.CodeG " +
-        " from( " +
-                " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode " +  
-                " from v802  " +
-                    " inner join Item on v802.itemcode = item.code  " + 
-                " Where   MONTH(docDate) between  @month1 and  @month2  and year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'  "+ 
-                " group by codeG,V802.ItemCode " +  
-            " )tmp  " +
-        " GROUP BY tmp.CodeG " +    
-        " )e on e.CodeG = a.CodeG " +
-" Where MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())   "+
-" Group by NameG,b.S1,c.RateCom,a.CodeG,c.incentive,e.s1,d.s1,c.point " +
-" union all " +
-" select * from sumAll " ;
+     const sql =  " with  " +
+             "   Months AS  (  "+
+             "                           SELECT 1 AS MonthNum  "+
+             "                           UNION ALL  "+
+             "                           SELECT MonthNum + 1 as MonthNum  FROM Months WHERE MonthNum <12  "+
+             "                           ), "+
+             "   monthTable as(  "+
+             "                           SELECT  Right('0'+cast(MonthNum as VARCHAR(2)),2)  as MonthNum , "+
+             "                                       CASE WHEN MonthNum IN (1,2,3)  then '1'  "+
+             "                                       when MonthNum IN (4,5,6)  then '2'   "+
+             "                                       when MonthNum IN (7,8,9) then '3'  "+
+             "                                       else '4' end  as quater  ,MonthNum as monthOri "+
+             "                           FROM Months  "+
+             "                           ), "+
+             "    newRate as ("+ 
+                    "                   select  tmp.CodeG , sum(tmp.incentive) as incentive , sum(tmp.point) as point  , " + 
+                    "                        case "+  
+                    "                                                                          when tier = '1' then "+  
+                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
+                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 500*3 then '0.5' "+   
+                    "                                                                                                                           when sum(tmp.point) >=500*3 and sum(tmp.point) < 750*3 then '1' "+   
+                    "                                                                                                                           when sum(tmp.point) >=750*3 then '1.5'  end "+    
+                    "                                                                          when tier = '2' then "+   
+                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+  
+                    "                                                                                                                           when sum(tmp.point)>=350*3 and sum(tmp.point) < 500*3 then '0.5' "+   
+                    "                                                                                                                           when sum(tmp.point) >=500*3 and sum(tmp.point) < 700*3 then '1' "+   
+                    "                                                                                                                           when sum(tmp.point) >=700*3 then '1.5' end "+   
+                    "                                                                          when tier = '3' then "+   
+                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
+                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 450*3 then '0.5' "+   
+                    "                                                                                                                           when sum(tmp.point) >=450*3 and sum(tmp.point) < 550*3 then '1' "+   
+                    "                                                                                                                           when sum(tmp.point) >=550*3 then '1.5' end "+   
+                    "                                                                        when tier = '4' then "+   
+                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
+                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 400*3 then '0.5' "+   
+                    "                                                                                                                           when sum(tmp.point) >=400*3 and sum(tmp.point) < 450*3 then '1' "+   
+                    "                                                                                                                           when sum(tmp.point) >=450*3 then '1.5' end "+   
+                    "                                                          end as RateCom "+
+                    "                                      from ( "+ 
+                    "                                                   select "+
+                    "                                                          case when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000 "+   
+                    "                                                                   when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+   
+                    "                                                                   when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000 "+    
+                    "                                                                   when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000 "+   
+                    "                                                       else 0  end as incentive ,sum(PPoint) as point ,a.CodeG,Month(DocDate) as mon ,tier "+
+                    "                                               From V802 a "+  
+                    "                                               Where  Month(DocDate) in (select  MonthNum from monthTable where quater =  (select  quater from monthTable where quater = (select quater from monthTable where monthOri = Month(GETDATE()) ) group by quater) ) and  year(Docdate) = YEAR(GETDATE()) "+  
+                    "                                               Group by a.CodeG, tier,Month(DocDate) "+ 
+                    "                                               ) tmp GROUP BY tmp.codeG ,tmp.tier "+ 
+                    "                        ), "+ 
+             "   mainTable as ( Select 0 as num, NameG, ROW_NUMBER() OVER(ORDER BY sum(Amt) DESC) AS Row, "+
+             "                                                CAST(ISNULL(Sum(Amt),0) AS DECIMAL(30,2)) as sales , CAST(ISNULL(Sum(PB),0) AS DECIMAL(30,2)) as PB,   "+
+             "                                                CAST(ISNULL(Sum(PPoint),0) AS DECIMAL(30,2)) as POINTSALE , f.RateCom , f.incentive, CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI,  "+
+             "                                                CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP,  "+
+             "                                                CAST(ISNULL(((ISNULL(Sum(PB),0)-ISNULL((e.s1),0))*c.RateCom/100   ),0) as DECIMAL(30,2)) as AmtPoint, case when c.point <1050 then '0'else  "+
+             "                                                CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI ,  "+
+             "                                                CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP,  "+
+             "                                                CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*f.rateCom/100) ,0) as DECIMAL(30,2)))+(1*(e.s1-ISNULL(d.s1,0))/100) +  "+
+             "                                                case when f.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP,    "+
+             "                                                CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, (ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))  as PBH1, (ISNULL(Sum(PB),0)-ISNULL((e.s1),0)) as PBCal,  "+
+             "                                                case    "+
+             "                                                    when c.point < 1050 then '0'   "+
+             "                                                    when c.point >= 1050  and c.point < 1950  then (0.5*(ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))/100)  "+
+             "                                                    when c.point >= 1950   and c.point < 3000  then (1*(ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))/100)   "+
+             "                                                    when c.point >= 3000   and c.point < 3900  then (1*(ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))/100)    "+
+             "                                                    when c.point >= 3900   then (1*(ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))/100) end as ComPBH1  "+
+             "                               From V802 a  left join ( Select  round(Sum(PB) ,2) as S1,CodeG  "+
+             "                                                                                From V802 inner join itemcomPI on v802.itemcode = itemcomPI.itemcode  "+
+             "                                                                                Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())  "+
+             "                                                                                Group by CodeG  "+
+             "                                                                             )b on b.CodeG = a.codeG  "+
+             "                                                        left join ( Select  case  when sum(PPoint) <  1050 then '0'   "+
+             "                                                                                                            when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'   "+
+             "                                                                                                            when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1'  "+
+             "                                                                                                            when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5'  "+
+             "                                                                                                            when sum(PPoint) >= 3900   then '1.5'  "+
+             "                                                                                                                   end as RateCom ,CodeG, "+
+             "                                                                                                case  when sum(PPoint) <  1050 then 0  "+
+             "                                                                                                            when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   "+
+             "                                                                                                            when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000   "+
+             "                                                                                                            when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000   "+
+             "                                                                                                            when sum(PPoint) >= 3900   then 60000 end as incentive, sum(PPoint) as point "+
+             "                                                                                From V802 Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())  "+
+             "                                                                                Group by CodeG  "+
+             "                                                                            )c on c.CodeG = a.codeG  "+
+             "                                                        left join ( select sum(tmp.S1) as s1 ,tmp.CodeG  "+
+             "                                                                                from( select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode  "+
+             "                                                                                            from v802  "+
+             "                                                                                                   inner join itemcomPI on v802.itemcode = itemcomPI.itemcode    "+
+             "                                                                                            Where MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())  "+
+             "                                                                                            group by codeG,V802.ItemCode  "+
+             "                                                                                           )tmp GROUP BY tmp.CodeG  "+
+             "                                                                            )d on d.CodeG = a.CodeG  "+
+             "                                                     left join ( select sum(tmp.S1) as s1 ,tmp.CodeG  "+
+             "                                                                               from( select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode  "+
+             "                                                                                           from v802  "+
+             "                                                                                               inner join Item on v802.itemcode = item.code  "+
+             "                                                                                           Where MONTH(docDate) between  @month1 and  @month2  and year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'  "+
+             "                                                                                           group by codeG,V802.ItemCode  "+
+             "                                                                                           )tmp GROUP BY tmp.CodeG  "+
+             "                                                                           )e on e.CodeG = a.CodeG  "+
+             "                                                     inner join newRate f on f.CodeG = a.CodeG  "+
+             "                       Where MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())  "+
+             "                       Group by NameG,b.S1,c.RateCom,a.CodeG,c.incentive,e.s1,ISNULL(d.s1,0),c.point,f.RateCom,f.incentive "+
+             "                   ) "+
+             "                   select * from mainTable  "+
+             "                   union all  "+
+             "                   select 1 as num,'รวมทั้งหมด' as NameG,'' as Row,sum(tmp.sales) as sales , sum(PB) as PB , sum(POINTSALE) as POINTSALE, '' as RateCom,   "+
+             "                               sum(incentive) as incentive,sum(PBI) as PBI , 0 as PP , sum(AmtPoint) as  AmtPoint ,sum(ComPBI) as ComPBI, sum(COMSP) as COMSP ,  "+
+             "                               sum(SumCOMSP) as sumCOMSP,sum(CUMS) as CUMS, sum(PBH1) as PBH1 , sum(PBCal) as PBCal , sum(ComPBH1) as ComPBH1  "+
+                                " from mainTable tmp  ";
         const username = req.session.Login;
         quater(month);
         var db = new mssql.Request();
@@ -1459,216 +1362,117 @@ router.get('/salesQuater',requireLogin,function(req,res){
     }); 
 })
 router.post('/salesQuater',function(req,res){
-    const sql =  "with sumAll as ( " +
-    "select 1 as num,'รวมทั้งหมด' as NameG,'' as Row,sum(tmp.sales) as sales , sum(PB) as PB , sum(POINTSALE) as POINTSALE, '' as RateCom,  sum(incentive) as incentive,sum(PBI) as PBI , 0 as PP , sum(AmtPoint) as  AmtPoint ,sum(ComPBI) as ComPBI, " +
-    "sum(COMSP) as COMSP , sum(SumCOMSP) as sumCOMSP,sum(CUMS) as CUMS, sum(PBH1) as PBH1 , sum(PBCal) as PBCal , sum(ComPBH1) as ComPBH1 " +
-    "from ( " +
-                "Select   " +
-                                "NameG, " +
-                                "CAST(ISNULL(Sum(Amt),0) AS DECIMAL(30,2)) as sales , " +
-                                "CAST(ISNULL(Sum(PB),0) AS DECIMAL(30,2)) as PB,  " +
-                                "CAST(ISNULL(Sum(PPoint),0) AS DECIMAL(30,2)) as POINTSALE , " +
-                                " case  " +
-                                        " when sum(PPoint) <1050 then '0'  " +
-                                        " when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'  " +
-                                        " when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1' " +
-                                        " when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5' " +
-                                        " when sum(PPoint) >= 3900   then '1.5' " +
-                                    " end as RateCom, " +
-                                " case  " +
-                                             " when sum(PPoint) <1050 then 0   " +
-                                              " when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   " +
-                                              " when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000  " +
-                                              " when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000  " +
-                                             " when sum(PPoint) >= 3900   then 60000 " +
-                                         " end as incentive, " +
-                              "  CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI, " +
-                               " CAST(ISNULL((Sum(PB) - b.s1),0) as DECIMAL(30,2)) as PP, " +
-//                                " CAST(ISNULL(((Sum(PB) - ISNULL(b.s1,0)-  case when @quater1 = '1' then '0.00' else (e.s1-d.s1) end  )*c.RateCom/100 + case when c.point <1050 then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end + case  " +
-//  " when c.point <1050 then '0'  " +
-//  " when c.point >= 1050  and c.point < 1950  then (0.5*(e.s1-d.s1)/100) " +
-//  " when c.point >= 1950   and c.point < 3000  then (1*(e.s1-d.s1)/100)  " +
-// "  when c.point >= 3000   and c.point < 3900  then (1*(e.s1-d.s1)/100)  " +
-// " when c.point >= 3900   then (1*(e.s1-d.s1)/100)   " +
-//  " end  ),0) as DECIMAL(30,2)) as AmtPoint, " +
-" CAST(ISNULL(((ISNULL(Sum(PB),0)-ISNULL((e.s1),0))*c.RateCom/100   ),0) as DECIMAL(30,2)) as AmtPoint,  " +
-                               " case when c.point <1050 then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , " +
-                               " CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP, " +
-                               "  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - ISNULL(b.s1,0)-  case when @quater1 = '1' then '0.00' else (e.s1-d.s1) end  )*c.RateCom/100 + case when sum(PPoint) <1050 then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end + case  " +
-" when c.point <1050 then '0'  " +
-" when c.point >= 1050  and c.point < 1950  then (0.5*(e.s1-d.s1)/100) " +
-" when c.point >= 1950   and c.point < 3000  then (1*(e.s1-d.s1)/100)  " +
-" when c.point >= 3000   and c.point < 3900  then (1*(e.s1-d.s1)/100)  " +
-" when c.point >= 3900   then (1*(e.s1-d.s1)/100)   " +
-" end  ),0) as DECIMAL(30,2))) ),0) AS DECIMAL(30,2)) as SumCOMSP,  " +
-                               " CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, " +
-                                // " case when  @quater1 = '1' then '0.00' " +
-                                //     " else (e.s1-d.s1) end as PBH1, " +
-                               " (ISNULL(e.s1,0)-ISNULL(d.s1,0))  as PBH1, "+
-                                "(ISNULL(Sum(PB),0)-ISNULL((e.s1),0)) as PBCal, " +
-                                " case  " +
-                                " when c.point <1050 then '0' "+ 
-                                " when c.point >= 1050  and c.point < 1950  then (0.5*(e.s1-d.s1)/100)"+
-                                " when c.point >= 1950   and c.point < 3000  then (1*(e.s1-d.s1)/100) "+ 
-                                " when c.point >= 3000   and c.point < 3900  then (1*(e.s1-d.s1)/100)  "+
-                                " when c.point >= 3900   then (1*(e.s1-d.s1)/100)  "+ 
-                                " end as ComPBH1 " +
-               " From V802 a  " +
-                        "left join ( " +
-                                               " Select  round(Sum(PB) ,2) as S1,CodeG   "+
-                                               " From V802   " +
-                                               " inner join itemcomPI on v802.itemcode = itemcomPI.itemcode    " +
-                                               " Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())  " +
-                                               " Group by CodeG  " +
-                                           " )b on b.CodeG = a.codeG " +
-                       " left join ( " +
-                                                "Select  case  " +
-                                                            " when sum(PPoint) <1050 then '0'  " +
-                                                            " when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'  " +
-                                                            " when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1' " +
-                                                            " when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5' " +
-                                                            " when sum(PPoint) >= 3900   then '1.5' " +
-                                                            " end as RateCom,CodeG,  " +
-                                                        " case    when sum(PPoint) <1050 then 0   " +
-                                                                 " when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   " +
-                                                                 " when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000  " +
-                                                                 " when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000  " +
-                                                                 " when sum(PPoint) >= 3900   then 60000 " +
-                                                        " end as incentive, sum(PPoint) as point " +
-                                               " From V802   " +
-                                               " Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())   " +
-                                               " Group by CodeG  " +
-                                               " )c on c.CodeG = a.codeG " +
-                                               " left join ( " +
-                                                " select sum(tmp.S1) as s1 ,tmp.CodeG " +
-                                                " from( " + 
-                                                       "  select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
-                                                        " from v802  " +
-                                                            " inner join itemcomPI on v802.itemcode = itemcomPI.itemcode   " +
-                                                        " Where    MONTH(docDate) between @month1 and @month2 and year(Docdate) = YEAR(GETDATE())  " + 
-                                                        " group by codeG,V802.ItemCode " +
-                                                        " )tmp " +
-                                                " GROUP BY tmp.CodeG " +    
-                                                    " )d on d.CodeG = a.CodeG   " +
-                                " left join ( " +
-                                                    " select sum(tmp.S1) as s1 ,tmp.CodeG " +
-                                                    " from( " +
-                                                            " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
-                                                            " from v802  " +
-                                                                " inner join Item on v802.itemcode = item.code  " + 
-                                                            " Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   " +
-                                                            " group by codeG,V802.ItemCode   " +
-                                                        " )tmp  " +
-                                                    " GROUP BY tmp.CodeG " +    
-                                                    " )e on e.CodeG = a.CodeG " +
-                       " Where MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())   " +
-                       " Group by NameG,b.S1,c.RateCom,c.incentive,e.s1,d.s1,c.point " +
-                       " )tmp " +
-       " ) " +
-" Select   " +
-" 0 as num, " +
-"  NameG, " +
-" ROW_NUMBER() OVER(ORDER BY sum(Amt) DESC) AS Row, " +
-" CAST(ISNULL(Sum(Amt),0) AS DECIMAL(30,2)) as sales , " +
-" CAST(ISNULL(Sum(PB),0) AS DECIMAL(30,2)) as PB,  " +
-" CAST(ISNULL(Sum(PPoint),0) AS DECIMAL(30,2)) as POINTSALE , " +
-" case  " +
-"when sum(PPoint) <1050 then '0'  " +
-"when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'   " +
-"when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1'  " +
-"when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5'  " +
-"when sum(PPoint) >= 3900   then '1.5'  " +
-"end as RateCom , " +
-" case  " +
-" when sum(PPoint) <1050 then 0   " +
- " when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   " +
-   " when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000  " +
-     " when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000  " +
-         " when sum(PPoint) >= 3900   then 60000 " +
-" end as incentive, " +        
-" CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI, "+ 
-" CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP, " +
-// " CAST(ISNULL(((Sum(PB) - ISNULL(b.s1,0)-  case when @quater1 = '1' then '0.00' else (e.s1-d.s1) end  )*c.RateCom/100 + case when c.point <1050 then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end + case  " +
-//  " when c.point <1050 then '0'  " +
-//  " when c.point >= 1050  and c.point < 1950  then (0.5*(e.s1-d.s1)/100) " +
-//  " when c.point >= 1950   and c.point < 3000  then (1*(e.s1-d.s1)/100)  " +
-// "  when c.point >= 3000   and c.point < 3900  then (1*(e.s1-d.s1)/100)  " +
-// " when c.point >= 3900   then (1*(e.s1-d.s1)/100)   " +
-//  " end  ),0) as DECIMAL(30,2)) as AmtPoint, " +
-" CAST(ISNULL(((ISNULL(Sum(PB),0)-ISNULL((e.s1),0))*c.RateCom/100   ),0) as DECIMAL(30,2)) as AmtPoint,  " +
-" case when c.point <1050 then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , " +
-" CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP, " +
-"  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - ISNULL(b.s1,0)-  case when @quater1 = '1' then '0.00' else (e.s1-d.s1) end  )*c.RateCom/100 + case when c.point <1050 then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end + case  " +
-" when c.point <1050 then '0'  " +
-" when c.point >= 1050  and c.point < 1950  then (0.5*(e.s1-d.s1)/100) " +
-" when c.point >= 1950   and c.point < 3000  then (1*(e.s1-d.s1)/100)  " +
-" when c.point >= 3000   and c.point < 3900  then (1*(e.s1-d.s1)/100)  " +
-" when c.point >= 3900   then (1*(e.s1-d.s1)/100)   " +
-" end  ),0) as DECIMAL(30,2))) ),0) AS DECIMAL(30,2)) as SumCOMSP,  " +
-" CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, " +
- // " case when  @quater1 = '1' then '0.00' " +
-                                //     " else (e.s1-d.s1) end as PBH1, " +
-                                " (ISNULL(e.s1,0)-ISNULL(d.s1,0))  as PBH1, "+
- " (ISNULL(Sum(PB),0)-ISNULL((e.s1),0)) as PBCal, " +
-  " case  " + 
-" when c.point <1050 then '0'  "+ 
-" when c.point >= 1050  and c.point < 1950  then (0.5*(e.s1-d.s1)/100) "+
-" when c.point >= 1950   and c.point < 3000  then (1*(e.s1-d.s1)/100)  "+ 
-" when c.point >= 3000   and c.point < 3900  then (1*(e.s1-d.s1)/100)  "+ 
-" when c.point >= 3900   then (1*(e.s1-d.s1)/100) " +   
-" end as ComPBH1 " +
-" From V802 a  " +
-" left join ( " +
-" Select  round(Sum(PB) ,2) as S1,CodeG   " +
-" From V802   " +
-" inner join itemcomPI on v802.itemcode = itemcomPI.itemcode    " +
-" Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())    " +
-" Group by CodeG  " +
-" )b on b.CodeG = a.codeG " +
-" left join ( " +
-"Select  case  "+
-" when sum(PPoint) <1050 then '0'  "+
-" when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'  "+
-" when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1' "+
-" when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5' "+
-" when sum(PPoint) >= 3900   then '1.5' "+
-" end as RateCom ,CodeG ,  " +
-    " case    when sum(PPoint) <1050 then 0   " +
-              " when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   " +
-                 " when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000  " +
-                  " when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000  " +
-                  " when sum(PPoint) >= 3900   then 60000 " +
-        " end as incentive   , sum(PPoint) as point" +
-" From V802   " +
-" Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())   " +
-" Group by CodeG  " +
-" )c on c.CodeG = a.codeG " +
-" left join ( "+
-    " select sum(tmp.S1) as s1 ,tmp.CodeG " +
-    " from( " +
-            " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode  " + 
-            " from v802  " +
-                " inner join itemcomPI on v802.itemcode = itemcomPI.itemcode  " + 
-            " Where    MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE()) " +  
-            " group by codeG,V802.ItemCode " + 
-            " )tmp " +
-    " GROUP BY tmp.CodeG " +    
-        " )d on d.CodeG = a.CodeG " +   
-" left join ( " +
-        " select sum(tmp.S1) as s1 ,tmp.CodeG " +
-        " from( " +
-                " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode " +  
-                " from v802  " +
-                    " inner join Item on v802.itemcode = item.code  " + 
-                " Where   MONTH(docDate) between  @month1 and  @month2  and year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'  "+ 
-                " group by codeG,V802.ItemCode " +  
-            " )tmp  " +
-        " GROUP BY tmp.CodeG " +    
-        " )e on e.CodeG = a.CodeG " +
-" Where MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())   "+
-" Group by NameG,b.S1,c.RateCom,a.CodeG,c.incentive,e.s1,d.s1,c.point " +
-" union all " +
-" select * from sumAll " ;
+    const sql =  " with  " +
+             "   Months AS  (  "+
+             "                           SELECT 1 AS MonthNum  "+
+             "                           UNION ALL  "+
+             "                           SELECT MonthNum + 1 as MonthNum  FROM Months WHERE MonthNum <12  "+
+             "                           ), "+
+             "   monthTable as(  "+
+             "                           SELECT  Right('0'+cast(MonthNum as VARCHAR(2)),2)  as MonthNum , "+
+             "                                       CASE WHEN MonthNum IN (1,2,3)  then '1'  "+
+             "                                       when MonthNum IN (4,5,6)  then '2'   "+
+             "                                       when MonthNum IN (7,8,9) then '3'  "+
+             "                                       else '4' end  as quater   "+
+             "                           FROM Months  "+
+             "                           ), "+
+            "    newRate as ("+ 
+                    "                   select  tmp.CodeG , sum(tmp.incentive) as incentive , sum(tmp.point) as point  , " + 
+                    "                        case "+  
+                    "                                                                          when tier = '1' then "+  
+                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
+                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 500*3 then '0.5' "+   
+                    "                                                                                                                           when sum(tmp.point) >=500*3 and sum(tmp.point) < 750*3 then '1' "+   
+                    "                                                                                                                           when sum(tmp.point) >=750*3 then '1.5'  end "+    
+                    "                                                                          when tier = '2' then "+   
+                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+  
+                    "                                                                                                                           when sum(tmp.point)>=350*3 and sum(tmp.point) < 500*3 then '0.5' "+   
+                    "                                                                                                                           when sum(tmp.point) >=500*3 and sum(tmp.point) < 700*3 then '1' "+   
+                    "                                                                                                                           when sum(tmp.point) >=700*3 then '1.5' end "+   
+                    "                                                                          when tier = '3' then "+   
+                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
+                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 450*3 then '0.5' "+   
+                    "                                                                                                                           when sum(tmp.point) >=450*3 and sum(tmp.point) < 550*3 then '1' "+   
+                    "                                                                                                                           when sum(tmp.point) >=550*3 then '1.5' end "+   
+                    "                                                                        when tier = '4' then "+   
+                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
+                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 400*3 then '0.5' "+   
+                    "                                                                                                                           when sum(tmp.point) >=400*3 and sum(tmp.point) < 450*3 then '1' "+   
+                    "                                                                                                                           when sum(tmp.point) >=450*3 then '1.5' end "+   
+                    "                                                          end as RateCom "+
+                    "                                      from ( "+ 
+                    "                                                   select "+
+                    "                                                          case when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000 "+   
+                    "                                                                   when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+   
+                    "                                                                   when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000 "+    
+                    "                                                                   when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000 "+   
+                    "                                                       else 0  end as incentive ,sum(PPoint) as point ,a.CodeG,Month(DocDate) as mon ,tier "+
+                    "                                               From V802 a "+  
+                    "                                               Where  Month(DocDate) in (select  MonthNum from monthTable where quater = @quater1 ) and  year(Docdate) = YEAR(GETDATE()) "+  
+                    "                                               Group by a.CodeG, tier,Month(DocDate) "+ 
+                    "                                               ) tmp GROUP BY tmp.codeG ,tmp.tier "+ 
+                    "                        ), "+ 
+             "   mainTable as ( Select 0 as num, NameG, ROW_NUMBER() OVER(ORDER BY sum(Amt) DESC) AS Row, "+
+             "                                                CAST(ISNULL(Sum(Amt),0) AS DECIMAL(30,2)) as sales , CAST(ISNULL(Sum(PB),0) AS DECIMAL(30,2)) as PB,   "+
+             "                                                CAST(ISNULL(Sum(PPoint),0) AS DECIMAL(30,2)) as POINTSALE , f.RateCom , f.incentive, CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI,  "+
+             "                                                CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP,  "+
+             "                                                CAST(ISNULL(((ISNULL(Sum(PB),0)-ISNULL((e.s1),0))*c.RateCom/100   ),0) as DECIMAL(30,2)) as AmtPoint, case when c.point <1050 then '0'else  "+
+             "                                                CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI ,  "+
+             "                                                CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP,  "+
+             "                                                CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*f.rateCom/100) ,0) as DECIMAL(30,2)))+(1*(e.s1-ISNULL(d.s1,0))/100) +  "+
+             "                                                case when f.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP,    "+
+             "                                                CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, (ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))  as PBH1, (ISNULL(Sum(PB),0)-ISNULL((e.s1),0)) as PBCal,  "+
+             "                                                case    "+
+             "                                                    when c.point < 1050 then '0'   "+
+             "                                                    when c.point >= 1050  and c.point < 1950  then (0.5*(ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))/100)  "+
+             "                                                    when c.point >= 1950   and c.point < 3000  then (1*(ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))/100)   "+
+             "                                                    when c.point >= 3000   and c.point < 3900  then (1*(ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))/100)    "+
+             "                                                    when c.point >= 3900   then (1*(ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))/100) end as ComPBH1  "+
+             "                               From V802 a  left join ( Select  round(Sum(PB) ,2) as S1,CodeG  "+
+             "                                                                                From V802 inner join itemcomPI on v802.itemcode = itemcomPI.itemcode  "+
+             "                                                                                Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())  "+
+             "                                                                                Group by CodeG  "+
+             "                                                                             )b on b.CodeG = a.codeG  "+
+             "                                                        left join ( Select  case  when sum(PPoint) <  1050 then '0'   "+
+             "                                                                                                            when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'   "+
+             "                                                                                                            when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1'  "+
+             "                                                                                                            when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5'  "+
+             "                                                                                                            when sum(PPoint) >= 3900   then '1.5'  "+
+             "                                                                                                                   end as RateCom ,CodeG, "+
+             "                                                                                                case  when sum(PPoint) <  1050 then 0  "+
+             "                                                                                                            when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   "+
+             "                                                                                                            when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000   "+
+             "                                                                                                            when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000   "+
+             "                                                                                                            when sum(PPoint) >= 3900   then 60000 end as incentive, sum(PPoint) as point "+
+             "                                                                                From V802 Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())  "+
+             "                                                                                Group by CodeG  "+
+             "                                                                            )c on c.CodeG = a.codeG  "+
+             "                                                        left join ( select sum(tmp.S1) as s1 ,tmp.CodeG  "+
+             "                                                                                from( select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode  "+
+             "                                                                                            from v802  "+
+             "                                                                                                   inner join itemcomPI on v802.itemcode = itemcomPI.itemcode    "+
+             "                                                                                            Where MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())  "+
+             "                                                                                            group by codeG,V802.ItemCode  "+
+             "                                                                                           )tmp GROUP BY tmp.CodeG  "+
+             "                                                                            )d on d.CodeG = a.CodeG  "+
+             "                                                     left join ( select sum(tmp.S1) as s1 ,tmp.CodeG  "+
+             "                                                                               from( select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode  "+
+             "                                                                                           from v802  "+
+             "                                                                                               inner join Item on v802.itemcode = item.code  "+
+             "                                                                                           Where MONTH(docDate) between  @month1 and  @month2  and year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'  "+
+             "                                                                                           group by codeG,V802.ItemCode  "+
+             "                                                                                           )tmp GROUP BY tmp.CodeG  "+
+             "                                                                           )e on e.CodeG = a.CodeG  "+
+             "                                                     inner join newRate f on f.CodeG = a.CodeG  "+
+             "                       Where MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())  "+
+             "                       Group by NameG,b.S1,c.RateCom,a.CodeG,c.incentive,e.s1,ISNULL(d.s1,0),c.point,f.RateCom,f.incentive "+
+             "                   ) "+
+             "                   select * from mainTable  "+
+             "                   union all  "+
+             "                   select 1 as num,'รวมทั้งหมด' as NameG,'' as Row,sum(tmp.sales) as sales , sum(PB) as PB , sum(POINTSALE) as POINTSALE, '' as RateCom,   "+
+             "                               sum(incentive) as incentive,sum(PBI) as PBI , 0 as PP , sum(AmtPoint) as  AmtPoint ,sum(ComPBI) as ComPBI, sum(COMSP) as COMSP ,  "+
+             "                               sum(SumCOMSP) as sumCOMSP,sum(CUMS) as CUMS, sum(PBH1) as PBH1 , sum(PBCal) as PBCal , sum(ComPBH1) as ComPBH1  "+
+                                " from mainTable tmp  ";
     const username= req.session.Login;
     let monthFil = req.body.month;
     console.log(monthFil);
