@@ -251,7 +251,7 @@ router.get('/pageTable2',requireLogin,function(req,res){
     " c.incentive, "+      
     " CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI, "+ 
     " CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP, " +
-    " CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100),0) as DECIMAL(30,2)) as AmtPoint,  " +
+    " CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( ISNULL(e.s1,0)-ISNULL(d.s1,0))))*c.rateCom/100)+(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100)+ case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end,0) as DECIMAL(30,2)) as AmtPoint,  " +
     "case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , " +
     " CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP, " +
     " CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100) ,0) as DECIMAL(30,2)))+(1*(e.s1-ISNULL(d.s1,0))/100) +  case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP, " +
@@ -292,12 +292,19 @@ router.get('/pageTable2',requireLogin,function(req,res){
 "             when sum(PPoint) >=400 and sum(PPoint) < 450 then '1' "+
 "             when sum(PPoint) >=450 then '1.5'  "+
 "             end "+
+" when tier = '5' then  "+
+"     case when sum(PPoint) <220  then '0' "+
+"             when sum(PPoint) >=220 and sum(PPoint) < 400 then '0.5' "+
+"             when sum(PPoint) >=400 and sum(PPoint) < 450 then '1' "+
+"             when sum(PPoint) >=450 then '1.5'  "+
+"             end "+
 " end as RateCom "+
 " ,CodeG , "+
 " case   when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000  "+
 " when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+
 " when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000  "+
 " when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000  "+
+" when tier = '5' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000  "+
 " else 0  "+
 "  end as incentive  , sum(PPoint) as point "+
 " From V802   "+
@@ -472,7 +479,7 @@ router.post('/pageTable2',function(req,res){
 " c.incentive, "+      
 " CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI, "+ 
 " CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP, " +
-" CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100),0) as DECIMAL(30,2)) as AmtPoint,  " +
+"CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( ISNULL(e.s1,0)-ISNULL(d.s1,0))))*c.rateCom/100)+(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100)+ case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end,0) as DECIMAL(30,2)) as AmtPoint,  " +
 "case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , " +
 " CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP, " +
 " CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100) ,0) as DECIMAL(30,2)))+(1*(e.s1-ISNULL(d.s1,0))/100) +  case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP, " +
@@ -513,12 +520,19 @@ router.post('/pageTable2',function(req,res){
 "             when sum(PPoint) >=400 and sum(PPoint) < 450 then '1' "+
 "             when sum(PPoint) >=450 then '1.5'  "+
 "             end "+
+" when tier = '5' then  "+
+"     case when sum(PPoint) <220  then '0' "+
+"             when sum(PPoint) >=220 and sum(PPoint) < 400 then '0.5' "+
+"             when sum(PPoint) >=400 and sum(PPoint) < 450 then '1' "+
+"             when sum(PPoint) >=450 then '1.5'  "+
+"             end "+
 " end as RateCom "+
 " ,CodeG , "+
 " case   when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000  "+
 " when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+
 " when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000  "+
 " when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000  "+
+" when tier = '5' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000  "+
 " else 0  "+
 "  end as incentive  , sum(PPoint) as point "+
 " From V802   "+
@@ -1273,14 +1287,20 @@ router.get('/salesQuater',requireLogin,function(req,res){
                     "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
                     "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 400*3 then '0.5' "+   
                     "                                                                                                                           when sum(tmp.point) >=400*3 and sum(tmp.point) < 450*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=450*3 then '1.5' end "+   
+                    "                                                                                                                           when sum(tmp.point) >=450*3 then '1.5' end "+ 
+                    "                                                                        when tier = '5' then "+   
+                    "                                                                                                                  case when sum(tmp.point) < 220*3  then '0' "+   
+                    "                                                                                                                           when sum(tmp.point) >=220*3 and sum(tmp.point) < 400*3 then '0.5' "+   
+                    "                                                                                                                           when sum(tmp.point) >=400*3 and sum(tmp.point) < 450*3 then '1' "+   
+                    "                                                                                                                           when sum(tmp.point) >=450*3 then '1.5' end "+  
                     "                                                          end as RateCom "+
                     "                                      from ( "+ 
                     "                                                   select "+
                     "                                                          case when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000 "+   
                     "                                                                   when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+   
                     "                                                                   when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000 "+    
-                    "                                                                   when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000 "+   
+                    "                                                                   when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000 "+
+                    "                                                                   when tier = '5' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000 "+    
                     "                                                       else 0  end as incentive ,sum(PPoint) as point ,a.CodeG,Month(DocDate) as mon ,tier "+
                     "                                               From V802 a "+  
                     "                                               Where  Month(DocDate) in (select  MonthNum from monthTable where quater =  (select  quater from monthTable where quater = (select quater from monthTable where monthOri = Month(GETDATE()) ) group by quater) ) and  year(Docdate) = YEAR(GETDATE()) "+  
@@ -1291,18 +1311,12 @@ router.get('/salesQuater',requireLogin,function(req,res){
              "                                                CAST(ISNULL(Sum(Amt),0) AS DECIMAL(30,2)) as sales , CAST(ISNULL(Sum(PB),0) AS DECIMAL(30,2)) as PB,   "+
              "                                                CAST(ISNULL(Sum(PPoint),0) AS DECIMAL(30,2)) as POINTSALE , f.RateCom , f.incentive, CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI,  "+
              "                                                CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP,  "+
-             "                                                CAST(ISNULL(((ISNULL(Sum(PB),0)-ISNULL((e.s1),0))*c.RateCom/100   ),0) as DECIMAL(30,2)) as AmtPoint, case when c.point <1050 then '0'else  "+
+             "                                                CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( ISNULL(e.s1,0)-ISNULL(d.s1,0))))*f.rateCom/100),0) as DECIMAL(30,2)) as AmtPoint, case when c.RateCom = '0'  then '0'else  "+
              "                                                CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI ,  "+
              "                                                CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP,  "+
-             "                                                CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*f.rateCom/100) ,0) as DECIMAL(30,2)))+(1*(e.s1-ISNULL(d.s1,0))/100) +  "+
-             "                                                case when f.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP,    "+
+             "                                                CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*f.rateCom/100) ,0) as DECIMAL(30,2)))+(case when Cast(f.RateCom as float) < 1 then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) +  case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP,    "+
              "                                                CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, (ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))  as PBH1, (ISNULL(Sum(PB),0)-ISNULL((e.s1),0)) as PBCal,  "+
-             "                                                case    "+
-             "                                                    when c.point < 1050 then '0'   "+
-             "                                                    when c.point >= 1050  and c.point < 1950  then (0.5*(ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))/100)  "+
-             "                                                    when c.point >= 1950   and c.point < 3000  then (1*(ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))/100)   "+
-             "                                                    when c.point >= 3000   and c.point < 3900  then (1*(ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))/100)    "+
-             "                                                    when c.point >= 3900   then (1*(ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))/100) end as ComPBH1  "+
+             "                                                (case when Cast(f.RateCom as float) ='0' then 0 when Cast(f.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100) as ComPBH1  "+
              "                               From V802 a  left join ( Select  round(Sum(PB) ,2) as S1,CodeG  "+
              "                                                                                From V802 inner join itemcomPI on v802.itemcode = itemcomPI.itemcode  "+
              "                                                                                Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())  "+
@@ -1398,6 +1412,11 @@ router.post('/salesQuater',function(req,res){
                     "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
                     "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 400*3 then '0.5' "+   
                     "                                                                                                                           when sum(tmp.point) >=400*3 and sum(tmp.point) < 450*3 then '1' "+   
+                    "                                                                                                                           when sum(tmp.point) >=450*3 then '1.5' end "+
+                    "                                                                        when tier = '5' then "+   
+                    "                                                                                                                  case when sum(tmp.point) < 220*3  then '0' "+   
+                    "                                                                                                                           when sum(tmp.point) >=220*3 and sum(tmp.point) < 400*3 then '0.5' "+   
+                    "                                                                                                                           when sum(tmp.point) >=400*3 and sum(tmp.point) < 450*3 then '1' "+   
                     "                                                                                                                           when sum(tmp.point) >=450*3 then '1.5' end "+   
                     "                                                          end as RateCom "+
                     "                                      from ( "+ 
@@ -1405,7 +1424,8 @@ router.post('/salesQuater',function(req,res){
                     "                                                          case when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000 "+   
                     "                                                                   when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+   
                     "                                                                   when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000 "+    
-                    "                                                                   when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000 "+   
+                    "                                                                   when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000 "+ 
+                    "                                                                   when tier = '5' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000 "+   
                     "                                                       else 0  end as incentive ,sum(PPoint) as point ,a.CodeG,Month(DocDate) as mon ,tier "+
                     "                                               From V802 a "+  
                     "                                               Where  Month(DocDate) in (select  MonthNum from monthTable where quater = @quater1 ) and  year(Docdate) = YEAR(GETDATE()) "+  
@@ -1416,18 +1436,12 @@ router.post('/salesQuater',function(req,res){
              "                                                CAST(ISNULL(Sum(Amt),0) AS DECIMAL(30,2)) as sales , CAST(ISNULL(Sum(PB),0) AS DECIMAL(30,2)) as PB,   "+
              "                                                CAST(ISNULL(Sum(PPoint),0) AS DECIMAL(30,2)) as POINTSALE , f.RateCom , f.incentive, CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI,  "+
              "                                                CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP,  "+
-             "                                                CAST(ISNULL(((ISNULL(Sum(PB),0)-ISNULL((e.s1),0))*c.RateCom/100   ),0) as DECIMAL(30,2)) as AmtPoint, case when c.point <1050 then '0'else  "+
+             "                                              CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( ISNULL(e.s1,0)-ISNULL(d.s1,0))))*f.rateCom/100),0) as DECIMAL(30,2)) as AmtPoint, case when c.RateCom = '0'  then '0'else   "+
              "                                                CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI ,  "+
              "                                                CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP,  "+
-             "                                                CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*f.rateCom/100) ,0) as DECIMAL(30,2)))+(1*(e.s1-ISNULL(d.s1,0))/100) +  "+
-             "                                                case when f.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP,    "+
+             "                                                CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*f.rateCom/100) ,0) as DECIMAL(30,2)))+(case when Cast(f.RateCom as float) < 1 then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) +  case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP,     "+
              "                                                CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, (ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))  as PBH1, (ISNULL(Sum(PB),0)-ISNULL((e.s1),0)) as PBCal,  "+
-             "                                                case    "+
-             "                                                    when c.point < 1050 then '0'   "+
-             "                                                    when c.point >= 1050  and c.point < 1950  then (0.5*(ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))/100)  "+
-             "                                                    when c.point >= 1950   and c.point < 3000  then (1*(ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))/100)   "+
-             "                                                    when c.point >= 3000   and c.point < 3900  then (1*(ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))/100)    "+
-             "                                                    when c.point >= 3900   then (1*(ISNULL(e.s1,0)-ISNULL(ISNULL(d.s1,0),0))/100) end as ComPBH1  "+
+             "                                                (case when Cast(f.RateCom as float) ='0' then 0 when Cast(f.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100)  as ComPBH1  "+
              "                               From V802 a  left join ( Select  round(Sum(PB) ,2) as S1,CodeG  "+
              "                                                                                From V802 inner join itemcomPI on v802.itemcode = itemcomPI.itemcode  "+
              "                                                                                Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())  "+

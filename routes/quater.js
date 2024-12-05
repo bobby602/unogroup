@@ -69,14 +69,14 @@ function toThaiMonthString(date) {
       "c.incentive,   "+      
       "CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI,  "+
       " CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP, "+
-      "  CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100)+(case when Cast(c.RateCom as float) < 1 then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100),0) as DECIMAL(30,2)) as AmtPoint, "+
+      "  CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( ISNULL(e.s1,0)-ISNULL(d.s1,0))))*c.rateCom/100)+(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100)+ case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end,0) as DECIMAL(30,2)) as AmtPoint, "+
       "case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , "+
       " CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP, "+
-      "  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100) ,0) as DECIMAL(30,2)))+(case when Cast(c.RateCom as float) < 1 then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) +  case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP,"+
+      "  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100) ,0) as DECIMAL(30,2)))+(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) +  case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP,"+
       " CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, "+
       "  (e.s1-ISNULL(d.s1,0))  as PBH1, "+
       "  (ISNULL(Sum(PB),0)-(e.s1)) as PBCal, "+
-      " ( 1*(e.s1-ISNULL(d.s1,0))/100) as ComPBH1 "+
+      " (case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100) as ComPBH1 "+
         " From V802 a  " +
         " left join ( " +
         " Select  round(Sum(PB) ,2) as S1,CodeG  " +
@@ -157,14 +157,14 @@ function toThaiMonthString(date) {
       "c.incentive,   "+      
       "CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI,  "+
       " CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP, "+
-      "  CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100)+(case when Cast(c.RateCom as float) < 1 then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100),0) as DECIMAL(30,2)) as AmtPoint, "+
+      "  CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( ISNULL(e.s1,0)-ISNULL(d.s1,0))))*c.rateCom/100)+(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100)+ case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end,0) as DECIMAL(30,2)) as AmtPoint, "+
       "case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , "+
       " CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP, "+
-      "  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100) ,0) as DECIMAL(30,2)))+(case when Cast(c.RateCom as float) < 1 then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) +  case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP,"+
+      "  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100) ,0) as DECIMAL(30,2)))+(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) +  case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP,"+
       " CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, "+
       "  (e.s1-ISNULL(d.s1,0))  as PBH1, "+
       "  (ISNULL(Sum(PB),0)-(e.s1)) as PBCal, "+
-      " ( c.RateCom*(e.s1-ISNULL(d.s1,0))/100) as ComPBH1 "+
+      " (case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100) as ComPBH1 "+
  " From V802 a  " +
  " left join ( " +
  " Select  round(Sum(PB) ,2) as S1,CodeG  " +
@@ -245,14 +245,14 @@ function toThaiMonthString(date) {
  "c.incentive,   "+      
  "CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI,  "+
  " CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP, "+
- "   CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.RateCom/100)+(case when Cast(c.RateCom as float) < 1 then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) ,0) as DECIMAL(30,2)) as AmtPoint, "+
+ "   CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( ISNULL(e.s1,0)-ISNULL(d.s1,0))))*c.rateCom/100)+(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100)+ case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end,0) as DECIMAL(30,2)) as AmtPoint, "+
  "case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , "+
  " CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP, "+
- "  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100) ,0) as DECIMAL(30,2)))+(case when Cast(c.rateCom as float) < 1 then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) +  case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP,"+
+ "  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100) ,0) as DECIMAL(30,2)))+(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) +  case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP,"+
  " CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, "+
  "  (e.s1-ISNULL(d.s1,0))  as PBH1, "+
  "  (ISNULL(Sum(PB),0)-(e.s1)) as PBCal, "+
- " ( c.RateCom*(e.s1-ISNULL(d.s1,0))/100) as ComPBH1 "+
+ " (case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100) as ComPBH1 "+
  " From V802 a  " +
  " left join ( " +
  " Select  round(Sum(PB) ,2) as S1,CodeG  " +
@@ -413,7 +413,7 @@ function toThaiMonthString(date) {
         const result5 = await request
         .input('user5',mssql.VarChar(50),username)
         .query(RateCom);
-        
+        console.log(username);
         const checkResult = (data)=>{
             if(data.length ==0){
                 data.push({
@@ -451,6 +451,19 @@ function toThaiMonthString(date) {
                 return data;
             }
         }
+
+          const checkResulRate = (data)=>{
+            if(data.length==0){
+                data.push({
+                    CodeG: '',
+                    incentive: 0.00,
+                    point: 0.00,
+                    RateCom: '0'
+                    })
+            }else{
+                return data;
+            }
+        }
         
         let data = result.recordset;
         let data2 = result2.recordset;
@@ -459,10 +472,11 @@ function toThaiMonthString(date) {
         let data4 = [];
         let data5 = result4.recordset;
         let data6 = result5.recordset;
+        console.log(data6);
         checkResult(data);
         checkResult(data2);
         checkResult(data3);
-
+        checkResulRate(data6);
         data4.push({
             num: 0,
             NameG: '',
@@ -474,10 +488,10 @@ function toThaiMonthString(date) {
             incentive: data[0].incentive+ data2[0].incentive+data3[0].incentive,
             PBI: data[0].PBI+ data2[0].PBI+data3[0].PBI,
             PP: data[0].PP+ data2[0].PP+data3[0].PP,
-            AmtPoint: (((data[0].PB+ data2[0].PB+data3[0].PB)-((data[0].PBI+ data2[0].PBI+data3[0].PBI)+(data[0].PBH1+ data2[0].PBH1+data3[0].PBH1)))*data6[0].RateCom/100)+ ((data[0].PBH1+ data2[0].PBH1+data3[0].PBH1)*(data6[0].RateCom >= 1? 1 :0.5)/100),
+            AmtPoint: (((data[0].PB+ data2[0].PB+data3[0].PB)-((data[0].PBI+ data2[0].PBI+data3[0].PBI)+(data[0].PBH1+ data2[0].PBH1+data3[0].PBH1)))*data6[0].RateCom/100)+ ((data[0].PBH1+ data2[0].PBH1+data3[0].PBH1)*(data6[0].RateCom < 1? data6[0].RateCom =0.5?0.5:0 :1)/100)+ (data[0].ComPBI+ data2[0].ComPBI+data3[0].ComPBI),
             ComPBI: data[0].ComPBI+ data2[0].ComPBI+data3[0].ComPBI,
             COMSP: data[0].COMSP+ data2[0].COMSP+data3[0].COMSP,
-            SumCOMSP: (((data[0].PB+ data2[0].PB+data3[0].PB)-((data[0].PBI+ data2[0].PBI+data3[0].PBI)+(data[0].PBH1+ data2[0].PBH1+data3[0].PBH1)))*data6[0].RateCom/100) + ((data[0].PBH1+ data2[0].PBH1+data3[0].PBH1)*(data6[0].RateCom >= 1? 1 :0.5)/100) + (data[0].COMSP+ data2[0].COMSP+data3[0].COMSP) +  (data6[0].RateCom =0 ?0:(0.5*(data[0].PBI+ data2[0].PBI+data3[0].PBI)/100)),
+            SumCOMSP: (((data[0].PB+ data2[0].PB+data3[0].PB)-((data[0].PBI+ data2[0].PBI+data3[0].PBI)+(data[0].PBH1+ data2[0].PBH1+data3[0].PBH1)))*data6[0].RateCom/100) + ((data[0].PBH1+ data2[0].PBH1+data3[0].PBH1)*(data6[0].RateCom < 1? data6[0].RateCom =0.5?0.5:0 :1)/100) + (data[0].COMSP+ data2[0].COMSP+data3[0].COMSP) +  (data6[0].RateCom =0 ?0:(0.5*(data[0].PBI+ data2[0].PBI+data3[0].PBI)/100)),
             CUMS: data[0].CUMS+ data2[0].CUMS+data3[0].CUMS,
             PBH1: data[0].PBH1+ data2[0].PBH1+data3[0].PBH1,
             PBCal:  data[0].PBCal+ data2[0].PBCal+data3[0].PBCal,
@@ -513,14 +527,14 @@ function toThaiMonthString(date) {
     "c.incentive,   "+      
     "CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI,  "+
     " CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP, "+
-    "  CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.RateCom/100)+(case when Cast(c.RateCom as float) < 1 then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) ,0) as DECIMAL(30,2)) as AmtPoint, "+
+    "  CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( ISNULL(e.s1,0)-ISNULL(d.s1,0))))*c.rateCom/100)+(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100)+ case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end,0) as DECIMAL(30,2)) as AmtPoint, "+
     "case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , "+
     " CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP, "+
-    "  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100) ,0) as DECIMAL(30,2)))+(case when Cast(c.RateCom as float) < 1 then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) +  case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP,"+
+    "  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100) ,0) as DECIMAL(30,2)))+(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) +  case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP,"+
     " CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, "+
     "  (e.s1-ISNULL(d.s1,0))  as PBH1, "+
     "  (ISNULL(Sum(PB),0)-(e.s1)) as PBCal, "+
-    " ( c.RateCom*(e.s1-ISNULL(d.s1,0))/100) as ComPBH1 "+
+    "(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100) as ComPBH1 "+
  " From V802 a  " +
  " left join ( " +
  " Select  round(Sum(PB) ,2) as S1,CodeG  " +
@@ -601,14 +615,14 @@ function toThaiMonthString(date) {
  "c.incentive,   "+      
  "CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI,  "+
  " CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP, "+
- "  CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100)+(case when Cast(c.RateCom as float) < 1 then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100),0) as DECIMAL(30,2)) as AmtPoint, "+
+ "  CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( ISNULL(e.s1,0)-ISNULL(d.s1,0))))*c.rateCom/100)+(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100)+ case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end,0) as DECIMAL(30,2)) as AmtPoint, "+
  "case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , "+
  " CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP, "+
- "  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100) ,0) as DECIMAL(30,2)))+(case when Cast(c.RateCom as float) < 1 then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) +  case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP,"+
+ "  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100) ,0) as DECIMAL(30,2)))+(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) +  case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP,"+
  " CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, "+
  "  (e.s1-ISNULL(d.s1,0))  as PBH1, "+
  "  (ISNULL(Sum(PB),0)-(e.s1)) as PBCal, "+
- " ( c.RateCom*(e.s1-ISNULL(d.s1,0))/100) as ComPBH1 "+
+ " (case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100) as ComPBH1 "+
  " From V802 a  " +
  " left join ( " +
  " Select  round(Sum(PB) ,2) as S1,CodeG  " +
@@ -689,14 +703,14 @@ function toThaiMonthString(date) {
  "c.incentive,   "+      
  "CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI,  "+
  " CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP, "+
- "  CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100)+(case when Cast(c.RateCom as float) < 1 then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100),0) as DECIMAL(30,2)) as AmtPoint, "+
+ "  CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( ISNULL(e.s1,0)-ISNULL(d.s1,0))))*c.rateCom/100)+(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100)+ case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end,0) as DECIMAL(30,2)) as AmtPoint, "+
  "case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , "+
  " CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP, "+
- "  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100) ,0) as DECIMAL(30,2)))+(case when Cast(c.RateCom as float) < 1 then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) +  case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP,"+
+ "  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*c.rateCom/100) ,0) as DECIMAL(30,2)))+(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) +  case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end),0) AS DECIMAL(30,2)) as SumCOMSP,"+
  " CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS, "+
  "  (e.s1-ISNULL(d.s1,0))  as PBH1, "+
  "  (ISNULL(Sum(PB),0)-(e.s1)) as PBCal, "+
- " ( c.RateCom*(e.s1-ISNULL(d.s1,0))/100) as ComPBH1 "+
+ " (case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100) as ComPBH1 "+
  " From V802 a  " +
  " left join ( " +
  " Select  round(Sum(PB) ,2) as S1,CodeG  " +
@@ -860,7 +874,7 @@ function toThaiMonthString(date) {
         const result2 = await request
         .input('user2',mssql.VarChar(50),username)
         .input('month2',mssql.VarChar(50),month2)
-        .input('month12',mssql.VarChar(50),month1)
+        .input('month12',mssql.VarChar(50),month2)
         .input('month32',mssql.VarChar(50),month3)
         .input('quater2',mssql.VarChar(50),monthFil)
         .query(sql2);
@@ -868,7 +882,7 @@ function toThaiMonthString(date) {
         const result3 = await request
         .input('user3',mssql.VarChar(50),username)
         .input('month3',mssql.VarChar(50),month3)
-        .input('month13',mssql.VarChar(50),month1)
+        .input('month13',mssql.VarChar(50),month3)
         .input('month33',mssql.VarChar(50),month3)
         .input('quater3',mssql.VarChar(50),monthFil)
         .query(sql3);
@@ -920,6 +934,19 @@ function toThaiMonthString(date) {
                 return data;
             }
         }
+
+        const checkResulRate = (data)=>{
+            if(data.length==0){
+                data.push({
+                    CodeG: '',
+                    incentive: 0.00,
+                    point: 0.00,
+                    RateCom: '0'
+                    })
+            }else{
+                return data;
+            }
+        }
         let data = result.recordset;
         let data2 = result2.recordset;
         console.log(data2)
@@ -930,6 +957,7 @@ function toThaiMonthString(date) {
         checkResult(data);
         checkResult(data2);
         checkResult(data3);
+        checkResulRate(data6);
         console.log(((data[0].PP+ data2[0].PP+data3[0].PP)*data6[0].RateCom/100));
         console.log((data[0].ComPBH1+ data2[0].ComPBH1+data3[0].ComPBH1));
         data4.push({
@@ -943,10 +971,10 @@ function toThaiMonthString(date) {
             incentive: data[0].incentive+ data2[0].incentive+data3[0].incentive,
             PBI: data[0].PBI+ data2[0].PBI+data3[0].PBI,
             PP: data[0].PP+ data2[0].PP+data3[0].PP,
-            AmtPoint: (((data[0].PB+ data2[0].PB+data3[0].PB)-((data[0].PBI+ data2[0].PBI+data3[0].PBI)+(data[0].PBH1+ data2[0].PBH1+data3[0].PBH1)))*data6[0].RateCom/100)+ ((data[0].PBH1+ data2[0].PBH1+data3[0].PBH1)*(data6[0].RateCom >= 1? 1 :0.5)/100),
+            AmtPoint: (((data[0].PB+ data2[0].PB+data3[0].PB)-((data[0].PBI+ data2[0].PBI+data3[0].PBI)+(data[0].PBH1+ data2[0].PBH1+data3[0].PBH1)))*data6[0].RateCom/100)+ ((data[0].PBH1+ data2[0].PBH1+data3[0].PBH1)*(data6[0].RateCom < 1? data6[0].RateCom =0.5?0.5:0 :1)/100) +(data[0].ComPBI+ data2[0].ComPBI+data3[0].ComPBI),
             ComPBI: data[0].ComPBI+ data2[0].ComPBI+data3[0].ComPBI,
             COMSP: data[0].COMSP+ data2[0].COMSP+data3[0].COMSP,
-            SumCOMSP: (((data[0].PB+ data2[0].PB+data3[0].PB)-((data[0].PBI+ data2[0].PBI+data3[0].PBI)+(data[0].PBH1+ data2[0].PBH1+data3[0].PBH1)))*data6[0].RateCom/100) + ((data[0].PBH1+ data2[0].PBH1+data3[0].PBH1)*(data6[0].RateCom >= 1? 1 :0.5)/100) + (data[0].COMSP+ data2[0].COMSP+data3[0].COMSP)+ (data6[0].RateCom =0 ?0:(0.5*(data[0].PBI+ data2[0].PBI+data3[0].PBI)/100)) ,
+            SumCOMSP: (((data[0].PB+ data2[0].PB+data3[0].PB)-((data[0].PBI+ data2[0].PBI+data3[0].PBI)+(data[0].PBH1+ data2[0].PBH1+data3[0].PBH1)))*data6[0].RateCom/100) + ((data[0].PBH1+ data2[0].PBH1+data3[0].PBH1)*(data6[0].RateCom < 1? data6[0].RateCom =0.5?0.5:0 :1)/100) + (data[0].COMSP+ data2[0].COMSP+data3[0].COMSP)+ (data6[0].RateCom =0 ?0:(0.5*(data[0].PBI+ data2[0].PBI+data3[0].PBI)/100)) ,
             CUMS: data[0].CUMS+ data2[0].CUMS+data3[0].CUMS,
             PBH1: data[0].PBH1+ data2[0].PBH1+data3[0].PBH1,
             PBCal:  data[0].PBCal+ data2[0].PBCal+data3[0].PBCal,
@@ -963,7 +991,7 @@ function toThaiMonthString(date) {
         res.render('quaterPage2',{data,data2,data3,data4,data5,monthTh1,monthTh2,monthTh3,monthFil,surName,lastName});
         } catch (err) {
           // ... handle it locally
-          throw new Error(err.message);
+          res.status(500).send("error");
         }
     });
     router.get('/quaterPage3',async function(req,res){
@@ -1029,7 +1057,7 @@ function toThaiMonthString(date) {
                     "                 f.incentive,         "+ 
                     "                CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI,  "+ 
                     "                 CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP, "+ 
-                    "                CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*f.RateCom/100)+(case when Cast(f.rateCom as float) < 1 then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) ,0) as DECIMAL(30,2)) as AmtPoint, "+ 
+                    "                 CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( ISNULL(e.s1,0)-ISNULL(d.s1,0))))*c.rateCom/100)+(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100)+ case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end,0) as DECIMAL(30,2)) as AmtPoint, "+ 
                     "                case when c.point <1050 then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , "+ 
                     "                 CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP, "+ 
                     "                  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*f.rateCom/100) ,0) as DECIMAL(30,2)))+(1*(e.s1-ISNULL(d.s1,0))/100) + "+ 
@@ -1038,13 +1066,7 @@ function toThaiMonthString(date) {
                     "                 case when (month(GETDATE())  = '1'  or  month(GETDATE()) = '2' or  month(GETDATE()) = '3') then '0.00'  "+ 
                     "                             else (e.s1-ISNULL(d.s1,0)) end as PBH1, "+ 
                     "                  (ISNULL(Sum(PB),0)-(e.s1)) as PBCal, "+ 
-                    "                   case   "+ 
-                    "                 when c.point <1050 then '0'   "+ 
-                    "                 when c.point >= 1050  and c.point < 1950  then (0.5*(e.s1-ISNULL(d.s1,0))/100) "+ 
-                    "                 when c.point >= 1950   and c.point < 3000  then (1*(e.s1-ISNULL(d.s1,0))/100)   "+ 
-                    "                 when c.point >= 3000   and c.point < 3900  then (1*(e.s1-ISNULL(d.s1,0))/100)   "+ 
-                    "                 when c.point >= 3900   then (1*(e.s1-ISNULL(d.s1,0))/100)    "+ 
-                    "                 end as ComPBH1 "+ 
+                    "                  (case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100) as ComPBH1 "+ 
                     "            From V802 a  "+ 
                     "                left join ( "+ 
                     "                             Select  round(Sum(PB) ,2) as S1,CodeG  "+ 
@@ -1157,7 +1179,7 @@ function toThaiMonthString(date) {
                     "                 f.incentive,         "+ 
                     "                CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI,  "+ 
                     "                 CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP, "+ 
-                    "                CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*f.RateCom/100)+(case when Cast(f.rateCom as float) < 1 then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) ,0) as DECIMAL(30,2)) as AmtPoint, "+ 
+                    "                 CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( ISNULL(e.s1,0)-ISNULL(d.s1,0))))*c.rateCom/100)+(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100)+ case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end,0) as DECIMAL(30,2)) as AmtPoint, "+ 
                     "                case when c.point <1050 then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , "+ 
                     "                 CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP, "+ 
                     "                  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*f.rateCom/100) ,0) as DECIMAL(30,2)))+(1*(e.s1-ISNULL(d.s1,0))/100) + "+ 
@@ -1166,13 +1188,7 @@ function toThaiMonthString(date) {
                     "                 case when (month(GETDATE())  = '1'  or  month(GETDATE()) = '2' or  month(GETDATE()) = '3') then '0.00'  "+ 
                     "                             else (e.s1-ISNULL(d.s1,0)) end as PBH1, "+ 
                     "                  (ISNULL(Sum(PB),0)-(e.s1)) as PBCal, "+ 
-                    "                   case   "+ 
-                    "                 when c.point <1050 then '0'   "+ 
-                    "                 when c.point >= 1050  and c.point < 1950  then (0.5*(e.s1-ISNULL(d.s1,0))/100) "+ 
-                    "                 when c.point >= 1950   and c.point < 3000  then (1*(e.s1-ISNULL(d.s1,0))/100)   "+ 
-                    "                 when c.point >= 3000   and c.point < 3900  then (1*(e.s1-ISNULL(d.s1,0))/100)   "+ 
-                    "                 when c.point >= 3900   then (1*(e.s1-ISNULL(d.s1,0))/100)    "+ 
-                    "                 end as ComPBH1 "+ 
+                    "                  (case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100) as ComPBH1 "+ 
                     "            From V802 a  "+ 
                     "                left join ( "+ 
                     "                             Select  round(Sum(PB) ,2) as S1,CodeG  "+ 
@@ -1285,7 +1301,7 @@ function toThaiMonthString(date) {
                     "                 f.incentive,         "+ 
                     "                CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI,  "+ 
                     "                 CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP, "+ 
-                    "                CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*f.RateCom/100)+(case when Cast(f.rateCom as float) < 1 then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) ,0) as DECIMAL(30,2)) as AmtPoint, "+ 
+                    "                 CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( ISNULL(e.s1,0)-ISNULL(d.s1,0))))*c.rateCom/100)+(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100)+ case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end,0) as DECIMAL(30,2)) as AmtPoint, "+ 
                     "                case when c.point <1050 then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , "+ 
                     "                 CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP, "+ 
                     "                  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*f.rateCom/100) ,0) as DECIMAL(30,2)))+(1*(e.s1-ISNULL(d.s1,0))/100) + "+ 
@@ -1294,13 +1310,7 @@ function toThaiMonthString(date) {
                     "                 case when (month(GETDATE())  = '1'  or  month(GETDATE()) = '2' or  month(GETDATE()) = '3') then '0.00'  "+ 
                     "                             else (e.s1-ISNULL(d.s1,0)) end as PBH1, "+ 
                     "                  (ISNULL(Sum(PB),0)-(e.s1)) as PBCal, "+ 
-                    "                   case   "+ 
-                    "                 when c.point <1050 then '0'   "+ 
-                    "                 when c.point >= 1050  and c.point < 1950  then (0.5*(e.s1-ISNULL(d.s1,0))/100) "+ 
-                    "                 when c.point >= 1950   and c.point < 3000  then (1*(e.s1-ISNULL(d.s1,0))/100)   "+ 
-                    "                 when c.point >= 3000   and c.point < 3900  then (1*(e.s1-ISNULL(d.s1,0))/100)   "+ 
-                    "                 when c.point >= 3900   then (1*(e.s1-ISNULL(d.s1,0))/100)    "+ 
-                    "                 end as ComPBH1 "+ 
+                    "                  (case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100) as ComPBH1 "+ 
                     "            From V802 a  "+ 
                     "                left join ( "+ 
                     "                             Select  round(Sum(PB) ,2) as S1,CodeG  "+ 
@@ -1413,7 +1423,7 @@ function toThaiMonthString(date) {
                     "                 f.incentive,         "+ 
                     "                CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI,  "+ 
                     "                 CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP, "+ 
-                    "                CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*f.RateCom/100)+(case when Cast(f.rateCom as float) < 1 then 0.5 else 1 end*(e.s1-ISNULL(d.s1,0))/100) ,0) as DECIMAL(30,2)) as AmtPoint, "+ 
+                    "                 CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( ISNULL(e.s1,0)-ISNULL(d.s1,0))))*c.rateCom/100)+(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100)+ case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end,0) as DECIMAL(30,2)) as AmtPoint, "+ 
                     "                case when c.point <1050 then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI , "+ 
                     "                 CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP, "+ 
                     "                  CAST(ISNULL((Sum(ComSP)+(CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( e.s1-ISNULL(d.s1,0))))*f.rateCom/100) ,0) as DECIMAL(30,2)))+(1*(e.s1-ISNULL(d.s1,0))/100) + "+ 
@@ -1422,13 +1432,7 @@ function toThaiMonthString(date) {
                     "                 case when (month(GETDATE())  = '1'  or  month(GETDATE()) = '2' or  month(GETDATE()) = '3') then '0.00'  "+ 
                     "                             else (e.s1-ISNULL(d.s1,0)) end as PBH1, "+ 
                     "                  (ISNULL(Sum(PB),0)-(e.s1)) as PBCal, "+ 
-                    "                   case   "+ 
-                    "                 when c.point <1050 then '0'   "+ 
-                    "                 when c.point >= 1050  and c.point < 1950  then (0.5*(e.s1-ISNULL(d.s1,0))/100) "+ 
-                    "                 when c.point >= 1950   and c.point < 3000  then (1*(e.s1-ISNULL(d.s1,0))/100)   "+ 
-                    "                 when c.point >= 3000   and c.point < 3900  then (1*(e.s1-ISNULL(d.s1,0))/100)   "+ 
-                    "                 when c.point >= 3900   then (1*(e.s1-ISNULL(d.s1,0))/100)    "+ 
-                    "                 end as ComPBH1 "+ 
+                    "                   (case when Cast(f.RateCom as float) ='0' then 0 when Cast(f.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100) as ComPBH1 "+ 
                     "            From V802 a  "+ 
                     "                left join ( "+ 
                     "                             Select  round(Sum(PB) ,2) as S1,CodeG  "+ 
@@ -1524,13 +1528,7 @@ function toThaiMonthString(date) {
     " case when (month(GETDATE())  = '1'  or  month(GETDATE()) = '2' or  month(GETDATE()) = '3') then '0.00'  " +
                 " else (e.s1-ISNULL(d.s1,0)) end as PBH1, " +
      " (ISNULL(Sum(PB),0)-(e.s1)) as PBCal, " +
-      " case   " +
-    " when c.point <1050 then '0'   " +
-    " when c.point >= 1050  and c.point < 1950  then (0.5*(e.s1-ISNULL(d.s1,0))/100) " +
-    " when c.point >= 1950   and c.point < 3000  then (1*(e.s1-ISNULL(d.s1,0))/100)   " +
-    " when c.point >= 3000   and c.point < 3900  then (1*(e.s1-ISNULL(d.s1,0))/100)   " +
-    " when c.point >= 3900   then (1*(e.s1-ISNULL(d.s1,0))/100)    " +
-    " end as ComPBH1 " +
+      " (case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100) as ComPBH1 " +
     " From V802 a  " +
     " left join ( " +
     " Select  round(Sum(PB) ,2) as S1,CodeG  " +

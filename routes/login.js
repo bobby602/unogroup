@@ -34,7 +34,7 @@ const { response } = require('../app');
 
   router.post('/',function(req,res){
     var Login = req.body.Login;
-    console.log(req.session.Login);
+    console.log(Login);
     var Password = req.body.Password;
     console.log(Password);
     if(Login){
@@ -49,17 +49,24 @@ const { response } = require('../app');
             let surName ;
             let lastName ;
             let authorize;
-            if(data.rowsAffected > 0){
-                surName = data.recordset[0].Name;
-                lastName = data.recordset[0].Surname;
-                if(Login == 'jeab'){
-                  req.session.authorize = true;
+            console.log(data);
+            if(data){
+                if(data.rowsAffected > 0 ){
+                    surName = data.recordset[0].Name;
+                    lastName = data.recordset[0].Surname;
+                    if(Login == 'jeab'){
+                    req.session.authorize = true;
+                    }
+                    req.session.loggedin = true;
+                    req.session.Login = Login;
+                    req.session.surName =  surName;
+                    req.session.lastName = lastName;
+                    res.redirect('/users/pageOne');
+                }else{
+                    req.flash('error','Incorrect Username and Password')
+                    // res.send('Incorrect Username and Password');
+                    return res.redirect('/');
                 }
-                req.session.loggedin = true;
-                req.session.Login = Login;
-                req.session.surName =  surName;
-                req.session.lastName = lastName;
-                res.redirect('/users/pageOne');
             }else{
                 req.flash('error','Incorrect Username and Password')
                 // res.send('Incorrect Username and Password');

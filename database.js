@@ -39,16 +39,16 @@ let result;
 
 
    var conn1 = {
-    // server: '192.168.11.148', // Replace with your host name
-    server:'25.32.222.7',
+    server: '192.168.11.148', // Replace with your host name
+    // server:'25.32.222.7',
     database:'UNOGROUP',
     user: 'sa',
       port:1433,      // Replace with your database username
     password: 'GoodMan@Pm.Com'  ,
     driver: "msnodesqlv8",
-    connectionTimeout: 300000,
-    idleTimeoutMillis: 300000,
-    requestTimeout: 300000,
+    connectionTimeout: 8000000,
+    idleTimeoutMillis: 800000,
+    requestTimeout: 800000,
     trustServerCertificate: true,
     options: {
       trustedConnection: true,
