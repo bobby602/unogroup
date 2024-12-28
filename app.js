@@ -35,8 +35,18 @@ app.use('/priceList', priceList);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
+app.get('/test-error', (req, res) => {
+  throw new Error('Simulated Server Error');
+});
+app.get('/timeout', (req, res) => {
+  setTimeout(() => {
+      res.send('Delayed response');
+  }, 10000); // 10 seconds delay
+});
+
 app.use(function(req, res, next) {
-    next(createError(404));
+  console.error('Error caught:', err.stack);
+  res.status(500).send('Internal Server Error');
   });
 
 
