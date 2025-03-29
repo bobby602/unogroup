@@ -61,59 +61,59 @@ function toThaiMonthString(date) {
     let date1 = new Date();
     let yearThai = date1.getFullYear()+543;
     const monthFil = toThaiMonthString(date1).trim();
-    const sqlNameCat = "select NameCat from ItemCalPSub GROUP BY NameCat " ;
-    const sqlNoteF = "select Name,SName,NoteF from itemcalpsub  WHERE  NoteF != '' group by ItemCode,Name,SName,NoteF";
-    const sqlSName = "select tmp.* from( " +
-            "select tmp.*,tmp2.NoteF  "+
-    " from( "+
-        " select  ROW_NUMBER ( )  "+  
-                        " OVER (  PARTITION BY tmp.mainName  Order by  tmp.rowReal) as num  ,tmp.Name,tmp.mainName ,CAST(ISNULL(tmp.Pricelist,0) AS DECIMAL(30,2)) as Pricelist , CAST(ISNULL(tmp.Price10,0) AS DECIMAL(30,2)) as Price10 , CAST(ISNULL(tmp.Price25,0) AS DECIMAL(30,2)) as Price25, CAST(ISNULL(tmp.Price50,0) AS DECIMAL(30,2)) as Price50, CAST(ISNULL(tmp.Price100,0) AS DECIMAL(30,2)) as Price100, CAST(ISNULL(tmp.Price120,0) AS DECIMAL(30,2)) as Price120 , CAST(ISNULL(tmp.Price240,0) AS DECIMAL(30,2)) as Price240, CAST(ISNULL(tmp.Price360,0) AS DECIMAL(30,2)) as Price360,CAST(ISNULL(tmp.Price600,0) AS DECIMAL(30,2)) as Price600 ,tmp.NameCat ,tmp.Note,tmp.Point,tmp.Package "+
-    " from( "+
-                " select ROW_NUMBER ( )  "+  
-                               "  OVER (  PARTITION BY tmp.mainName  Order by  tmp.row) as num1, case when tmp.row is null then tmp2.row else tmp.row end as rowReal ,tmp.Name ,case when tmp.mainName is null then tmp2.mainName else tmp.mainName end as mainName  ,tmp2.row ,tmp2.mainName as mainTmp2,Pricelist,Price10 ,Price25, Price50, Price100,Price120 , Price240,Price360,Price600 ,case when tmp2.NameCat is null then tmp.NameCat else tmp2.NameCat end as NameCat,Note,case when tmp2.Point is null then tmp.Point else tmp2.Point end as Point,Package "+
-                           "  from( "+
-                                    " select tmp.* " +
-                                    " FROM " +
-                                        " ( " +
-                                            " select 1 as row ,Name as Name ,Name as mainName,NameCat,Point " +
-                                            "  from ItemCalPSub " +
-                                            " where StGroup = '1' and Sname1 != ''  " +
-                                            " GROUP BY Name ,NameCat,Point " +
-                                                " union ALL " +
-                                            " select 2 as row ,SName1 as Name ,Name as  mainName,NameCat,Point " +
-                                            " from ItemCalPSub " +
-                                            " where StGroup = '1' and Sname1 != '' " +
-                                            " GROUP BY SName1,Name,NameCat,Point "+
-                                                " union all  " +
-                                            " select 3 as row ,SName2 as Name ,Name as mainName,NameCat,Point " +
-                                            " from ItemCalPSub  " +
-                                            " where StGroup = '1' and Sname1 != ''  " +
-                                            " GROUP BY SName2,Name,NameCat,Point " + 
-                                            " union all   " +
-                                            " select 4 as row ,SName3 as Name ,Name as mainName,NameCat,Point " + 
-                                            " from ItemCalPSub  " +
-                                            " where StGroup = '1' and Sname1 != ''  " +
-                                            " GROUP BY SName3,Name,NameCat,Point  " +
-                                            " )Tmp " +
-                                        " where tmp.Name <> '' " + 
-                            " )tmp  "+
-                            " full join ( "+
-                            " select  ROW_NUMBER ( )  " +  
-                            " OVER (  PARTITION BY Name Order by  Name) as row ,NoteF as Name ,Name as mainName,sum(ISNULL(Pricelist,'0.00')) as Pricelist ,sum(ISNULL( Price10,'0.00')) as  Price10  , sum(ISNULL( Price25,'0.00')) as  Price25 ,sum(ISNULL( Price50,'0.00')) as  Price50 , sum(ISNULL( Price100,'0.00')) as  Price100 ,  sum(ISNULL( Price120,'0.00')) as  Price120   ,sum(ISNULL( Price240,'0.00')) as  Price240  , sum(ISNULL( Price360,'0.00')) as  Price360 , sum(ISNULL( Price600,'0.00')) as  Price600 ,NameCat,Note,Point,Package,DocNo " +
-                                " from ItemCalPSub "+
-                                " where StGroup = '1' and Sname1 != '' and DocNo = (select  TOP 1 DocNo from ItemCalPSub order by DocNo DESC ) " +
-                                " GROUP BY NoteF,Name, NameCat,Note,Point ,Package,DocNo"+
-                            " )tmp2 on tmp2.mainName = tmp.mainName and tmp2.row = tmp.row "+
-                        " )tmp	 "+
-        " )tmp	 "+
-        " full join ( select ROW_NUMBER ( )    "+
-        " OVER (  PARTITION BY Name Order by  Name) as num ,Name as mainName , NoteF,Package,NameCat "+
-        " from ItemCalPSub "+
-        " where StGroup = '1' and Sname1 != '' "+
-        " GROUP BY NoteF,Name,Package,NameCat "+
-        " )tmp2  on tmp2.mainName = tmp.mainName and tmp2.num = tmp.num " +
-        " )tmp order by tmp.mainName ,tmp.num ASC " ;
-    const sqlStGroup = "select StGroup from ItemCalPSub  where StGroup <> '7' and StGroup <> '8' GROUP BY StGroup ORDER BY StGroup ASC";
+    const sqlNameCat = " select CatName as NameCat from ItemFG GROUP BY CatName ";
+    const sqlNoteF = " select a.Name,SName,NoteF from ItemFG a inner join ItemDm b on b.ItemCode  =  a.ItemCode WHERE  NoteF != '' group by a.ItemCode,a.Name,SName,NoteF";
+    const sqlSName = " select * " +
+      "   from( "+
+      "              select  0 as num , Name , Name as mainName, 0 as PriceList , 0 as Price15, 0 as Price25,0 as  Price50, 0 as Price120,CatName ,'' as NoteF ,  Point , '' as Package , '' as NamePack, 1 as StShowPrice,'' as id  "+
+      "              from itemFG where G = '1' AND StShowPrice = '1'  GROUP BY Name,CatName,Point "+
+      "              union all "+
+      "              select tmp.* "+
+      "                          from(  "+
+      "                                  select  ROW_NUMBER()      "+
+      "                                                              OVER(PARTITION BY tmp.mainName  Order by  tmp.rowReal) as num, tmp.Name, tmp.mainName, CAST(ISNULL(tmp.Pricelist, 0) AS DECIMAL(30, 2)) as Pricelist, CAST(ISNULL(tmp.Price15, 0) AS DECIMAL(30, 2)) as Price15, CAST(ISNULL(tmp.Price25, 0) AS DECIMAL(30, 2)) as Price25, CAST(ISNULL(tmp.Price50, 0) AS DECIMAL(30, 2)) as Price50, CAST(ISNULL(tmp.Price120, 0) AS DECIMAL(30, 2)) as Price120, tmp.CatName, tmp.NoteF, tmp.Point, tmp.Package,tmp.NamePack,tmp.StShowPrice ,tmp.id   "+
+      "                      from(  "+
+      "                                          select ROW_NUMBER()      "+
+      "                                                                              OVER(PARTITION BY tmp.mainName  Order by  tmp.row) as num1, case when tmp.row is null then tmp2.row else tmp.row end as rowReal, tmp.Name,case when tmp.mainName is null then tmp2.mainName else tmp.mainName end as mainName, tmp2.row, tmp2.mainName as mainTmp2, Pricelist, Price15, Price25, Price50, Price120,case when tmp2.CatName is null then tmp.CatName else tmp2.CatName end as CatName, NoteF,case when tmp2.Point is null then tmp.Point else tmp2.Point end as Point, Package,NamePack,case when tmp2.StShowPrice is null then tmp.StShowPrice else tmp2.StShowPrice end as StShowPrice ,tmp2.id  "+
+      "                                                                      from(  "+
+      "                                                  select tmp.*  "+
+      "                                          FROM  "+
+      "                                                  (  "+
+      "                                                          select 1 as row, NameUno as Name, Name as mainName, CatName, Point,StShowPrice  "+
+      "                                                         from ItemFG "+
+      "                                                         where G = '1' "+
+      "                                                         GROUP BY NameUno, Name, CatName, Point,StShowPrice  "+
+      "                                                         union all  "+
+      "                                                         select 2 as row, NameSIM as Name, Name as mainName, CatName, Point ,StShowPrice "+
+      "                                                         from ItemFG  "+
+      "                                                         where  G = '1' "+
+      "                                                         GROUP BY NameSIM, Name, CatName, Point  ,StShowPrice "+
+      "                                                         union all "+
+      "                                                         select 3 as row, NameZU as Name, Name as mainName, CatName, Point ,StShowPrice  "+
+      "                                                         from ItemFG "+
+      "                                                         where G = '1' "+
+      "                                                         GROUP BY NameZU, Name, CatName, Point,StShowPrice "+
+      "                                                  )Tmp   "+
+      "                                                                                              where tmp.Name <> '' and tmp.StShowPrice = '1' "+
+      "                                          )tmp    "+
+      "                                                                                                                                  full join(  "+
+      "                                                  select  ROW_NUMBER()      "+
+      "                                                                                      OVER(PARTITION BY Name Order by  Name) as row, NoteF as Name, Name as mainName, sum(ISNULL(Pricelist, '0.00')) as Pricelist, sum(ISNULL(Price15, '0.00')) as Price15, sum(ISNULL(Price25, '0.00')) as Price25, sum(ISNULL(Price50, '0.00')) as Price50, sum(ISNULL(Price120, '0.00')) as Price120, CatName, NoteF, Point, concat(Rpack, ' ', PackR, 'x', RpackSale) as Package,NamePack,StShowPrice,id  "+
+      "                                                                              from ItemFG   "+
+      "                                                                              where  G = '1'     "+
+      "                                                                              GROUP BY NoteF, Name, CatName, Point, Rpack, PackR, RpackSale,NamePack ,StShowPrice,id "+
+      "                                          )tmp2 on tmp2.mainName = tmp.mainName and tmp2.row = tmp.row  "+
+      "                                  )tmp  "+
+      "                          )tmp      "+
+      "                              full join(select ROW_NUMBER()      "+
+      "                              OVER(PARTITION BY Name Order by  Name) as num, Name as mainName, NoteF, concat(Rpack, ' ', PackR, 'x', RpackSale) as Package, CatName ,id  "+
+      "                              from ItemFG   "+
+      "                              where  G = '1'    "+
+      "                              GROUP BY NoteF, Name, Rpack, PackR, RpackSale, CatName ,id "+
+      "                          )tmp2  on tmp2.mainName = tmp.mainName and tmp2.num = tmp.num  "+
+      "      )Temp "+
+      "      where temp.StShowPrice = '1' order by temp.mainName,CASE WHEN num = 0 THEN 0 ELSE 1 END, id";
+    const sqlStGroup = " select G from ItemFG  where G = '1' or G = '5' GROUP BY G ORDER BY G ASC";
     const MaxQNo = "select MAX(QNo) as QNo from ItemCalP  where YEAR(DocDate) = YEAR(CURRENT_TIMESTAMP)  AND MONTH(DocDate) = MONTH (CURRENT_TIMESTAMP) " ;
     const pool = await db;
     await pool.connect()
@@ -134,7 +134,8 @@ function toThaiMonthString(date) {
     const dataStGroup = resultStGroup.recordset;
     const dataMaxQno = resultMaxQNo.recordset;
     
-    console.log(dataNoteF)
+    console.log(dataNameCat)
+    console.log(dataSName)
     res.render('priceListPage',{monthFil,yearThai,dataNameCat,dataSName,dataNoteF,dataStGroup,dataMaxQno});
 
   });
@@ -144,67 +145,69 @@ function toThaiMonthString(date) {
     let yearThai = date1.getFullYear()+543;
     const monthFil = toThaiMonthString(date1).trim();
     const stGroup = req.body.stGroup;
-
-    const sqlNameCat = "select NameCat from ItemCalPSub GROUP BY NameCat " ;
-    const sqlNoteF = "select Name,SName,NoteF from itemcalpsub  WHERE  NoteF != '' group by ItemCode,Name,SName,NoteF";
-    const sqlSName = "select tmp.*,tmp2.NoteF  "+
-    " from( "+
-        " select  ROW_NUMBER ( )  "+  
-                        " OVER (  PARTITION BY tmp.mainName  Order by  tmp.rowReal) as num  ,tmp.Name,tmp.mainName ,CAST(ISNULL(tmp.Pricelist,0) AS DECIMAL(30,2)) as Pricelist , CAST(ISNULL(tmp.Price10,0) AS DECIMAL(30,2)) as Price10 , CAST(ISNULL(tmp.Price25,0) AS DECIMAL(30,2)) as Price25, CAST(ISNULL(tmp.Price50,0) AS DECIMAL(30,2)) as Price50, CAST(ISNULL(tmp.Price100,0) AS DECIMAL(30,2)) as Price100, CAST(ISNULL(tmp.Price120,0) AS DECIMAL(30,2)) as Price120 , CAST(ISNULL(tmp.Price240,0) AS DECIMAL(30,2)) as Price240, CAST(ISNULL(tmp.Price360,0) AS DECIMAL(30,2)) as Price360,CAST(ISNULL(tmp.Price600,0) AS DECIMAL(30,2)) as Price600 ,tmp.NameCat ,tmp.Note,tmp.Point,tmp.Package "+
-    " from( "+
-                " select ROW_NUMBER ( )  "+  
-                               "  OVER (  PARTITION BY tmp.mainName  Order by  tmp.row) as num1, case when tmp.row is null then tmp2.row else tmp.row end as rowReal ,tmp.Name ,case when tmp.mainName is null then tmp2.mainName else tmp.mainName end as mainName  ,tmp2.row ,tmp2.mainName as mainTmp2,Pricelist,Price10 ,Price25, Price50, Price100,Price120 , Price240,Price360,Price600 ,case when tmp2.NameCat is null then tmp.NameCat else tmp2.NameCat end as NameCat,Note,case when tmp2.Point is null then tmp.Point else tmp2.Point end as Point,Package "+
-                           "  from( "+
-                                    " select tmp.* " +
-                                    " FROM " +
-                                        " ( " +
-                                            " select 1 as row ,Name as Name ,Name as mainName,NameCat,Point " +
-                                            "  from ItemCalPSub " +
-                                            " where StGroup = @stGroup and Sname1 != ''  " +
-                                            " GROUP BY Name ,NameCat,Point " +
-                                                " union ALL " +
-                                            " select 2 as row ,SName1 as Name ,Name as  mainName,NameCat,Point " +
-                                            " from ItemCalPSub " +
-                                            " where StGroup = @stGroup and Sname1 != '' " +
-                                            " GROUP BY SName1,Name,NameCat,Point "+
-                                                " union all  " +
-                                            " select 3 as row ,SName2 as Name ,Name as mainName,NameCat,Point " +
-                                            " from ItemCalPSub  " +
-                                            " where StGroup = @stGroup and Sname1 != ''  " +
-                                            " GROUP BY SName2,Name,NameCat,Point " + 
-                                            " union all   " +
-                                            " select 4 as row ,SName3 as Name ,Name as mainName,NameCat,Point " + 
-                                            " from ItemCalPSub  " +
-                                            " where StGroup = @stGroup and Sname1 != ''  " +
-                                            " GROUP BY SName3,Name,NameCat,Point  " +
-                                            " )Tmp " +
-                                        " where tmp.Name <> '' " + 
-                            " )tmp  "+
-                            " full join ( "+
-                                    " select  ROW_NUMBER ( )  " +  
-                                    " OVER (  PARTITION BY Name Order by  Name) as row ,NoteF as Name ,Name as mainName,sum(ISNULL(Pricelist,'0.00')) as Pricelist ,sum(ISNULL( Price10,'0.00')) as  Price10  , sum(ISNULL( Price25,'0.00')) as  Price25 ,sum(ISNULL( Price50,'0.00')) as  Price50 , sum(ISNULL( Price100,'0.00')) as  Price100 ,  sum(ISNULL( Price120,'0.00')) as  Price120   ,sum(ISNULL( Price240,'0.00')) as  Price240  , sum(ISNULL( Price360,'0.00')) as  Price360 , sum(ISNULL( Price600,'0.00')) as  Price600 ,NameCat,Note,Point,Package,DocNo " +
-                                " from ItemCalPSub "+
-                                " where StGroup = @stGroup and Sname1 != '' and DocNo = (select  TOP 1 DocNo from ItemCalPSub order by DocNo DESC ) " +
-                                " GROUP BY NoteF,Name,NameCat,Note,Point ,Package,DocNo "+
-                            " )tmp2 on tmp2.mainName = tmp.mainName and tmp2.row = tmp.row "+
-                        " )tmp	 "+
-        " )tmp	 "+
-        " full join ( select ROW_NUMBER ( )    "+
-        " OVER (  PARTITION BY Name Order by  Name) as num ,Name as mainName , NoteF,Package,NameCat "+
-        " from ItemCalPSub "+
-        " where StGroup = @stGroup and Sname1 != '' "+
-        " GROUP BY NoteF,Name,Package,NameCat "+
-        " )tmp2  on tmp2.mainName = tmp.mainName and tmp2.num = tmp.num " ;
-    
-        const sqlStGroup = "select StGroup from ItemCalPSub  where StGroup <> '7' and StGroup <> '8' GROUP BY StGroup ORDER BY StGroup ASC";
+    console.log(stGroup)
+    const sqlNameCat = " select CatName as NameCat from ItemFG GROUP BY CatName ";
+    const sqlNoteF = " select a.Name,SName,NoteF from ItemFG a inner join ItemDm b on b.ItemCode  =  a.ItemCode WHERE  NoteF != '' group by a.ItemCode,a.Name,SName,NoteF";
+    const sqlSName = " select * " +
+      "   from( "+
+      "              select  0 as num , Name , Name as mainName, 0 as PriceList , 0 as Price15, 0 as Price25,0 as  Price50, 0 as Price120,CatName ,'' as NoteF ,  Point , '' as Package , '' as NamePack, 1 as StShowPrice  ,'' as id "+
+      "              from itemFG where G = @G AND StShowPrice = '1'  GROUP BY Name,CatName,Point "+
+      "              union all "+
+      "              select tmp.* "+
+      "                          from(  "+
+      "                                  select  ROW_NUMBER()      "+
+      "                                                              OVER(PARTITION BY tmp.mainName  Order by  tmp.rowReal) as num, tmp.Name, tmp.mainName, CAST(ISNULL(tmp.Pricelist, 0) AS DECIMAL(30, 2)) as Pricelist, CAST(ISNULL(tmp.Price15, 0) AS DECIMAL(30, 2)) as Price15, CAST(ISNULL(tmp.Price25, 0) AS DECIMAL(30, 2)) as Price25, CAST(ISNULL(tmp.Price50, 0) AS DECIMAL(30, 2)) as Price50, CAST(ISNULL(tmp.Price120, 0) AS DECIMAL(30, 2)) as Price120, tmp.CatName, tmp.NoteF, tmp.Point, tmp.Package,tmp.NamePack,tmp.StShowPrice ,tmp.id   "+
+      "                      from(  "+
+      "                                          select ROW_NUMBER()      "+
+      "                                                                              OVER(PARTITION BY tmp.mainName  Order by  tmp.row) as num1, case when tmp.row is null then tmp2.row else tmp.row end as rowReal, tmp.Name,case when tmp.mainName is null then tmp2.mainName else tmp.mainName end as mainName, tmp2.row, tmp2.mainName as mainTmp2, Pricelist, Price15, Price25, Price50, Price120,case when tmp2.CatName is null then tmp.CatName else tmp2.CatName end as CatName, NoteF,case when tmp2.Point is null then tmp.Point else tmp2.Point end as Point, Package,NamePack,case when tmp2.StShowPrice is null then tmp.StShowPrice else tmp2.StShowPrice end as StShowPrice ,tmp2.id  "+
+      "                                                                      from(  "+
+      "                                                  select tmp.*  "+
+      "                                          FROM  "+
+      "                                                  (  "+
+      "                                                          select 1 as row, NameUno as Name, Name as mainName, CatName, Point,StShowPrice  "+
+      "                                                         from ItemFG "+
+      "                                                         where G = @G "+
+      "                                                         GROUP BY NameUno, Name, CatName, Point,StShowPrice  " +
+      "                                                         union all  "+
+      "                                                         select 2 as row, NameSIM as Name, Name as mainName, CatName, Point ,StShowPrice "+
+      "                                                         from ItemFG  "+
+      "                                                         where  G = @G "+
+      "                                                         GROUP BY NameSIM, Name, CatName, Point  ,StShowPrice "+
+      "                                                         union all "+
+      "                                                         select 3 as row, NameZU as Name, Name as mainName, CatName, Point ,StShowPrice  "+
+      "                                                         from ItemFG "+
+      "                                                         where G = @G "+
+      "                                                         GROUP BY NameZU, Name, CatName, Point,StShowPrice "+
+      "                                                  )Tmp   "+
+      "                                                                                              where tmp.Name <> '' and tmp.StShowPrice = '1'  "+
+      "                                          )tmp    "+
+      "                                                                                                                                  full join(  "+
+      "                                                  select  ROW_NUMBER()      "+
+      "                                                                                      OVER(PARTITION BY Name Order by  Name) as row, NoteF as Name, Name as mainName, sum(ISNULL(Pricelist, '0.00')) as Pricelist, sum(ISNULL(Price15, '0.00')) as Price15, sum(ISNULL(Price25, '0.00')) as Price25, sum(ISNULL(Price50, '0.00')) as Price50, sum(ISNULL(Price120, '0.00')) as Price120, CatName, NoteF, Point, concat(Rpack, ' ', PackR, 'x', RpackSale) as Package,NamePack,StShowPrice ,id "+
+      "                                                                              from ItemFG   "+
+      "                                                                              where  G = @G     "+
+      "                                                                              GROUP BY NoteF, Name, CatName, Point, Rpack, PackR, RpackSale,NamePack ,StShowPrice ,id"+
+      "                                          )tmp2 on tmp2.mainName = tmp.mainName and tmp2.row = tmp.row  "+
+      "                                  )tmp  "+
+      "                          )tmp      "+
+      "                              full join(select ROW_NUMBER()      "+
+      "                              OVER(PARTITION BY Name Order by  Name) as num, Name as mainName, NoteF, concat(Rpack, ' ', PackR, 'x', RpackSale) as Package, CatName,id   "+
+      "                              from ItemFG   "+
+      "                              where  G = @G    "+
+      "                              GROUP BY NoteF, Name, Rpack, PackR, RpackSale, CatName,id  "+
+      "                          )tmp2  on tmp2.mainName = tmp.mainName and tmp2.num = tmp.num  "+
+      "      )Temp "+
+      "      where temp.StShowPrice = '1' order by temp.mainName,CASE WHEN num = 0 THEN 0 ELSE 1 END, id "; 
+        const sqlStGroup = " select G from ItemFG  where G = '1' or G = '5' GROUP BY G ORDER BY G ASC";
         const MaxQNo = "select MAX(QNo) as QNo from ItemCalP  where YEAR(DocDate) = YEAR(CURRENT_TIMESTAMP)  AND MONTH(DocDate) = MONTH (CURRENT_TIMESTAMP) " ;
     const pool = await db;
     await pool.connect()
     const request = pool.request();
+    console.log(stGroup)
     const resultNameCat = await request
     .query(sqlNameCat);
     const resultSName = await request
-    .input('stGroup',mssql.VarChar(50),stGroup)
+    .input('G',mssql.VarChar(50),stGroup)
     .query(sqlSName);
     const resultNoteF = await request
     .query(sqlNoteF);
@@ -217,6 +220,7 @@ function toThaiMonthString(date) {
     const dataNoteF = resultNoteF.recordset;
     const dataStGroup = resultStGroup.recordset;
     const dataMaxQno = resultMaxQNo.recordset;
+    console.log(dataSName)
     
     res.render('priceListPage',{monthFil,yearThai,dataNameCat,dataSName,dataNoteF,dataStGroup,dataMaxQno});
 

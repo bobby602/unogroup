@@ -138,8 +138,8 @@ function toThaiMonthString(date) {
                 " from( " +
                         " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
                         " from v802  " +
-                            " inner join Item on v802.itemcode = item.code   " +
-                        " Where  codeG = @user and  Month(DocDate) = @month1 and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   " +
+                            " inner join ItemG on v802.itemcode = ItemG.code   " +
+                        " Where  codeG = @user and  Month(DocDate) = @month1 and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   " +
                         " group by codeG,V802.ItemCode   " +
                     " )tmp  " +
                 " GROUP BY tmp.CodeG     " +
@@ -226,8 +226,8 @@ function toThaiMonthString(date) {
          " from( " +
                  " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
                  " from v802  " +
-                     " inner join Item on v802.itemcode = item.code   " +
-                 " Where  codeG = @user2 and  Month(DocDate) = @month2 and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   " +
+                     " inner join ItemG on v802.itemcode = ItemG.code   " +
+                 " Where  codeG = @user2 and  Month(DocDate) = @month2 and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   " +
                  " group by codeG,V802.ItemCode   " +
              " )tmp  " +
          " GROUP BY tmp.CodeG     " +
@@ -314,8 +314,8 @@ function toThaiMonthString(date) {
          " from( " +
                  " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
                  " from v802  " +
-                     " inner join Item on v802.itemcode = item.code   " +
-                 " Where  codeG = @user3 and  Month(DocDate) = @month3 and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   " +
+                     " inner join ItemG on v802.itemcode = ItemG.code   " +
+                 " Where  codeG = @user3 and  Month(DocDate) = @month3 and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   " +
                  " group by codeG,V802.ItemCode   " +
              " )tmp  " +
          " GROUP BY tmp.CodeG     " +
@@ -596,8 +596,8 @@ function toThaiMonthString(date) {
          " from( " +
                  " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
                  " from v802  " +
-                     " inner join Item on v802.itemcode = item.code   " +
-                 " Where  codeG = @user and  Month(DocDate) = @month1 and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   " +
+                     " inner join ItemG on v802.itemcode = ItemG.code   " +
+                 " Where  codeG = @user and  Month(DocDate) = @month1 and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   " +
                  " group by codeG,V802.ItemCode   " +
              " )tmp  " +
          " GROUP BY tmp.CodeG   " +
@@ -684,8 +684,8 @@ function toThaiMonthString(date) {
          " from( " +
                  " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
                  " from v802  " +
-                     " inner join Item on v802.itemcode = item.code   " +
-                 " Where  codeG = @user2 and  Month(DocDate) = @month2 and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   " +
+                     " inner join ItemG on v802.itemcode = ItemG.code   " +
+                 " Where  codeG = @user2 and  Month(DocDate) = @month2 and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   " +
                  " group by codeG,V802.ItemCode   " +
              " )tmp  " +
          " GROUP BY tmp.CodeG     " +
@@ -772,8 +772,8 @@ function toThaiMonthString(date) {
          " from( " +
                  " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
                  " from v802  " +
-                     " inner join Item on v802.itemcode = item.code   " +
-                 " Where  codeG = @user3 and  Month(DocDate) = @month3 and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   " +
+                     " inner join ItemG on v802.itemcode = ItemG.code   " +
+                 " Where  codeG = @user3 and  Month(DocDate) = @month3 and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   " +
                  " group by codeG,V802.ItemCode   " +
              " )tmp  " +
          " GROUP BY tmp.CodeG     " +
@@ -1109,8 +1109,8 @@ function toThaiMonthString(date) {
                     "                             from( "+ 
                     "                                     select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   "+ 
                     "                                     from v802  "+ 
-                    "                                         inner join Item on v802.itemcode = item.code   "+ 
-                    "                                     Where  codeG = @user and  Month(DocDate) BETWEEN   '01' and '03'  and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   "+ 
+                    "                                         inner join ItemG on v802.itemcode = ItemG.code   "+ 
+                    "                                     Where  codeG = @user and  Month(DocDate) BETWEEN   '01' and '03'  and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   "+ 
                     "                                     group by codeG,V802.ItemCode   "+ 
                     "                                 )tmp  "+ 
                     "                             GROUP BY tmp.CodeG     "+ 
@@ -1231,8 +1231,8 @@ function toThaiMonthString(date) {
                     "                             from( "+ 
                     "                                     select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   "+ 
                     "                                     from v802  "+ 
-                    "                                         inner join Item on v802.itemcode = item.code   "+ 
-                    "                                     Where  codeG = @user2 and  Month(DocDate) BETWEEN   '04' and '06'  and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   "+ 
+                    "                                         inner join ItemG on v802.itemcode = ItemG.code   "+ 
+                    "                                     Where  codeG = @user2 and  Month(DocDate) BETWEEN   '04' and '06'  and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   "+ 
                     "                                     group by codeG,V802.ItemCode   "+ 
                     "                                 )tmp  "+ 
                     "                             GROUP BY tmp.CodeG     "+ 
@@ -1353,8 +1353,8 @@ function toThaiMonthString(date) {
                     "                             from( "+ 
                     "                                     select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   "+ 
                     "                                     from v802  "+ 
-                    "                                         inner join Item on v802.itemcode = item.code   "+ 
-                    "                                     Where  codeG = @user3 and  Month(DocDate) BETWEEN   '07' and '09'  and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   "+ 
+                    "                                         inner join ItemG on v802.itemcode = ItemG.code   "+ 
+                    "                                     Where  codeG = @user3 and  Month(DocDate) BETWEEN   '07' and '09'  and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   "+ 
                     "                                     group by codeG,V802.ItemCode   "+ 
                     "                                 )tmp  "+ 
                     "                             GROUP BY tmp.CodeG     "+ 
@@ -1475,8 +1475,8 @@ function toThaiMonthString(date) {
                     "                             from( "+ 
                     "                                     select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   "+ 
                     "                                     from v802  "+ 
-                    "                                         inner join Item on v802.itemcode = item.code   "+ 
-                    "                                     Where  codeG = @user4 and  Month(DocDate) BETWEEN   '10' and '12'  and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   "+ 
+                    "                                         inner join ItemG on v802.itemcode = ItemG.code   "+ 
+                    "                                     Where  codeG = @user4 and  Month(DocDate) BETWEEN   '10' and '12'  and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   "+ 
                     "                                     group by codeG,V802.ItemCode   "+ 
                     "                                 )tmp  "+ 
                     "                             GROUP BY tmp.CodeG     "+ 
@@ -1571,8 +1571,8 @@ function toThaiMonthString(date) {
             " from( " +
                     " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
                     " from v802  " +
-                        " inner join Item on v802.itemcode = item.code   " +
-                    " Where  codeG = @user6 and  Month(DocDate) BETWEEN   '4' and '12' and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   " +
+                        " inner join ItemG on v802.itemcode = ItemG.code   " +
+                    " Where  codeG = @user6 and  Month(DocDate) BETWEEN   '4' and '12' and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   " +
                     " group by codeG,V802.ItemCode   " +
                 " )tmp  " +
             " GROUP BY tmp.CodeG     " +

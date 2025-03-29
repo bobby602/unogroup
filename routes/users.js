@@ -327,8 +327,8 @@ router.get('/pageTable2',requireLogin,function(req,res){
         " from( " +
                 " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode " +  
                 " from v802  " +
-                    " inner join Item on v802.itemcode = item.code  " + 
-                " Where   MONTH(docDate) = Month(GETDATE())  and year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'  "+ 
+                    " inner join ItemG on v802.itemcode = ItemG.code  " + 
+                " Where   MONTH(docDate) = Month(GETDATE())  and year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'  "+ 
                 " group by codeG,V802.ItemCode " +  
             " )tmp  " +
         " GROUP BY tmp.CodeG " +    
@@ -555,8 +555,8 @@ router.post('/pageTable2',function(req,res){
         " from( " +
                 " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode " +  
                 " from v802  " +
-                    " inner join Item on v802.itemcode = item.code  " + 
-                " Where   MONTH(docDate) = @month1  and year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'  "+ 
+                    " inner join ItemG on v802.itemcode = ItemG.code  " + 
+                " Where   MONTH(docDate) = @month1  and year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'  "+ 
                 " group by codeG,V802.ItemCode " +  
             " )tmp  " +
         " GROUP BY tmp.CodeG " +    
@@ -1347,8 +1347,8 @@ router.get('/salesQuater',requireLogin,function(req,res){
              "                                                     left join ( select sum(tmp.S1) as s1 ,tmp.CodeG  "+
              "                                                                               from( select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode  "+
              "                                                                                           from v802  "+
-             "                                                                                               inner join Item on v802.itemcode = item.code  "+
-             "                                                                                           Where MONTH(docDate) between  @month1 and  @month2  and year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'  "+
+             "                                                                                               inner join ItemG on v802.itemcode = ItemG.code  "+
+             "                                                                                           Where MONTH(docDate) between  @month1 and  @month2  and year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'  "+
              "                                                                                           group by codeG,V802.ItemCode  "+
              "                                                                                           )tmp GROUP BY tmp.CodeG  "+
              "                                                                           )e on e.CodeG = a.CodeG  "+
@@ -1472,8 +1472,8 @@ router.post('/salesQuater',function(req,res){
              "                                                     left join ( select sum(tmp.S1) as s1 ,tmp.CodeG  "+
              "                                                                               from( select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode  "+
              "                                                                                           from v802  "+
-             "                                                                                               inner join Item on v802.itemcode = item.code  "+
-             "                                                                                           Where MONTH(docDate) between  @month1 and  @month2  and year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'  "+
+             "                                                                                               inner join ItemG on v802.itemcode = ItemG.code  "+
+             "                                                                                           Where MONTH(docDate) between  @month1 and  @month2  and year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'  "+
              "                                                                                           group by codeG,V802.ItemCode  "+
              "                                                                                           )tmp GROUP BY tmp.CodeG  "+
              "                                                                           )e on e.CodeG = a.CodeG  "+

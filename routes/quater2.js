@@ -155,8 +155,8 @@ function toThaiMonthString(date) {
         " from( " +
                 " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode " +  
                 " from v802  " +
-                    " inner join Item on v802.itemcode = item.code  " + 
-                " Where   MONTH(docDate) = Month(GETDATE())  and year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'  "+ 
+                    " inner join ItemG on v802.itemcode = ItemG.code  " + 
+                " Where   MONTH(docDate) = Month(GETDATE())  and year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'  "+ 
                 " group by codeG,V802.ItemCode " +  
             " )tmp  " +
         " GROUP BY tmp.CodeG " +    
@@ -295,8 +295,8 @@ router.post('/quaterPage4',async function(req,res){
         " from( " +
                 " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode " +  
                 " from v802  " +
-                    " inner join Item on v802.itemcode = item.code  " + 
-                " Where   MONTH(docDate) = @month1  and year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'  "+ 
+                    " inner join ItemG on v802.itemcode = ItemG.code  " + 
+                " Where   MONTH(docDate) = @month1  and year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'  "+ 
                 " group by codeG,V802.ItemCode " +  
             " )tmp  " +
         " GROUP BY tmp.CodeG " +    
@@ -458,8 +458,8 @@ router.post('/quaterPage4',async function(req,res){
          " from( " +
                  " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
                  " from v802  " +
-                     " inner join Item on v802.itemcode = item.code   " +
-                 " Where  Month(DocDate) = @month1 and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   " +
+                     " inner join ItemG on v802.itemcode = ItemG.code   " +
+                 " Where  Month(DocDate) = @month1 and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   " +
                  " group by codeG,V802.ItemCode   " +
              " )tmp  " +
          " GROUP BY tmp.CodeG     " +
@@ -577,8 +577,8 @@ router.post('/quaterPage4',async function(req,res){
          " from( " +
                  " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
                  " from v802  " +
-                     " inner join Item on v802.itemcode = item.code   " +
-                 " Where    Month(DocDate) = @month2 and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   " +
+                     " inner join ItemG on v802.itemcode = ItemG.code   " +
+                 " Where    Month(DocDate) = @month2 and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   " +
                  " group by codeG,V802.ItemCode   " +
              " )tmp  " +
          " GROUP BY tmp.CodeG     " +
@@ -696,8 +696,8 @@ router.post('/quaterPage4',async function(req,res){
          " from( " +
                  " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
                  " from v802  " +
-                     " inner join Item on v802.itemcode = item.code   " +
-                 " Where    Month(DocDate) = @month3 and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   " +
+                     " inner join ItemG on v802.itemcode = ItemG.code   " +
+                 " Where    Month(DocDate) = @month3 and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   " +
                  " group by codeG,V802.ItemCode   " +
              " )tmp  " +
          " GROUP BY tmp.CodeG     " +
@@ -941,8 +941,8 @@ router.post('/quaterPage4',async function(req,res){
          " from( " +
                  " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
                  " from v802  " +
-                     " inner join Item on v802.itemcode = item.code   " +
-                 " Where  Month(DocDate) = @month1 and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   " +
+                     " inner join ItemG on v802.itemcode = ItemG.code   " +
+                 " Where  Month(DocDate) = @month1 and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   " +
                  " group by codeG,V802.ItemCode   " +
              " )tmp  " +
          " GROUP BY tmp.CodeG     " +
@@ -1060,8 +1060,8 @@ router.post('/quaterPage4',async function(req,res){
          " from( " +
                  " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
                  " from v802  " +
-                     " inner join Item on v802.itemcode = item.code   " +
-                 " Where    Month(DocDate) = @month2 and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   " +
+                     " inner join ItemG on v802.itemcode = ItemG.code   " +
+                 " Where    Month(DocDate) = @month2 and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   " +
                  " group by codeG,V802.ItemCode   " +
              " )tmp  " +
          " GROUP BY tmp.CodeG     " +
@@ -1179,8 +1179,8 @@ router.post('/quaterPage4',async function(req,res){
          " from( " +
                  " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
                  " from v802  " +
-                     " inner join Item on v802.itemcode = item.code   " +
-                 " Where    Month(DocDate) = @month3 and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   " +
+                     " inner join ItemG on v802.itemcode = ItemG.code   " +
+                 " Where    Month(DocDate) = @month3 and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   " +
                  " group by codeG,V802.ItemCode " +
              " )tmp  " +
          " GROUP BY tmp.CodeG     " +
@@ -1439,8 +1439,8 @@ router.post('/quaterPage4',async function(req,res){
             " from( " +
                     " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
                     " from v802  " +
-                        " inner join Item on v802.itemcode = item.code   " +
-                    " Where    Month(DocDate) BETWEEN   '01' and '03'  and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   " +
+                        " inner join ItemG on v802.itemcode = ItemG.code   " +
+                    " Where    Month(DocDate) BETWEEN   '01' and '03'  and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   " +
                     " group by codeG,V802.ItemCode   " +
                 " )tmp  " +
             " GROUP BY tmp.CodeG     " +
@@ -1558,8 +1558,8 @@ router.post('/quaterPage4',async function(req,res){
             " from( " +
                     " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
                     " from v802  " +
-                        " inner join Item on v802.itemcode = item.code   " +
-                    " Where    Month(DocDate) BETWEEN   '04' and '06' and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   " +
+                        " inner join ItemG on v802.itemcode = ItemG.code   " +
+                    " Where    Month(DocDate) BETWEEN   '04' and '06' and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   " +
                     " group by codeG,V802.ItemCode   " +
                 " )tmp  " +
             " GROUP BY tmp.CodeG     " +
@@ -1677,8 +1677,8 @@ router.post('/quaterPage4',async function(req,res){
             " from( " +
                     " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
                     " from v802  " +
-                        " inner join Item on v802.itemcode = item.code   " +
-                    " Where    Month(DocDate) BETWEEN   '07' and '09' and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   " +
+                        " inner join ItemG on v802.itemcode = ItemG.code   " +
+                    " Where    Month(DocDate) BETWEEN   '07' and '09' and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   " +
                     " group by codeG,V802.ItemCode   " +
                 " )tmp  " +
             " GROUP BY tmp.CodeG     " +
@@ -1796,8 +1796,8 @@ router.post('/quaterPage4',async function(req,res){
             " from( " +
                     " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
                     " from v802  " +
-                        " inner join Item on v802.itemcode = item.code   " +
-                    " Where   Month(DocDate) BETWEEN   '10' and '12' and  year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'   " +
+                        " inner join ItemG on v802.itemcode = ItemG.code   " +
+                    " Where   Month(DocDate) BETWEEN   '10' and '12' and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   " +
                     " group by codeG,V802.ItemCode   " +
                 " )tmp  " +
             " GROUP BY tmp.CodeG     " +
@@ -1915,8 +1915,8 @@ router.post('/quaterPage4',async function(req,res){
              "from(  " +
                      "select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode    " +
                      "from v802   " +
-                         "inner join Item on v802.itemcode = item.code    " +
-                     "Where     year(Docdate) = YEAR(GETDATE())  and Item.grItemCode ='H'    " +
+                         "inner join ItemG on v802.itemcode = ItemG.code    " +
+                     "Where     year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'    " +
                     " group by codeG,V802.ItemCode    " +
                  ")tmp   " +
              "GROUP BY tmp.CodeG      " +
