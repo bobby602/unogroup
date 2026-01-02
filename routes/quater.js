@@ -57,7 +57,6 @@ function toThaiMonthString(date) {
   router.use(bodyParser.json());
   router.get('/quaterPage2',async function(req,res){
     try {
-
         const sql = " Select   " +
       "  0 as num, "+
       "  NameG, "+
@@ -86,41 +85,18 @@ function toThaiMonthString(date) {
         " Group by CodeG  " +
         " )b on b.CodeG = a.codeG " +
         " left join ( " +
-        " Select  case when tier = '1' then "+ 
-        "case when sum(PPoint) <350  then '0' "+ 
-                    "when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+ 
-                    "when sum(PPoint) >=500 and sum(PPoint) < 750 then '1' "+ 
-                    "when sum(PPoint) >=750 then '1.5' "+ 
-                    "end "+  
-       "when tier = '2' then "+ 
-            "case when sum(PPoint) <350  then '0' "+ 
-                    "when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+ 
-                    "when sum(PPoint) >=500 and sum(PPoint) < 700 then '1' "+ 
-                    "when sum(PPoint) >=700 then '1.5'"+ 
-                    "end "+ 
-       "when tier = '3' then "+ 
-            "case when sum(PPoint) <350  then '0' "+ 
-                    "when sum(PPoint) >=350 and sum(PPoint) < 450 then '0.5' "+ 
-                    "when sum(PPoint) >=450 and sum(PPoint) < 550 then '1' "+ 
-                    "when sum(PPoint) >=550 then '1.5'"+ 
-                    "end "+ 
-       "when tier = '4' then "+ 
-            "case when sum(PPoint) <350  then '0' "+ 
-                    "when sum(PPoint) >=350 and sum(PPoint) < 400 then '0.5' "+ 
-                    "when sum(PPoint) >=400 and sum(PPoint) < 450 then '1' "+ 
-                    "when sum(PPoint) >=450 then '1.5' "+ 
-                    "end "+ 
-       " end as RateCom "+ 
-       ",CodeG , "+ 
-       "case   when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000 "+ 
-       "when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+ 
-       "when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000  "+ 
-       "when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000  "+ 
-       "else 0 "+ 
-       "  end as incentive  ,sum(PPoint) as point "+ 
-       " From V802 " +  
-       " Where   codeG = @user and Month(DocDate) = @month11 and  year(Docdate) = YEAR(GETDATE()) "  +
-       " Group by CodeG, tier " +
+            " select  case when sum(a.PPoint) < A1  then '0'   " +
+            "              when sum(a.PPoint) >=A1 and sum(a.PPoint) < A2 then Rate1 " +
+            "              when sum(a.PPoint) >=A3 and sum(a.PPoint) < A4 then Rate2   " +
+            "              when sum(a.PPoint) >=A5 then Rate3   " +
+            "              end as RateCom,sum(a.PPoint) as point , " +
+" 				case when sum(a.PPoint) < MPoint then '0' else cast(((sum(a.PPoint)  - c.MPoint)/c.PPoint) as int) * c.Incen end as  incentive, a.CodeG " +
+"  from V802 a  " +
+" 	inner join ItemTier b on b.CodeG = a.CodeG " +
+" 	inner join Tier c on c.Code = b.TierCode " +
+"  where a.CodeG = @user and Month(a.DocDate) =  @month1 and year(a.Docdate) = YEAR(GETDATE()) and b.YearCal = YEAR(GETDATE())+543 " +
+"  GROUP BY  " +
+"     c.A1, c.A2, c.A3, c.A4, c.A5, c.Rate1, c.Rate2, c.Rate3,c.MPoint, c.Incen,c.PPoint,a.CodeG " +
         " )c on c.CodeG = a.codeG " +
         " left join ( " +
             " select sum(tmp.S1) as s1 ,tmp.CodeG " +
@@ -147,7 +123,7 @@ function toThaiMonthString(date) {
         " Where Month(DocDate) = @month1 and  a.codeG = @user and year(Docdate) = YEAR(GETDATE())   " +
         " Group by NameG,b.S1,c.RateCom,a.CodeG,c.incentive,e.s1,ISNULL(d.s1,0),c.point " ;
  const sql2 = " Select   " +
- "  0 as num, "+
+"  0 as num, "+
       "  NameG, "+
       " ROW_NUMBER() OVER(ORDER BY sum(Amt) DESC) AS Row, "+
       " CAST(ISNULL(Sum(Amt),0) AS DECIMAL(30,2)) as sales , "+
@@ -170,45 +146,22 @@ function toThaiMonthString(date) {
  " Select  round(Sum(PB) ,2) as S1,CodeG  " +
  " From V802   " +
  " inner join itemcomPI on v802.itemcode = itemcomPI.itemcode   " +
- " Where  codeG = @user2 and Month(DocDate) = @month2 and   year(Docdate) = YEAR(GETDATE())     " +
+ " Where  codeG = @user2 and Month(DocDate) = @month2 and   year(Docdate) = YEAR(GETDATE())  " +
  " Group by CodeG  " +
  " )b on b.CodeG = a.codeG " +
  " left join ( " +
- " Select  case when tier = '1' then "+ 
- "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+ 
-             "when sum(PPoint) >=500 and sum(PPoint) < 750 then '1' "+ 
-             "when sum(PPoint) >=750 then '1.5' "+ 
-             "end "+  
-"when tier = '2' then "+ 
-     "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+ 
-             "when sum(PPoint) >=500 and sum(PPoint) < 700 then '1' "+ 
-             "when sum(PPoint) >=700 then '1.5'"+ 
-             "end "+ 
-"when tier = '3' then "+ 
-     "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 450 then '0.5' "+ 
-             "when sum(PPoint) >=450 and sum(PPoint) < 550 then '1' "+ 
-             "when sum(PPoint) >=550 then '1.5'"+ 
-             "end "+ 
-"when tier = '4' then "+ 
-     "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 400 then '0.5' "+ 
-             "when sum(PPoint) >=400 and sum(PPoint) < 450 then '1' "+ 
-             "when sum(PPoint) >=450 then '1.5' "+ 
-             "end "+ 
-" end as RateCom "+ 
-",CodeG , "+ 
-"case   when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000 "+ 
-"when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+ 
-"when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000  "+ 
-"when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000  "+ 
-"else 0 "+ 
-"  end as incentive  ,sum(PPoint) as point "+ 
-" From V802 " +  
-" Where   codeG = @user2 and Month(DocDate) = @month12 and  year(Docdate) = YEAR(GETDATE()) "  +
-" Group by CodeG, tier " +
+ " select  case when sum(a.PPoint) < A1  then '0'   " +
+ "              when sum(a.PPoint) >=A1 and sum(a.PPoint) < A2 then Rate1 " +
+ "              when sum(a.PPoint) >=A3 and sum(a.PPoint) < A4 then Rate2   " +
+ "              when sum(a.PPoint) >=A5 then Rate3   " +
+ "              end as RateCom,sum(a.PPoint) as point , " +
+" 				case when sum(a.PPoint) < MPoint then '0' else cast(((sum(a.PPoint)  - c.MPoint)/c.PPoint) as int) * c.Incen end as  incentive, a.CodeG " +
+"  from V802 a  " +
+" 	inner join ItemTier b on b.CodeG = a.CodeG " +
+" 	inner join Tier c on c.Code = b.TierCode " +
+"  where a.codeG = @user2 and Month(a.DocDate) = @month12 and year(a.Docdate) = YEAR(GETDATE()) and b.YearCal = YEAR(GETDATE())+543 " +
+"  GROUP BY  " +
+"     c.A1, c.A2, c.A3, c.A4, c.A5, c.Rate1, c.Rate2, c.Rate3,c.MPoint, c.Incen,c.PPoint,a.CodeG " +
  " )c on c.CodeG = a.codeG " +
  " left join ( " +
      " select sum(tmp.S1) as s1 ,tmp.CodeG " +
@@ -232,8 +185,8 @@ function toThaiMonthString(date) {
              " )tmp  " +
          " GROUP BY tmp.CodeG     " +
          " )e on e.CodeG = a.CodeG " +
- " Where Month(DocDate) = @month2 and  a.codeG = @user2 and year(Docdate) = YEAR(GETDATE())   " +
- " Group by NameG,b.S1,c.RateCom,a.CodeG,c.incentive,e.s1,ISNULL(d.s1,0),c.point " ;
+ " Where Month(DocDate) = @month2 and  a.codeG = @user2 and year(Docdate) = YEAR(GETDATE()) " +
+ " Group by NameG,b.S1,c.RateCom,a.CodeG,c.incentive,e.s1,ISNULL(d.s1,0),c.point ";
  const sql3 = " Select   " +
  "  0 as num, "+
  "  NameG, "+
@@ -262,41 +215,18 @@ function toThaiMonthString(date) {
  " Group by CodeG  " +
  " )b on b.CodeG = a.codeG " +
  " left join ( " +
- " Select  case when tier = '1' then "+ 
- "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+ 
-             "when sum(PPoint) >=500 and sum(PPoint) < 750 then '1' "+ 
-             "when sum(PPoint) >=750 then '1.5' "+ 
-             "end "+  
-"when tier = '2' then "+ 
-     "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+ 
-             "when sum(PPoint) >=500 and sum(PPoint) < 700 then '1' "+ 
-             "when sum(PPoint) >=700 then '1.5'"+ 
-             "end "+ 
-"when tier = '3' then "+ 
-     "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 450 then '0.5' "+ 
-             "when sum(PPoint) >=450 and sum(PPoint) < 550 then '1' "+ 
-             "when sum(PPoint) >=550 then '1.5'"+ 
-             "end "+ 
-"when tier = '4' then "+ 
-     "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 400 then '0.5' "+ 
-             "when sum(PPoint) >=400 and sum(PPoint) < 450 then '1' "+ 
-             "when sum(PPoint) >=450 then '1.5' "+ 
-             "end "+ 
-" end as RateCom "+ 
-",CodeG , "+ 
-"case   when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000 "+ 
-"when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+ 
-"when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000  "+ 
-"when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000  "+ 
-"else 0 "+ 
-"  end as incentive  ,sum(PPoint) as point "+ 
-" From V802 " +  
-" Where   codeG = @user3 and Month(DocDate) = @month13 and  year(Docdate) = YEAR(GETDATE()) "  +
-" Group by CodeG, tier " +
+ " select  case when sum(a.PPoint) < A1  then '0'   " +
+ "              when sum(a.PPoint) >=A1 and sum(a.PPoint) < A2 then Rate1 " +
+ "              when sum(a.PPoint) >=A3 and sum(a.PPoint) < A4 then Rate2   " +
+ "              when sum(a.PPoint) >=A5 then Rate3   " +
+ "              end as RateCom,sum(a.PPoint) as point , " +
+" 				case when sum(a.PPoint) < MPoint then '0' else cast(((sum(a.PPoint)  - c.MPoint)/c.PPoint) as int) * c.Incen end as  incentive, a.CodeG " +
+"  from V802 a  " +
+" 	inner join ItemTier b on b.CodeG = a.CodeG " +
+" 	inner join Tier c on c.Code = b.TierCode " +
+"  where a.codeG = @user3 and Month(a.DocDate) = @month13 and year(a.Docdate) = YEAR(GETDATE()) and b.YearCal = YEAR(GETDATE())+543 " +
+"  GROUP BY  " +
+"     c.A1, c.A2, c.A3, c.A4, c.A5, c.Rate1, c.Rate2, c.Rate3,c.MPoint, c.Incen,c.PPoint,a.CodeG " +
  " )c on c.CodeG = a.codeG " +
  " left join ( " +
      " select sum(tmp.S1) as s1 ,tmp.CodeG " +
@@ -315,62 +245,81 @@ function toThaiMonthString(date) {
                  " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode   " +
                  " from v802  " +
                      " inner join ItemG on v802.itemcode = ItemG.code   " +
-                 " Where  codeG = @user3 and  Month(DocDate) = @month3 and  year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'   " +
+                 " Where  codeG = @user3 and  Month(DocDate) = @month3 and year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H' " +
                  " group by codeG,V802.ItemCode   " +
              " )tmp  " +
          " GROUP BY tmp.CodeG     " +
          " )e on e.CodeG = a.CodeG " +
  " Where Month(DocDate) = @month3 and  a.codeG = @user3 and year(Docdate) = YEAR(GETDATE())   " +
  " Group by NameG,b.S1,c.RateCom,a.CodeG,c.incentive,e.s1,ISNULL(d.s1,0),c.point " ;
-  const sqlPoPoint = "select sum(AmtN) as Sales, sum(PB) as Pb , sum(AmtPoint) as AmtPoint from POPOINT   where CodeG = @user4 and Month(DocDate) BETWEEN   @monthVar1 and @monthVar3 "
-  const RateCom = "with  " +
-                    "    Months AS  (  " +
-                    "                            SELECT 1 AS MonthNum  " +
-                    "                            UNION ALL  " +
-                    "                            SELECT MonthNum + 1 as MonthNum  FROM Months WHERE MonthNum <12  " +
-                    "                            ), " +
-                    "    monthTable as(  " +
-                    "                            SELECT  Right('0'+cast(MonthNum as VARCHAR(2)),2)  as MonthNum , " +
-                    "                                        CASE WHEN MonthNum IN (1,2,3)  then '1'  " +
-                    "                                        when MonthNum IN (4,5,6)  then '2'   " +
-                    "                                        when MonthNum IN (7,8,9) then '3'  " +
-                    "                                        else '4' end  as quater ,MonthNum as monthOri    " +
-                    "                            FROM Months  " +
-                    "                            )" +
-                    "                            select  tmp.CodeG , sum(tmp.incentive) as incentive , sum(tmp.point) as point  ," +
-                    "                                     case  " +
-                    "                                                                    when tier = '1' then  " +
-                    "                                                                                                            case when sum(tmp.point) < 350*3  then '0'   " +
-                    "                                                                                                                     when sum(tmp.point) >=350*3 and sum(tmp.point) < 500*3 then '0.5'   " +
-                    "                                                                                                                     when sum(tmp.point) >=500*3 and sum(tmp.point) < 750*3 then '1'   " +
-                    "                                                                                                                     when sum(tmp.point) >=750*3 then '1.5'  end    " +
-                    "                                                                    when tier = '2' then   " +
-                    "                                                                                                            case when sum(tmp.point) < 350*3  then '0'  " +
-                    "                                                                                                                     when sum(tmp.point)>=350*3 and sum(tmp.point) < 500*3 then '0.5'   " +
-                    "                                                                                                                     when sum(tmp.point) >=500*3 and sum(tmp.point) < 700*3 then '1'   " +
-                    "                                                                                                                     when sum(tmp.point) >=700*3 then '1.5' end   " +
-                    "                                                                    when tier = '3' then   " +
-                    "                                                                                                            case when sum(tmp.point) < 350*3  then '0'   " +
-                    "                                                                                                                     when sum(tmp.point) >=350*3 and sum(tmp.point) < 450*3 then '0.5'   " +
-                    "                                                                                                                     when sum(tmp.point) >=450*3 and sum(tmp.point) < 550*3 then '1'   " +
-                    "                                                                                                                     when sum(tmp.point) >=550*3 then '1.5' end   " +
-                    "                                                                  when tier = '4' then   " +
-                    "                                                                                                            case when sum(tmp.point) < 350*3  then '0'   " +
-                    "                                                                                                                     when sum(tmp.point) >=350*3 and sum(tmp.point) < 400*3 then '0.5'   " +
-                    "                                                                                                                     when sum(tmp.point) >=400*3 and sum(tmp.point) < 450*3 then '1'   " +
-                    "                                                                                                                     when sum(tmp.point) >=450*3 then '1.5' end   " +
-                    "                                                    end as RateCom" +
-                    "                                from ( " +
-                    "                                             select" +
-                    "                                                    case when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000   " +
-                    "                                                             when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000   " +
-                    "                                                             when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000    " +
-                    "                                                             when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000   " +
-                    "                                                 else 0  end as incentive ,sum(PPoint) as point ,a.CodeG,Month(DocDate) as mon ,tier" +
-                    "                                         From V802 a  " +
-                    "                                         Where  Month(DocDate) in (select  MonthNum from monthTable where quater =  (select  quater from monthTable where quater = (select quater from monthTable where monthOri = Month(GETDATE()) ) group by quater) ) and  year(Docdate) = YEAR(GETDATE())  and a.CodeG = @user5  " +
-                    "                                         Group by a.CodeG, tier,Month(DocDate) " +
-                    "                                         ) tmp GROUP BY tmp.codeG ,tmp.tier";
+const sqlPoPoint = "select sum(AmtN) as Sales, sum(PB) as Pb , sum(AmtPoint) as AmtPoint from POPOINT  where CodeG = @user4 and Month(DocDate) BETWEEN  @monthVar1 and @monthVar3 ";
+const RateCom = `
+  WITH  
+    Months AS (  
+        SELECT 1 AS MonthNum  
+        UNION ALL  
+        SELECT MonthNum + 1 FROM Months WHERE MonthNum < 12  
+    ), 
+    monthTable AS (  
+        SELECT  
+            RIGHT('0' + CAST(MonthNum AS VARCHAR(2)), 2) AS MonthNum, 
+            CASE 
+                WHEN MonthNum IN (1,2,3) THEN '1'  
+                WHEN MonthNum IN (4,5,6) THEN '2'   
+                WHEN MonthNum IN (7,8,9) THEN '3'  
+                ELSE '4' 
+            END AS quater,
+            MonthNum AS monthOri    
+        FROM Months  
+    )
+SELECT  
+    tmp.CodeG, 
+    SUM(tmp.incentive) AS incentive, 
+    SUM(tmp.point) AS point,
+    CASE  
+        WHEN SUM(tmp.point) < tmp.A1 * 3 THEN '0'   
+        WHEN SUM(tmp.point) >= tmp.A1 * 3 AND SUM(tmp.point) < tmp.A2 * 3 THEN tmp.Rate1 
+        WHEN SUM(tmp.point) >= tmp.A3 * 3 AND SUM(tmp.point) < tmp.A4 * 3 THEN tmp.Rate2   
+        WHEN SUM(tmp.point) >= tmp.A5 * 3 THEN tmp.Rate3  
+    END AS RateCom 
+FROM ( 
+    SELECT 
+        a.CodeG,
+        SUM(a.PPoint) AS point,
+        CASE 
+            WHEN SUM(a.PPoint) < c.MPoint THEN '0'
+            ELSE CAST(((SUM(a.PPoint) - c.MPoint) / c.PPoint) AS INT) * c.Incen
+        END AS incentive,
+        MONTH(a.DocDate) AS mon,
+        c.A1, c.A2, c.A3, c.A4, c.A5, 
+        c.Rate1, c.Rate2, c.Rate3,
+        c.MPoint, c.PPoint, c.Incen,
+        b.TierCode as tier
+    FROM 
+        V802 a  
+        INNER JOIN ItemTier b ON b.CodeG = a.CodeG 
+        INNER JOIN Tier c ON c.Code = b.TierCode 
+    WHERE  
+        MONTH(a.DocDate) IN (
+            SELECT MonthNum 
+            FROM monthTable 
+            WHERE quater = (
+                SELECT quater 
+                FROM monthTable 
+                WHERE monthOri = MONTH(GETDATE()) 
+                GROUP BY quater
+            )
+        )
+        AND YEAR(a.DocDate) = YEAR(GETDATE()) 
+				and b.YearCal = YEAR(GETDATE())+543  
+        AND a.CodeG  = @user5  
+    GROUP BY 
+        a.CodeG, c.A1, c.A2, c.A3, c.A4, c.A5, 
+        c.Rate1, c.Rate2, c.Rate3, c.MPoint, c.PPoint, c.Incen, b.TierCode, MONTH(a.DocDate)
+) tmp 
+GROUP BY 
+    tmp.CodeG, tmp.tier, tmp.A1, tmp.A2, tmp.A3, tmp.A4, tmp.A5, tmp.Rate1, tmp.Rate2, tmp.Rate3
+    `;
         const currentMonth = new Date().getMonth();
         quater(currentMonth);
         console.log(month3)
@@ -391,6 +340,7 @@ function toThaiMonthString(date) {
         .input('month31',mssql.VarChar(50),month3)
         .input('quater1',mssql.VarChar(50),monthFil)
         .query(sql);
+        console.log("a1")
         const result2 = await request
         .input('user2',mssql.VarChar(50),username)
         .input('month2',mssql.VarChar(50),month2)
@@ -398,6 +348,7 @@ function toThaiMonthString(date) {
         .input('month32',mssql.VarChar(50),month3)
         .input('quater2',mssql.VarChar(50),monthFil)
         .query(sql2);
+        console.log("a2")
         const result3 = await request
         .input('user3',mssql.VarChar(50),username)
         .input('month3',mssql.VarChar(50),month3)
@@ -405,11 +356,13 @@ function toThaiMonthString(date) {
         .input('month33',mssql.VarChar(50),month3)
         .input('quater3',mssql.VarChar(50),monthFil)
         .query(sql3);
+        console.log("a3")
          const result4 = await request
         .input('user4',mssql.VarChar(50),username)
         .input('monthVar1',mssql.VarChar(50),month1)
         .input('monthVar3',mssql.VarChar(50),month3)
         .query(sqlPoPoint);
+        console.log("a4")
         const result5 = await request
         .input('user5',mssql.VarChar(50),username)
         .query(RateCom);
@@ -472,7 +425,7 @@ function toThaiMonthString(date) {
         let data4 = [];
         let data5 = result4.recordset;
         let data6 = result5.recordset;
-        console.log(data6);
+        console.log("data1"+data6);
         checkResult(data);
         checkResult(data2);
         checkResult(data3);
@@ -544,41 +497,18 @@ function toThaiMonthString(date) {
  " Group by CodeG  " +
  " )b on b.CodeG = a.codeG " +
  " left join ( " +
- " Select  case when tier = '1' then "+ 
- "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+ 
-             "when sum(PPoint) >=500 and sum(PPoint) < 750 then '1' "+ 
-             "when sum(PPoint) >=750 then '1.5' "+ 
-             "end "+  
-"when tier = '2' then "+ 
-     "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+ 
-             "when sum(PPoint) >=500 and sum(PPoint) < 700 then '1' "+ 
-             "when sum(PPoint) >=700 then '1.5'"+ 
-             "end "+ 
-"when tier = '3' then "+ 
-     "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 450 then '0.5' "+ 
-             "when sum(PPoint) >=450 and sum(PPoint) < 550 then '1' "+ 
-             "when sum(PPoint) >=550 then '1.5'"+ 
-             "end "+ 
-"when tier = '4' then "+ 
-     "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 400 then '0.5' "+ 
-             "when sum(PPoint) >=400 and sum(PPoint) < 450 then '1' "+ 
-             "when sum(PPoint) >=450 then '1.5' "+ 
-             "end "+ 
-" end as RateCom "+ 
-",CodeG , "+ 
-"case   when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000 "+ 
-"when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+ 
-"when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000  "+ 
-"when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000  "+ 
-"else 0 "+ 
-"  end as incentive  ,sum(PPoint) as point "+ 
-" From V802 " +  
-" Where   codeG = @user and Month(DocDate) = @month1 and  year(Docdate) = YEAR(GETDATE()) " +
-" Group by CodeG, tier " +
+ " select  case when sum(a.PPoint) < A1  then '0'   " +
+ "              when sum(a.PPoint) >=A1 and sum(a.PPoint) < A2 then Rate1 " +
+ "              when sum(a.PPoint) >=A3 and sum(a.PPoint) < A4 then Rate2   " +
+ "              when sum(a.PPoint) >=A5 then Rate3   " +
+ "              end as RateCom,sum(a.PPoint) as point , " +
+" 				case when sum(a.PPoint) < MPoint then '0' else cast(((sum(a.PPoint)  - c.MPoint)/c.PPoint) as int) * c.Incen end as  incentive, a.CodeG " +
+"  from V802 a  " +
+" 	inner join ItemTier b on b.CodeG = a.CodeG " +
+" 	inner join Tier c on c.Code = b.TierCode " +
+"  where a.CodeG = @user and Month(a.DocDate) =  @month1 and year(a.Docdate) = YEAR(GETDATE()) and b.YearCal = YEAR(GETDATE())+543 " +
+"  GROUP BY  " +
+"     c.A1, c.A2, c.A3, c.A4, c.A5, c.Rate1, c.Rate2, c.Rate3,c.MPoint, c.Incen,c.PPoint,a.CodeG " +
  " )c on c.CodeG = a.codeG " +
  " left join ( " +
      " select sum(tmp.S1) as s1 ,tmp.CodeG " +
@@ -632,41 +562,18 @@ function toThaiMonthString(date) {
  " Group by CodeG  " +
  " )b on b.CodeG = a.codeG " +
  " left join ( " +
- " Select  case when tier = '1' then "+ 
- "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+ 
-             "when sum(PPoint) >=500 and sum(PPoint) < 750 then '1' "+ 
-             "when sum(PPoint) >=750 then '1.5' "+ 
-             "end "+  
-"when tier = '2' then "+ 
-     "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+ 
-             "when sum(PPoint) >=500 and sum(PPoint) < 700 then '1' "+ 
-             "when sum(PPoint) >=700 then '1.5'"+ 
-             "end "+ 
-"when tier = '3' then "+ 
-     "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 450 then '0.5' "+ 
-             "when sum(PPoint) >=450 and sum(PPoint) < 550 then '1' "+ 
-             "when sum(PPoint) >=550 then '1.5'"+ 
-             "end "+ 
-"when tier = '4' then "+ 
-     "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 400 then '0.5' "+ 
-             "when sum(PPoint) >=400 and sum(PPoint) < 450 then '1' "+ 
-             "when sum(PPoint) >=450 then '1.5' "+ 
-             "end "+ 
-" end as RateCom "+ 
-",CodeG , "+ 
-"case   when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000 "+ 
-"when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+ 
-"when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000  "+ 
-"when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000  "+ 
-"else 0 "+ 
-"  end as incentive  ,sum(PPoint) as point "+ 
-" From V802 " +  
-" Where   codeG = @user2 and Month(DocDate) = @month12 and  year(Docdate) = YEAR(GETDATE()) "  +
-" Group by CodeG, tier " +
+ " select  case when sum(a.PPoint) < A1  then '0'   " +
+ "              when sum(a.PPoint) >=A1 and sum(a.PPoint) < A2 then Rate1 " +
+ "              when sum(a.PPoint) >=A3 and sum(a.PPoint) < A4 then Rate2   " +
+ "              when sum(a.PPoint) >=A5 then Rate3   " +
+ "              end as RateCom,sum(a.PPoint) as point , " +
+" 				case when sum(a.PPoint) < MPoint then '0' else cast(((sum(a.PPoint)  - c.MPoint)/c.PPoint) as int) * c.Incen end as  incentive, a.CodeG " +
+"  from V802 a  " +
+" 	inner join ItemTier b on b.CodeG = a.CodeG " +
+" 	inner join Tier c on c.Code = b.TierCode " +
+"  where a.codeG = @user2 and Month(a.DocDate) = @month12 and year(a.Docdate) = YEAR(GETDATE()) and b.YearCal = YEAR(GETDATE())+543 " +
+"  GROUP BY  " +
+"     c.A1, c.A2, c.A3, c.A4, c.A5, c.Rate1, c.Rate2, c.Rate3,c.MPoint, c.Incen,c.PPoint,a.CodeG " +
  " )c on c.CodeG = a.codeG " +
  " left join ( " +
      " select sum(tmp.S1) as s1 ,tmp.CodeG " +
@@ -720,41 +627,18 @@ function toThaiMonthString(date) {
  " Group by CodeG  " +
  " )b on b.CodeG = a.codeG " +
  " left join ( " +
- " Select  case when tier = '1' then "+ 
- "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+ 
-             "when sum(PPoint) >=500 and sum(PPoint) < 750 then '1' "+ 
-             "when sum(PPoint) >=750 then '1.5' "+ 
-             "end "+  
-"when tier = '2' then "+ 
-     "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+ 
-             "when sum(PPoint) >=500 and sum(PPoint) < 700 then '1' "+ 
-             "when sum(PPoint) >=700 then '1.5'"+ 
-             "end "+ 
-"when tier = '3' then "+ 
-     "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 450 then '0.5' "+ 
-             "when sum(PPoint) >=450 and sum(PPoint) < 550 then '1' "+ 
-             "when sum(PPoint) >=550 then '1.5'"+ 
-             "end "+ 
-"when tier = '4' then "+ 
-     "case when sum(PPoint) <350  then '0' "+ 
-             "when sum(PPoint) >=350 and sum(PPoint) < 400 then '0.5' "+ 
-             "when sum(PPoint) >=400 and sum(PPoint) < 450 then '1' "+ 
-             "when sum(PPoint) >=450 then '1.5' "+ 
-             "end "+ 
-" end as RateCom "+ 
-",CodeG , "+ 
-"case   when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000 "+ 
-"when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+ 
-"when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000  "+ 
-"when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000  "+ 
-"else 0 "+ 
-"  end as incentive  ,sum(PPoint) as point "+ 
-" From V802 " +  
-" Where   codeG = @user3 and Month(DocDate) = @month13 and  year(Docdate) = YEAR(GETDATE()) "  +
-" Group by CodeG, tier " +
+ " select  case when sum(a.PPoint) < A1  then '0'   " +
+ "              when sum(a.PPoint) >=A1 and sum(a.PPoint) < A2 then Rate1 " +
+ "              when sum(a.PPoint) >=A3 and sum(a.PPoint) < A4 then Rate2   " +
+ "              when sum(a.PPoint) >=A5 then Rate3   " +
+ "              end as RateCom,sum(a.PPoint) as point , " +
+" 				case when sum(a.PPoint) < MPoint then '0' else cast(((sum(a.PPoint)  - c.MPoint)/c.PPoint) as int) * c.Incen end as  incentive, a.CodeG " +
+"  from V802 a  " +
+" 	inner join ItemTier b on b.CodeG = a.CodeG " +
+" 	inner join Tier c on c.Code = b.TierCode " +
+"  where a.codeG = @user3 and Month(a.DocDate) = @month13 and year(a.Docdate) = YEAR(GETDATE()) and b.YearCal = YEAR(GETDATE())+543 " +
+"  GROUP BY  " +
+"     c.A1, c.A2, c.A3, c.A4, c.A5, c.Rate1, c.Rate2, c.Rate3,c.MPoint, c.Incen,c.PPoint,a.CodeG " +
  " )c on c.CodeG = a.codeG " +
  " left join ( " +
      " select sum(tmp.S1) as s1 ,tmp.CodeG " +
@@ -781,54 +665,63 @@ function toThaiMonthString(date) {
  " Where Month(DocDate) = @month3 and  a.codeG = @user3 and year(Docdate) = YEAR(GETDATE())   " +
  " Group by NameG,b.S1,c.RateCom,a.CodeG,c.incentive,e.s1,ISNULL(d.s1,0),c.point " ;
  const sqlPoPoint = "select sum(AmtN) as Sales, sum(PB) as Pb , sum(AmtPoint) as AmtPoint from POPOINT   where CodeG = @user4 and Month(DocDate) BETWEEN   @monthVar1 and @monthVar3 ";
- const RateCom = " with  " +
-                    "    Months AS  (  " +
-                    "                            SELECT 1 AS MonthNum  " +
-                    "                            UNION ALL  " +
-                    "                            SELECT MonthNum + 1 as MonthNum  FROM Months WHERE MonthNum <12  " +
-                    "                            ), " +
-                    "    monthTable as(  " +
-                    "                            SELECT  Right('0'+cast(MonthNum as VARCHAR(2)),2)  as MonthNum , " +
-                    "                                        CASE WHEN MonthNum IN (1,2,3)  then '1'  " +
-                    "                                        when MonthNum IN (4,5,6)  then '2'   " +
-                    "                                        when MonthNum IN (7,8,9) then '3'  " +
-                    "                                        else '4' end  as quater   " +
-                    "                            FROM Months  " +
-                    "                            )" +
-                    "                            select  tmp.CodeG , sum(tmp.incentive) as incentive , sum(tmp.point) as point  ," +
-                    "                                     case  " +
-                    "                                                                    when tier = '1' then  " +
-                    "                                                                                                            case when sum(tmp.point) < 350*3  then '0'   " +
-                    "                                                                                                                     when sum(tmp.point) >=350*3 and sum(tmp.point) < 500*3 then '0.5'   " +
-                    "                                                                                                                     when sum(tmp.point) >=500*3 and sum(tmp.point) < 750*3 then '1'   " +
-                    "                                                                                                                     when sum(tmp.point) >=750*3 then '1.5'  end    " +
-                    "                                                                    when tier = '2' then   " +
-                    "                                                                                                            case when sum(tmp.point) < 350*3  then '0'  " +
-                    "                                                                                                                     when sum(tmp.point)>=350*3 and sum(tmp.point) < 500*3 then '0.5'   " +
-                    "                                                                                                                     when sum(tmp.point) >=500*3 and sum(tmp.point) < 700*3 then '1'   " +
-                    "                                                                                                                     when sum(tmp.point) >=700*3 then '1.5' end   " +
-                    "                                                                    when tier = '3' then   " +
-                    "                                                                                                            case when sum(tmp.point) < 350*3  then '0'   " +
-                    "                                                                                                                     when sum(tmp.point) >=350*3 and sum(tmp.point) < 450*3 then '0.5'   " +
-                    "                                                                                                                     when sum(tmp.point) >=450*3 and sum(tmp.point) < 550*3 then '1'   " +
-                    "                                                                                                                     when sum(tmp.point) >=550*3 then '1.5' end   " +
-                    "                                                                  when tier = '4' then   " +
-                    "                                                                                                            case when sum(tmp.point) < 350*3  then '0'   " +
-                    "                                                                                                                     when sum(tmp.point) >=350*3 and sum(tmp.point) < 400*3 then '0.5'   " +
-                    "                                                                                                                     when sum(tmp.point) >=400*3 and sum(tmp.point) < 450*3 then '1'   " +
-                    "                                                                                                                     when sum(tmp.point) >=450*3 then '1.5' end   " +
-                    "                                                    end as RateCom" +
-                    "                                from ( " +
-                    "                                             select" +
-                    "                                                    case when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000   " +
-                    "                                                             when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000   " +
-                    "                                                             when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000    " +
-                    "                                                             when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000   " +
-                    "                                                 else 0  end as incentive ,sum(PPoint) as point ,a.CodeG,Month(DocDate) as mon ,tier" +
-                    "                                         From V802 a  " +
-                    "                                         Where  Month(DocDate) in (select  MonthNum from monthTable where quater = @quater  and a.CodeG = @user5) and year(Docdate) = year(GETDATE()) " +
-                    "                                         Group by a.CodeG, tier,Month(DocDate) " +
-                    "                                         ) tmp GROUP BY tmp.codeG ,tmp.tier ";
+                    const RateCom = `
+  WITH  
+    Months AS (  
+        SELECT 1 AS MonthNum  
+        UNION ALL  
+        SELECT MonthNum + 1 FROM Months WHERE MonthNum < 12  
+    ), 
+    monthTable AS (  
+        SELECT  
+            RIGHT('0' + CAST(MonthNum AS VARCHAR(2)), 2) AS MonthNum, 
+            CASE 
+                WHEN MonthNum IN (1,2,3) THEN '1'  
+                WHEN MonthNum IN (4,5,6) THEN '2'   
+                WHEN MonthNum IN (7,8,9) THEN '3'  
+                ELSE '4' 
+            END AS quater,
+            MonthNum AS monthOri    
+        FROM Months  
+    )
+SELECT  
+    tmp.CodeG, 
+    SUM(tmp.incentive) AS incentive, 
+    SUM(tmp.point) AS point,
+    CASE  
+        WHEN SUM(tmp.point) < tmp.A1 * 3 THEN '0'   
+        WHEN SUM(tmp.point) >= tmp.A1 * 3 AND SUM(tmp.point) < tmp.A2 * 3 THEN tmp.Rate1 
+        WHEN SUM(tmp.point) >= tmp.A3 * 3 AND SUM(tmp.point) < tmp.A4 * 3 THEN tmp.Rate2   
+        WHEN SUM(tmp.point) >= tmp.A5 * 3 THEN tmp.Rate3  
+    END AS RateCom 
+FROM ( 
+    SELECT 
+        a.CodeG,
+        SUM(a.PPoint) AS point,
+        CASE 
+            WHEN SUM(a.PPoint) < c.MPoint THEN '0'
+            ELSE CAST(((SUM(a.PPoint) - c.MPoint) / c.PPoint) AS INT) * c.Incen
+        END AS incentive,
+        MONTH(a.DocDate) AS mon,
+        c.A1, c.A2, c.A3, c.A4, c.A5, 
+        c.Rate1, c.Rate2, c.Rate3,
+        c.MPoint, c.PPoint, c.Incen,
+        b.TierCode as tier
+    FROM 
+        V802 a  
+        INNER JOIN ItemTier b ON b.CodeG = a.CodeG 
+        INNER JOIN Tier c ON c.Code = b.TierCode 
+    WHERE  
+         Month(a.DocDate) in (select  MonthNum from monthTable where quater = @quater  and a.CodeG = @user5)
+        AND YEAR(a.DocDate) = YEAR(GETDATE()) 
+				and b.YearCal = YEAR(GETDATE())+543   
+    GROUP BY 
+        a.CodeG, c.A1, c.A2, c.A3, c.A4, c.A5, 
+        c.Rate1, c.Rate2, c.Rate3, c.MPoint, c.PPoint, c.Incen, b.TierCode, MONTH(a.DocDate)
+) tmp 
+GROUP BY 
+    tmp.CodeG, tmp.tier, tmp.A1, tmp.A2, tmp.A3, tmp.A4, tmp.A5, tmp.Rate1, tmp.Rate2, tmp.Rate3
+    `;
         const monthVar = req.body.month;
         if(monthVar ==1){
             monthFil = '1';
@@ -990,8 +883,9 @@ function toThaiMonthString(date) {
         console.log(data4)
         res.render('quaterPage2',{data,data2,data3,data4,data5,monthTh1,monthTh2,monthTh3,monthFil,surName,lastName});
         } catch (err) {
-          // ... handle it locally
-          res.status(500).send("error");
+            res.status(500).send("error");
+            throw new Error(err.message);
+        //   res.status(500).send("error");
         }
     });
     router.get('/quaterPage3',async function(req,res){
@@ -1011,40 +905,43 @@ function toThaiMonthString(date) {
                     "                            FROM Months "+ 
                     "                            ),"+ 
                     "    newRate as ("+ 
-                    "                   select  tmp.CodeG , sum(tmp.incentive) as incentive , sum(tmp.point) as point  , " + 
-                    "                        case "+  
-                    "                                                                          when tier = '1' then "+  
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 500*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=500*3 and sum(tmp.point) < 750*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=750*3 then '1.5'  end "+    
-                    "                                                                          when tier = '2' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+  
-                    "                                                                                                                           when sum(tmp.point)>=350*3 and sum(tmp.point) < 500*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=500*3 and sum(tmp.point) < 700*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=700*3 then '1.5' end "+   
-                    "                                                                          when tier = '3' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 450*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=450*3 and sum(tmp.point) < 550*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=550*3 then '1.5' end "+   
-                    "                                                                        when tier = '4' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 400*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=400*3 and sum(tmp.point) < 450*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=450*3 then '1.5' end "+   
-                    "                                                          end as RateCom "+
-                    "                                      from ( "+ 
-                    "                                                   select "+
-                    "                                                          case when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000 "+   
-                    "                                                                   when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+   
-                    "                                                                   when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000 "+    
-                    "                                                                   when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000 "+   
-                    "                                                       else 0  end as incentive ,sum(PPoint) as point ,a.CodeG,Month(DocDate) as mon ,tier "+
-                    "                                               From V802 a "+  
-                    "                                               Where  Month(DocDate) in (select  MonthNum from monthTable where quater = '1' ) and  year(Docdate) = YEAR(GETDATE()) "+  
-                    "                                               Group by a.CodeG, tier,Month(DocDate) "+ 
-                    "                                               ) tmp GROUP BY tmp.codeG ,tmp.tier "+ 
+                                            `select
+                                            tmp.CodeG, 
+                        SUM(tmp.incentive) AS incentive, 
+                        SUM(tmp.point) AS point,
+                        CASE  
+                        WHEN SUM(tmp.point) < tmp.A1 * 3 THEN '0'   
+                        WHEN SUM(tmp.point) >= tmp.A1 * 3 AND SUM(tmp.point) < tmp.A2 * 3 THEN tmp.Rate1 
+                        WHEN SUM(tmp.point) >= tmp.A3 * 3 AND SUM(tmp.point) < tmp.A4 * 3 THEN tmp.Rate2   
+                        WHEN SUM(tmp.point) >= tmp.A5 * 3 THEN tmp.Rate3  
+                        END AS RateCom
+                                            from(
+                                SELECT 
+                        a.CodeG,
+                        SUM(a.PPoint) AS point,
+                        CASE 
+                        WHEN SUM(a.PPoint) < c.MPoint THEN '0'
+                        ELSE CAST(((SUM(a.PPoint) - c.MPoint) / c.PPoint) AS INT) * c.Incen
+                        END AS incentive,
+                        MONTH(a.DocDate) AS mon,
+                        c.A1, c.A2, c.A3, c.A4, c.A5, 
+                        c.Rate1, c.Rate2, c.Rate3,
+                        c.MPoint, c.PPoint, c.Incen,
+                        b.TierCode as tier
+                        FROM 
+                        V802 a  
+                        INNER JOIN ItemTier b ON b.CodeG = a.CodeG 
+                        INNER JOIN Tier c ON c.Code = b.TierCode 
+                        WHERE  
+                        Month(a.DocDate) in (select  MonthNum from monthTable where quater = '1')
+                        AND YEAR(a.DocDate) = YEAR(GETDATE()) 
+                        and b.YearCal = YEAR(GETDATE())+543   
+                        GROUP BY 
+                        a.CodeG, c.A1, c.A2, c.A3, c.A4, c.A5, 
+                        c.Rate1, c.Rate2, c.Rate3, c.MPoint, c.PPoint, c.Incen, b.TierCode, MONTH(a.DocDate)
+                        ) tmp 
+                        GROUP BY 
+                        tmp.CodeG, tmp.tier, tmp.A1, tmp.A2, tmp.A3, tmp.A4, tmp.A5, tmp.Rate1, tmp.Rate2, tmp.Rate3` +   
                     "                        )"+ 
                     "            Select   "+ 
                     "                 0 as num, "+ 
@@ -1076,22 +973,18 @@ function toThaiMonthString(date) {
                     "                             Group by CodeG  "+ 
                     "                            )b on b.CodeG = a.codeG "+ 
                     "                left join ( "+ 
-                    "                            Select  case  "+ 
-                    "                             when sum(PPoint) <1050 then '0'  "+ 
-                    "                             when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'  "+ 
-                    "                             when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1' "+ 
-                    "                             when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5' "+ 
-                    "                             when sum(PPoint) >= 3900   then '1.5' "+ 
-                    "                             end as RateCom ,CodeG ,  "+ 
-                    "                                case    when sum(PPoint) <1050 then 0   "+ 
-                    "                                        when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   "+ 
-                    "                                           when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000  "+ 
-                    "                                            when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000  "+ 
-                    "                                            when sum(PPoint) >= 3900   then 60000 "+ 
-                    "                                  end as incentive , sum(PPoint) as point"+ 
-                    "                             From V802   "+ 
-                    "                             Where   codeG = @user and Month(DocDate) BETWEEN   '01' and '03'  and  year(Docdate) = YEAR(GETDATE())   "+ 
-                    "                             Group by CodeG  "+ 
+                                                " select  case when sum(a.PPoint) < A1  then '0'   " +
+                                                "              when sum(a.PPoint) >=A1 and sum(a.PPoint) < A2 then Rate1 " +
+                                                 "              when sum(a.PPoint) >=A3 and sum(a.PPoint) < A4 then Rate2   " +
+                                                 "              when sum(a.PPoint) >=A5 then Rate3   " +
+                                                 "              end as RateCom,sum(a.PPoint) as point , " +
+                                                " 				case when sum(a.PPoint) < MPoint then '0' else cast(((sum(a.PPoint)  - c.MPoint)/c.PPoint) as int) * c.Incen end as  incentive, a.CodeG " +
+                                                "  from V802 a  " +
+                                                " 	inner join ItemTier b on b.CodeG = a.CodeG " +
+                                                " 	inner join Tier c on c.Code = b.TierCode " +
+                                                "  where a.codeG = @user and Month(a.DocDate) BETWEEN   '01' and '03' and year(a.Docdate) = YEAR(GETDATE()) and b.YearCal = YEAR(GETDATE())+543 " +
+                                                "  GROUP BY  " +
+                                                "     c.A1, c.A2, c.A3, c.A4, c.A5, c.Rate1, c.Rate2, c.Rate3,c.MPoint, c.Incen,c.PPoint,a.CodeG " +
                     "                        )c on c.CodeG = a.codeG "+ 
                     "                left join ( "+ 
                     "                             select sum(tmp.S1) as s1 ,tmp.CodeG "+ 
@@ -1133,40 +1026,43 @@ function toThaiMonthString(date) {
                     "                            FROM Months "+ 
                     "                            ),"+ 
                     "    newRate as ("+ 
-                    "                   select  tmp.CodeG , sum(tmp.incentive) as incentive , sum(tmp.point) as point  , " + 
-                    "                        case "+  
-                    "                                                                          when tier = '1' then "+  
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 500*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=500*3 and sum(tmp.point) < 750*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=750*3 then '1.5'  end "+    
-                    "                                                                          when tier = '2' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+  
-                    "                                                                                                                           when sum(tmp.point)>=350*3 and sum(tmp.point) < 500*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=500*3 and sum(tmp.point) < 700*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=700*3 then '1.5' end "+   
-                    "                                                                          when tier = '3' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 450*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=450*3 and sum(tmp.point) < 550*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=550*3 then '1.5' end "+   
-                    "                                                                        when tier = '4' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 400*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=400*3 and sum(tmp.point) < 450*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=450*3 then '1.5' end "+   
-                    "                                                          end as RateCom "+
-                    "                                      from ( "+ 
-                    "                                                   select "+
-                    "                                                          case when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000 "+   
-                    "                                                                   when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+   
-                    "                                                                   when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000 "+    
-                    "                                                                   when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000 "+   
-                    "                                                       else 0  end as incentive ,sum(PPoint) as point ,a.CodeG,Month(DocDate) as mon ,tier "+
-                    "                                               From V802 a "+  
-                    "                                               Where  Month(DocDate) in (select  MonthNum from monthTable where quater = '2' ) and  year(Docdate) = YEAR(GETDATE()) "+  
-                    "                                               Group by a.CodeG, tier,Month(DocDate) "+ 
-                    "                                               ) tmp GROUP BY tmp.codeG ,tmp.tier "+ 
+                    `select
+                    tmp.CodeG, 
+SUM(tmp.incentive) AS incentive, 
+SUM(tmp.point) AS point,
+CASE  
+WHEN SUM(tmp.point) < tmp.A1 * 3 THEN '0'   
+WHEN SUM(tmp.point) >= tmp.A1 * 3 AND SUM(tmp.point) < tmp.A2 * 3 THEN tmp.Rate1 
+WHEN SUM(tmp.point) >= tmp.A3 * 3 AND SUM(tmp.point) < tmp.A4 * 3 THEN tmp.Rate2   
+WHEN SUM(tmp.point) >= tmp.A5 * 3 THEN tmp.Rate3  
+END AS RateCom
+                    from(
+        SELECT 
+a.CodeG,
+SUM(a.PPoint) AS point,
+CASE 
+WHEN SUM(a.PPoint) < c.MPoint THEN '0'
+ELSE CAST(((SUM(a.PPoint) - c.MPoint) / c.PPoint) AS INT) * c.Incen
+END AS incentive,
+MONTH(a.DocDate) AS mon,
+c.A1, c.A2, c.A3, c.A4, c.A5, 
+c.Rate1, c.Rate2, c.Rate3,
+c.MPoint, c.PPoint, c.Incen,
+b.TierCode as tier
+FROM 
+V802 a  
+INNER JOIN ItemTier b ON b.CodeG = a.CodeG 
+INNER JOIN Tier c ON c.Code = b.TierCode 
+WHERE  
+Month(a.DocDate) in (select  MonthNum from monthTable where quater = '1'  )
+AND YEAR(a.DocDate) = YEAR(GETDATE()) 
+and b.YearCal = YEAR(GETDATE())+543   
+GROUP BY 
+a.CodeG, c.A1, c.A2, c.A3, c.A4, c.A5, 
+c.Rate1, c.Rate2, c.Rate3, c.MPoint, c.PPoint, c.Incen, b.TierCode, MONTH(a.DocDate)
+) tmp 
+GROUP BY 
+tmp.CodeG, tmp.tier, tmp.A1, tmp.A2, tmp.A3, tmp.A4, tmp.A5, tmp.Rate1, tmp.Rate2, tmp.Rate3` +   
                     "                        )"+ 
                     "            Select   "+ 
                     "                 0 as num, "+ 
@@ -1198,22 +1094,18 @@ function toThaiMonthString(date) {
                     "                             Group by CodeG  "+ 
                     "                            )b on b.CodeG = a.codeG "+ 
                     "                left join ( "+ 
-                    "                            Select  case  "+ 
-                    "                             when sum(PPoint) <1050 then '0'  "+ 
-                    "                             when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'  "+ 
-                    "                             when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1' "+ 
-                    "                             when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5' "+ 
-                    "                             when sum(PPoint) >= 3900   then '1.5' "+ 
-                    "                             end as RateCom ,CodeG ,  "+ 
-                    "                                case    when sum(PPoint) <1050 then 0   "+ 
-                    "                                        when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   "+ 
-                    "                                           when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000  "+ 
-                    "                                            when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000  "+ 
-                    "                                            when sum(PPoint) >= 3900   then 60000 "+ 
-                    "                                  end as incentive , sum(PPoint) as point"+ 
-                    "                             From V802   "+ 
-                    "                             Where   codeG = @user2 and Month(DocDate) BETWEEN   '04' and '06'  and  year(Docdate) = YEAR(GETDATE())   "+ 
-                    "                             Group by CodeG  "+ 
+                    " select  case when sum(a.PPoint) < A1  then '0'   " +
+                    "              when sum(a.PPoint) >=A1 and sum(a.PPoint) < A2 then Rate1 " +
+                     "              when sum(a.PPoint) >=A3 and sum(a.PPoint) < A4 then Rate2   " +
+                     "              when sum(a.PPoint) >=A5 then Rate3   " +
+                     "              end as RateCom,sum(a.PPoint) as point , " +
+                    " 				case when sum(a.PPoint) < MPoint then '0' else cast(((sum(a.PPoint)  - c.MPoint)/c.PPoint) as int) * c.Incen end as  incentive, a.CodeG " +
+                    "  from V802 a  " +
+                    " 	inner join ItemTier b on b.CodeG = a.CodeG " +
+                    " 	inner join Tier c on c.Code = b.TierCode " +
+                    "  where a.codeG = @user2 and Month(a.DocDate) BETWEEN   '04' and '06' and year(a.Docdate) = YEAR(GETDATE()) and b.YearCal = YEAR(GETDATE())+543 " +
+                    "  GROUP BY  " +
+                    "     c.A1, c.A2, c.A3, c.A4, c.A5, c.Rate1, c.Rate2, c.Rate3,c.MPoint, c.Incen,c.PPoint,a.CodeG " +
                     "                        )c on c.CodeG = a.codeG "+ 
                     "                left join ( "+ 
                     "                             select sum(tmp.S1) as s1 ,tmp.CodeG "+ 
@@ -1255,40 +1147,43 @@ function toThaiMonthString(date) {
                     "                            FROM Months "+ 
                     "                            ),"+ 
                     "    newRate as ("+ 
-                    "                   select  tmp.CodeG , sum(tmp.incentive) as incentive , sum(tmp.point) as point  , " + 
-                    "                        case "+  
-                    "                                                                          when tier = '1' then "+  
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 500*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=500*3 and sum(tmp.point) < 750*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=750*3 then '1.5'  end "+    
-                    "                                                                          when tier = '2' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+  
-                    "                                                                                                                           when sum(tmp.point)>=350*3 and sum(tmp.point) < 500*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=500*3 and sum(tmp.point) < 700*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=700*3 then '1.5' end "+   
-                    "                                                                          when tier = '3' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 450*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=450*3 and sum(tmp.point) < 550*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=550*3 then '1.5' end "+   
-                    "                                                                        when tier = '4' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 400*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=400*3 and sum(tmp.point) < 450*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=450*3 then '1.5' end "+   
-                    "                                                          end as RateCom "+
-                    "                                      from ( "+ 
-                    "                                                   select "+
-                    "                                                          case when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000 "+   
-                    "                                                                   when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+   
-                    "                                                                   when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000 "+    
-                    "                                                                   when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000 "+   
-                    "                                                       else 0  end as incentive ,sum(PPoint) as point ,a.CodeG,Month(DocDate) as mon ,tier "+
-                    "                                               From V802 a "+  
-                    "                                               Where  Month(DocDate) in (select  MonthNum from monthTable where quater = '3' ) and  year(Docdate) = YEAR(GETDATE()) "+  
-                    "                                               Group by a.CodeG, tier,Month(DocDate) "+ 
-                    "                                               ) tmp GROUP BY tmp.codeG ,tmp.tier "+ 
+                    `select
+                    tmp.CodeG, 
+SUM(tmp.incentive) AS incentive, 
+SUM(tmp.point) AS point,
+CASE  
+WHEN SUM(tmp.point) < tmp.A1 * 3 THEN '0'   
+WHEN SUM(tmp.point) >= tmp.A1 * 3 AND SUM(tmp.point) < tmp.A2 * 3 THEN tmp.Rate1 
+WHEN SUM(tmp.point) >= tmp.A3 * 3 AND SUM(tmp.point) < tmp.A4 * 3 THEN tmp.Rate2   
+WHEN SUM(tmp.point) >= tmp.A5 * 3 THEN tmp.Rate3  
+END AS RateCom
+                    from(
+        SELECT 
+a.CodeG,
+SUM(a.PPoint) AS point,
+CASE 
+WHEN SUM(a.PPoint) < c.MPoint THEN '0'
+ELSE CAST(((SUM(a.PPoint) - c.MPoint) / c.PPoint) AS INT) * c.Incen
+END AS incentive,
+MONTH(a.DocDate) AS mon,
+c.A1, c.A2, c.A3, c.A4, c.A5, 
+c.Rate1, c.Rate2, c.Rate3,
+c.MPoint, c.PPoint, c.Incen,
+b.TierCode as tier
+FROM 
+V802 a  
+INNER JOIN ItemTier b ON b.CodeG = a.CodeG 
+INNER JOIN Tier c ON c.Code = b.TierCode 
+WHERE  
+Month(a.DocDate) in (select  MonthNum from monthTable where quater = '3'  )
+AND YEAR(a.DocDate) = YEAR(GETDATE()) 
+and b.YearCal = YEAR(GETDATE())+543   
+GROUP BY 
+a.CodeG, c.A1, c.A2, c.A3, c.A4, c.A5, 
+c.Rate1, c.Rate2, c.Rate3, c.MPoint, c.PPoint, c.Incen, b.TierCode, MONTH(a.DocDate)
+) tmp 
+GROUP BY 
+tmp.CodeG, tmp.tier, tmp.A1, tmp.A2, tmp.A3, tmp.A4, tmp.A5, tmp.Rate1, tmp.Rate2, tmp.Rate3` +   
                     "                        )"+ 
                     "            Select   "+ 
                     "                 0 as num, "+ 
@@ -1320,22 +1215,18 @@ function toThaiMonthString(date) {
                     "                             Group by CodeG  "+ 
                     "                            )b on b.CodeG = a.codeG "+ 
                     "                left join ( "+ 
-                    "                            Select  case  "+ 
-                    "                             when sum(PPoint) <1050 then '0'  "+ 
-                    "                             when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'  "+ 
-                    "                             when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1' "+ 
-                    "                             when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5' "+ 
-                    "                             when sum(PPoint) >= 3900   then '1.5' "+ 
-                    "                             end as RateCom ,CodeG ,  "+ 
-                    "                                case    when sum(PPoint) <1050 then 0   "+ 
-                    "                                        when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   "+ 
-                    "                                           when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000  "+ 
-                    "                                            when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000  "+ 
-                    "                                            when sum(PPoint) >= 3900   then 60000 "+ 
-                    "                                  end as incentive , sum(PPoint) as point"+ 
-                    "                             From V802   "+ 
-                    "                             Where   codeG = @user3 and Month(DocDate) BETWEEN   '07' and '09'  and  year(Docdate) = YEAR(GETDATE())   "+ 
-                    "                             Group by CodeG  "+ 
+                    " select  case when sum(a.PPoint) < A1  then '0'   " +
+                    "              when sum(a.PPoint) >=A1 and sum(a.PPoint) < A2 then Rate1 " +
+                     "              when sum(a.PPoint) >=A3 and sum(a.PPoint) < A4 then Rate2   " +
+                     "              when sum(a.PPoint) >=A5 then Rate3   " +
+                     "              end as RateCom,sum(a.PPoint) as point , " +
+                    " 				case when sum(a.PPoint) < MPoint then '0' else cast(((sum(a.PPoint)  - c.MPoint)/c.PPoint) as int) * c.Incen end as  incentive, a.CodeG " +
+                    "  from V802 a  " +
+                    " 	inner join ItemTier b on b.CodeG = a.CodeG " +
+                    " 	inner join Tier c on c.Code = b.TierCode " +
+                    "  where a.codeG = @user3 and Month(a.DocDate) BETWEEN   '07' and '09' and year(a.Docdate) = YEAR(GETDATE()) and b.YearCal = YEAR(GETDATE())+543 " +
+                    "  GROUP BY  " +
+                    "     c.A1, c.A2, c.A3, c.A4, c.A5, c.Rate1, c.Rate2, c.Rate3,c.MPoint, c.Incen,c.PPoint,a.CodeG " +
                     "                        )c on c.CodeG = a.codeG "+ 
                     "                left join ( "+ 
                     "                             select sum(tmp.S1) as s1 ,tmp.CodeG "+ 
@@ -1377,40 +1268,43 @@ function toThaiMonthString(date) {
                     "                            FROM Months "+ 
                     "                            ),"+ 
                     "    newRate as ("+ 
-                    "                   select  tmp.CodeG , sum(tmp.incentive) as incentive , sum(tmp.point) as point  , " + 
-                    "                        case "+  
-                    "                                                                          when tier = '1' then "+  
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 500*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=500*3 and sum(tmp.point) < 750*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=750*3 then '1.5'  end "+    
-                    "                                                                          when tier = '2' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+  
-                    "                                                                                                                           when sum(tmp.point)>=350*3 and sum(tmp.point) < 500*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=500*3 and sum(tmp.point) < 700*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=700*3 then '1.5' end "+   
-                    "                                                                          when tier = '3' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 450*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=450*3 and sum(tmp.point) < 550*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=550*3 then '1.5' end "+   
-                    "                                                                        when tier = '4' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 400*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=400*3 and sum(tmp.point) < 450*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=450*3 then '1.5' end "+   
-                    "                                                          end as RateCom "+
-                    "                                      from ( "+ 
-                    "                                                   select "+
-                    "                                                          case when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000 "+   
-                    "                                                                   when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+   
-                    "                                                                   when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000 "+    
-                    "                                                                   when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000 "+   
-                    "                                                       else 0  end as incentive ,sum(PPoint) as point ,a.CodeG,Month(DocDate) as mon ,tier "+
-                    "                                               From V802 a "+  
-                    "                                               Where  Month(DocDate) in (select  MonthNum from monthTable where quater = '4' ) and  year(Docdate) = YEAR(GETDATE()) "+  
-                    "                                               Group by a.CodeG, tier,Month(DocDate) "+ 
-                    "                                               ) tmp GROUP BY tmp.codeG ,tmp.tier "+ 
+                    `select
+                    tmp.CodeG, 
+SUM(tmp.incentive) AS incentive, 
+SUM(tmp.point) AS point,
+CASE  
+WHEN SUM(tmp.point) < tmp.A1 * 3 THEN '0'   
+WHEN SUM(tmp.point) >= tmp.A1 * 3 AND SUM(tmp.point) < tmp.A2 * 3 THEN tmp.Rate1 
+WHEN SUM(tmp.point) >= tmp.A3 * 3 AND SUM(tmp.point) < tmp.A4 * 3 THEN tmp.Rate2   
+WHEN SUM(tmp.point) >= tmp.A5 * 3 THEN tmp.Rate3  
+END AS RateCom
+                    from(
+        SELECT 
+a.CodeG,
+SUM(a.PPoint) AS point,
+CASE 
+WHEN SUM(a.PPoint) < c.MPoint THEN '0'
+ELSE CAST(((SUM(a.PPoint) - c.MPoint) / c.PPoint) AS INT) * c.Incen
+END AS incentive,
+MONTH(a.DocDate) AS mon,
+c.A1, c.A2, c.A3, c.A4, c.A5, 
+c.Rate1, c.Rate2, c.Rate3,
+c.MPoint, c.PPoint, c.Incen,
+b.TierCode as tier
+FROM 
+V802 a  
+INNER JOIN ItemTier b ON b.CodeG = a.CodeG 
+INNER JOIN Tier c ON c.Code = b.TierCode 
+WHERE  
+Month(a.DocDate) in (select  MonthNum from monthTable where quater = '4'  )
+AND YEAR(a.DocDate) = YEAR(GETDATE()) 
+and b.YearCal = YEAR(GETDATE())+543   
+GROUP BY 
+a.CodeG, c.A1, c.A2, c.A3, c.A4, c.A5, 
+c.Rate1, c.Rate2, c.Rate3, c.MPoint, c.PPoint, c.Incen, b.TierCode, MONTH(a.DocDate)
+) tmp 
+GROUP BY 
+tmp.CodeG, tmp.tier, tmp.A1, tmp.A2, tmp.A3, tmp.A4, tmp.A5, tmp.Rate1, tmp.Rate2, tmp.Rate3` +   
                     "                        )"+ 
                     "            Select   "+ 
                     "                 0 as num, "+ 
@@ -1442,22 +1336,18 @@ function toThaiMonthString(date) {
                     "                             Group by CodeG  "+ 
                     "                            )b on b.CodeG = a.codeG "+ 
                     "                left join ( "+ 
-                    "                            Select  case  "+ 
-                    "                             when sum(PPoint) <1050 then '0'  "+ 
-                    "                             when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'  "+ 
-                    "                             when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1' "+ 
-                    "                             when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5' "+ 
-                    "                             when sum(PPoint) >= 3900   then '1.5' "+ 
-                    "                             end as RateCom ,CodeG ,  "+ 
-                    "                                case    when sum(PPoint) <1050 then 0   "+ 
-                    "                                        when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   "+ 
-                    "                                           when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000  "+ 
-                    "                                            when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000  "+ 
-                    "                                            when sum(PPoint) >= 3900   then 60000 "+ 
-                    "                                  end as incentive , sum(PPoint) as point"+ 
-                    "                             From V802   "+ 
-                    "                             Where   codeG = @user4 and Month(DocDate) BETWEEN   '10' and '12'  and  year(Docdate) = YEAR(GETDATE())   "+ 
-                    "                             Group by CodeG  "+ 
+                    " select  case when sum(a.PPoint) < A1  then '0'   " +
+                    "              when sum(a.PPoint) >=A1 and sum(a.PPoint) < A2 then Rate1 " +
+                     "              when sum(a.PPoint) >=A3 and sum(a.PPoint) < A4 then Rate2   " +
+                     "              when sum(a.PPoint) >=A5 then Rate3   " +
+                     "              end as RateCom,sum(a.PPoint) as point , " +
+                    " 				case when sum(a.PPoint) < MPoint then '0' else cast(((sum(a.PPoint)  - c.MPoint)/c.PPoint) as int) * c.Incen end as  incentive, a.CodeG " +
+                    "  from V802 a  " +
+                    " 	inner join ItemTier b on b.CodeG = a.CodeG " +
+                    " 	inner join Tier c on c.Code = b.TierCode " +
+                    "  where a.codeG = @user4 and Month(a.DocDate) BETWEEN   '10' and '12' and year(a.Docdate) = YEAR(GETDATE()) and b.YearCal = YEAR(GETDATE())+543 " +
+                    "  GROUP BY  " +
+                    "     c.A1, c.A2, c.A3, c.A4, c.A5, c.Rate1, c.Rate2, c.Rate3,c.MPoint, c.Incen,c.PPoint,a.CodeG " +
                     "                        )c on c.CodeG = a.codeG "+ 
                     "                left join ( "+ 
                     "                             select sum(tmp.S1) as s1 ,tmp.CodeG "+ 
@@ -1492,20 +1382,8 @@ function toThaiMonthString(date) {
     " CAST(ISNULL(Sum(Amt),0) AS DECIMAL(30,2)) as sales , " +
     " CAST(ISNULL(Sum(PB),0) AS DECIMAL(30,2)) as PB,  " +
     " CAST(ISNULL(Sum(PPoint),0) AS DECIMAL(30,2)) as POINTSALE , " +
-    " case  " +
-   " when sum(PPoint) <1050 then '0'  " +
-   " when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'   " +
-   " when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1'  " +
-   " when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5'  " +
-   " when sum(PPoint) >= 3900   then '1.5'  " +
-   " end as RateCom , " +
-   "  case  " +
-   "  when sum(PPoint) <1050 then 0   " +
-   "   when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   " +
-   "     when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000  " +
-   "       when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000  " +
-   "           when sum(PPoint) >= 3900   then 60000 " +
-   "  end as incentive,         " +
+    "  c.RateCom , " +
+   "   c.incentive,  " +
    " CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI,  " +
    "  CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP, " +
    " CAST(ISNULL(((Sum(PB) - ISNULL(b.s1,0)-  case when @quater5 = '1' then '0.00' else (e.s1-ISNULL(d.s1,0)) end  )*c.RateCom/100 + case when c.point <1050 then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end + case  " +
@@ -1538,22 +1416,18 @@ function toThaiMonthString(date) {
     " Group by CodeG  " +
     " )b on b.CodeG = a.codeG " +
     " left join ( " +
-   " Select  case  " +
-    " when sum(PPoint) <1050 then '0'  " +
-    " when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'  " +
-    " when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1' " +
-    " when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5' " +
-    " when sum(PPoint) >= 3900   then '1.5' " +
-    " end as RateCom ,CodeG ,  " +
-        " case    when sum(PPoint) <1050 then 0   " +
-                  " when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   " +
-                    "  when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000  " +
-                    "   when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000  " +
-                    "   when sum(PPoint) >= 3900   then 60000 " +
-            " end as incentive, sum(PPoint) as point " +
-    " From V802   " +
-    " Where   codeG = @user6 and   year(Docdate) = YEAR(GETDATE())   " +
-    " Group by CodeG  " +
+    `select  case when sum(a.PPoint) < A1  then '0'   
+    when sum(a.PPoint) >=A1 and sum(a.PPoint) < A2 then Rate1 
+    when sum(a.PPoint) >=A3 and sum(a.PPoint) < A4 then Rate2   
+    when sum(a.PPoint) >=A5 then Rate3   
+    end as RateCom,sum(a.PPoint) as point , 
+       case when sum(a.PPoint) < MPoint then '0' else cast(((sum(a.PPoint)  - c.MPoint)/c.PPoint) as int) * c.Incen end as  incentive, a.CodeG 
+from V802 a  
+inner join ItemTier b on b.CodeG = a.CodeG 
+inner join Tier c on c.Code = b.TierCode 
+where a.CodeG = @user6 and year(a.Docdate) = YEAR(GETDATE()) and b.YearCal = YEAR(GETDATE())+543 
+GROUP BY  
+c.A1, c.A2, c.A3, c.A4, c.A5, c.Rate1, c.Rate2, c.Rate3,c.MPoint, c.Incen,c.PPoint,a.CodeG ` +
     " )c on c.CodeG = a.codeG " +
     " left join ( " +
         " select sum(tmp.S1) as s1 ,tmp.CodeG " +
@@ -1675,24 +1549,19 @@ function toThaiMonthString(date) {
            }]
 
         let sumPPoint =  data[0].POINTSALE+ data2[0].POINTSALE+data3[0].POINTSALE+data4[0].POINTSALE;
+        console.log(sumPPoint);
         let rateComSum = 0 ;
 
-        switch (true) {
-            case sumPPoint< 1050:
-                rateComSum = 0;
-                break;
-            case sumPPoint< 1050 && sumPPoint< 1950:
-                rateComSum = 0.5;
-                break;
-            case sumPPoint< 1950 && sumPPoint< 3000:
-                rateComSum = 1;
-                break;
-            case sumPPoint< 3000 && sumPPoint< 3900:
-                rateComSum = 1.5;
-                break;
-            case sumPPoint>= 3900:
-                rateComSum = 1.5;
-                break;         
+        if (sumPPoint < 1050) {
+            rateComSum = 0;
+        } else if (sumPPoint >= 1050 && sumPPoint < 1950) {
+            rateComSum = 0.5;
+        } else if (sumPPoint >= 1950 && sumPPoint < 3000) {
+            rateComSum = 1;
+        } else if (sumPPoint >= 3000 && sumPPoint < 3900) {
+            rateComSum = 1.5;
+        } else if (sumPPoint >= 3900) {
+            rateComSum = 1.5;
         }
         console.log(result6.recordset)
             console.log(data7[0].AmtPoint)

@@ -1,28 +1,54 @@
 const express = require('express');
 const router = express.Router();
-var mssql = require("mssql");
+const mssql = require("mssql");
 const db = require('../database');
-const path = require('path');
-const flash = require('connect-flash')
-var session = require('express-session');
-var bodyParser = require('body-parser');
-const fs = require('fs');
+const session = require('express-session');
+const bodyParser = require('body-parser');
+const flash = require('connect-flash');
+
+// Middleware Configuration
 router.use(session({
     secret: 'secret',
-    resave:true,
-    saveUninitialized:true
+    resave: true,
+    saveUninitialized: true
 }));
-router.use(express.urlencoded({extended:true}));
+router.use(express.urlencoded({ extended: true }));
 router.use(bodyParser.json());
 router.use(flash());
-const requireLogin = (req,res,next)=>{
-    console.log()
-    if(!req.session.Login){
-        return res.redirect('/')
-    }
 
+const requireLogin = (req, res, next) => {
+    if (!req.session.Login) {
+        return res.redirect('/login');
+    }
     next();
-}
+};
+
+const executeQuery = async (sql, params = {}) => {
+    try {
+        const pool = await db;
+        const request = pool.request();
+        Object.entries(params).forEach(([key, value]) => {
+            request.input(key, value.type, value.value);
+        });
+        const result = await request.query(sql);
+        return result;
+    } catch (error) {
+        console.error("Database Query Error:", error);
+        throw error;
+    }
+};
+
+const getQuarterMonths = (month) => {
+    const quarter = Math.floor((month - 1) / 3) + 1;
+    switch (quarter) {
+        case 1: return { start: 1, end: 3 };
+        case 2: return { start: 4, end: 6 };
+        case 3: return { start: 7, end: 9 };
+        case 4: return { start: 10, end: 12 };
+        default: return { start: 1, end: 3 };
+    }
+};
+
 let monthFil = "";
 let month1;
 let month2;
@@ -52,63 +78,74 @@ const quater = (month)=>{
         month2 = '12';
     }
 }
-// console.log(db);
-router.get('/pageOne',requireLogin,function(req,res,next){
-    quater(month);
-    const sql = "select sum(PPoint) as sumPointMonth from [UNoGroup].[dbo].[V802]  where CodeG  = @Login and MONTH(DocDate) = MONTH(GETDATE()) and Year (DocDate) = Year (GETDATE()); "+
-                "select sum(PPoint) as sumPointQuater from [UNoGroup].[dbo].[V802]  where CodeG  = @Login and MONTH(DocDate) BETWEEN @month1 and @month2 and Year (DocDate) = Year (GETDATE()); "+
-                "select sum(PPoint) as sumPointYear from [UNoGroup].[dbo].[V802]  where CodeG  =  @Login2 and Year(DocDate) = Year(GETDATE()) ;"+
-                "select sum(PPoint) as sumPointAllMonth from [UNoGroup].[dbo].[V802]  where MONTH (DocDate) = MONTH (GETDATE()) and Year (DocDate) = Year (GETDATE());"+
-                "select sum(PPoint) as sumPoinQuaterUno from [UNoGroup].[dbo].[V802]  where  MONTH (DocDate) BETWEEN @month1 and @month2 and Year (DocDate) = Year (GETDATE()); "+
-                "select sum(PPoint) as sumPointAllYear from [UNoGroup].[dbo].[V802]  where Year (DocDate) = Year (GETDATE());"+
-                "select CodeG,NameG from [UNoGroup].[dbo].[sale] where codeG <> '' and CodeG <> 'jeab' and ST = '1'    order by CodeG ASC;";
-    // const sql2 =  " select sum(POINT) as sumPointYear from [UNoGroup].[dbo].[P803]  where CodeG  =  @Login and Year (DocDate) = Year (GETDATE())";
-    const username = req.session.Login;
-    let authorize = req.session.authorize;
-    if(authorize){
-        authorize = true;
-    }
 
-    var db = new mssql.Request();
-        db.input('Login',mssql.VarChar(50),req.session.Login);
-        db.input('month1',mssql.VarChar(50),month1);
-        db.input('month2',mssql.VarChar(50),month2);
-        db.input('Login2',mssql.VarChar(50),req.session.Login);
-        db.query(sql,function(err,data,fields){
-        // console.log(data[0]);
-        if (err) throw err; 
-        const testData = data.recordset; 
-        const testData2 = data.recordsets[1][0];
-        const testData3 = data.recordsets[2][0];
-        const testData4 = data.recordsets[3][0];
-        const testData5 = data.recordsets[4][0];
-        const testData6 = data.recordsets[5][0];
-        const testData7 = data.recordsets[6];
-        // console.log(data.recordset)
-        console.log(testData7)
-        res.render('pageOne',{
-                                sumData:testData,
-                                author:authorize,
-                                surName:req.session.surName,
-                                lastName:req.session.lastName,
-                                testData2,
-                                testData3,
-                                testData4,
-                                testData5,
-                                testData6,
-                                testData7
-                            }
-        );
-    });
+router.get('/pageOne',requireLogin,async function(req,res,next){
+    try {
+        const username = req.session.Login;
+        let authorize = req.session.authorize;
+        const month = new Date().getMonth() + 1;
+        const { start: month1, end: month2 } = getQuarterMonths(month);
+        console.log(month1, month2);
+        const sql = `select sum(PPoint) as sumPointMonth from [UNoGroup].[dbo].[V802]  where CodeG  = @Login and MONTH(DocDate) = MONTH(GETDATE()) and Year (DocDate) = Year (GETDATE()); 
+                    select sum(PPoint) as sumPointQuater from [UNoGroup].[dbo].[V802]  where CodeG  = @Login and MONTH(DocDate) BETWEEN @month1 and @month2 and Year (DocDate) = Year (GETDATE()); 
+                    select sum(PPoint) as sumPointYear from [UNoGroup].[dbo].[V802]  where CodeG  =  @Login2 and Year(DocDate) = Year(GETDATE()) ;
+                    select sum(PPoint) as sumPointAllMonth from [UNoGroup].[dbo].[V802]  where MONTH (DocDate) = MONTH (GETDATE()) and Year (DocDate) = Year (GETDATE());
+                    select sum(PPoint) as sumPoinQuaterUno from [UNoGroup].[dbo].[V802]  where  MONTH (DocDate) BETWEEN @month1 and @month2 and Year (DocDate) = Year (GETDATE()); 
+                    select sum(PPoint) as sumPointAllYear from [UNoGroup].[dbo].[V802]  where Year (DocDate) = Year (GETDATE());
+                    select CodeG,NameG from [UNoGroup].[dbo].[sale] where codeG <> '' and CodeG <> 'jeab' and ST = '1'    order by CodeG ASC;`;
+    
+        if(authorize){
+            authorize = true;
+        }
+
+        const params = {
+            Login: { type: mssql.VarChar(50), value: username },
+            month1: { type: mssql.Int, value: month1 },
+            month2: { type: mssql.Int, value: month2 },
+            Login2: { type: mssql.VarChar(50), value: username }
+        };
+        const data = await executeQuery(sql, params);
+
+        // Debugging: Log the structure of the returned data
+        console.log("Recordsets:", data.recordset);
+
+            const testData = data.recordset; 
+            const testData2 = data.recordsets[1][0];
+            const testData3 = data.recordsets[2][0];
+            const testData4 = data.recordsets[3][0];
+            const testData5 = data.recordsets[4][0];
+            const testData6 = data.recordsets[5][0];
+            const testData7 = data.recordsets[6];
+
+            res.render('pageOne',{
+                                    sumData:testData,
+                                    author:authorize,
+                                    surName:req.session.surName,
+                                    lastName:req.session.lastName,
+                                    testData2,
+                                    testData3,
+                                    testData4,
+                                    testData5,
+                                    testData6,
+                                    testData7
+                                }
+            );
+    } catch (error) {
+        console.error("Error loading pageOne:", error);
+        res.status(500).send("Error loading pageOne");
+    }
 });
+
 router.post('/pageOne',requireLogin,function(req,res,next){
     const selectUser = req.body.selectUser;
     req.session.Login = selectUser;
     res.redirect('/users/pageOne');
 }); 
+
 router.get('/pageTwo',requireLogin,function(req,res,next){
     res.render('pageTwo');
 }); 
+
 router.get('/pageTwo/pageTable1',requireLogin,function(req,res,next){
     const sql = "select rptSale3.custCode,rptSale3.custName2,Sum(Amt) as NetAmt  ,Sum(Cost) as PB,Sum(AmtDiff) as CUMS ,MaxCr  from rptSale3  "+     
                 " where  rptSale3.CodeG  = @Login and docdate between '01/01/22' and '01/01/23' " +
@@ -121,7 +158,6 @@ router.get('/pageTwo/pageTable1',requireLogin,function(req,res,next){
         db.query(sql,function(err,data,fields){
         if (err) throw err;
         const testData = data.recordset;
-        // console.log(data);
         res.render('pageTable1',  {testData});
     });
 });     
@@ -170,76 +206,6 @@ router.get('/pageTwo/subTable2',requireLogin,function(req,res){
     }); 
 })
 router.get('/pageTable2',requireLogin,function(req,res){
-    // const sql = "with Pb as ( " +
-    //                 " select sum(tmp.PB) as PB, sum(tmp.AMTPOINT) as AMTPOINT, sum(tmp.ComSP) as comSP,sum(tmp.cumS) as cums, tmp.CodeG,tmp.NameG,case when   Round(Sum(AmtPoint),2) <350 " +
-    //                     " then 0 " +
-    //                     " when Round(sum(tmp.AMTPOINT),2) >=350 and Round(sum(tmp.AMTPOINT),2) <650 " + 
-    //                     " then Round((0.5*sum(tmp.PB))/100,2) " +
-    //                     " when Round(sum(tmp.AMTPOINT),2) >=650 and Round(sum(tmp.AMTPOINT),2) <950 " +
-    //                     " then Round((sum(tmp.PB))/100,2) " +
-    //                     " when Round(sum(tmp.AMTPOINT),2) >=950 and Round(sum(tmp.AMTPOINT),2) <1250 " +
-    //                     " then Round((1.5*(sum(tmp.PB)))/100,2) " +
-    //                     " when Round(sum(tmp.AMTPOINT),2) >=1250 and Round(sum(tmp.AMTPOINT),2) <1550 " +
-    //                     " then Round((2*(sum(tmp.PB)))/100,2) " +
-    //                     " else Round((2.5*(sum(tmp.PB)))/100,2) " +
-    //                     " end as COMPB " +
-    //                 " from " +
-    //                 "( " +
-    //                     "Select  round(Sum((Amt-CUMS) - ((Amt-CUMS) * Discpro/100)) ,2) as PB, Round(Sum(POINT * ((Amt-CUMS) - ((Amt-CUMS) * Discpro/100)) /10000),2) as AMTPOINT,Round(Sum(((Amt-CUMS) - ((Amt-CUMS) * Discpro/100)) * RateSp/100),2) as COMSP,Round(Sum(CUMS),2) as CUMS ,CodeG  ,NameG " +
-    //                     " From V801 " +  
-    //                     " Where   Month(V801.Docdate) =  MONTH(GETDATE())  and year(Docdate) =  year(CONVERT(VARCHAR, GETDATE(), 101)) and DiscPro <> 0   Group by CodeG,NameG " +
-    //                     " union " + 
-    //                     " Select  round(Sum(Amt-CUMS),2) as PB, Round(Sum(POINT * (Amt-CUMS) /10000),2) as AmtPoint,Round(Sum(ComSp),2) as ComSP,Round(Sum(CUMS),2) as CUMS ,CodeG,NameG " +  
-    //                     " From V801 " +  
-    //                     " Where  Month(V801.Docdate) =  MONTH(GETDATE()) and year(Docdate) =  year(CONVERT(VARCHAR, GETDATE(), 101)) and DiscPro  = 0  Group by CodeG ,NameG " +
-    //                     " )tmp " +
-    //                     "group by tmp.codeG,tmp.NameG " +
-    //                 "), " +  
-
-    //             "PO as ( " +
-    //                     "select sum(tmp.PB) as PB, sum(tmp.AMTPOINT) as AMTPOINT, sum(tmp.ComSP) as comSP,sum(tmp.cumS) as cums, tmp.CodeG,NameG, " +
-    //                             " case when   Round( sum(tmp.AMTPOINT),2) <350  " +
-    //                             " then 0 " + 
-    //                             " when Round(sum(tmp.AMTPOINT),2) >=350 and Round( sum(tmp.AMTPOINT),2) <650 " +
-    //                             " then Round((0.5*(sum(tmp.PB)))/100,2) " +
-    //                             " when Round( sum(tmp.AMTPOINT),2) >=650 and Round( sum(tmp.AMTPOINT),2) <950 " +
-    //                             " then Round((sum(tmp.PB))/100,2) " +
-    //                             " when Round( sum(tmp.AMTPOINT),2) >=950 and Round( sum(tmp.AMTPOINT),2) <1250 " +
-    //                             " then Round((1.5*(sum(tmp.PB)))/100,2) " +
-    //                             " when Round( sum(tmp.AMTPOINT),2) >=1250 and Round( sum(tmp.AMTPOINT),2) <1550 " +
-    //                             " then Round((2*(sum(tmp.PB)))/100,2) " +
-    //                             " else Round((2.5*(sum(tmp.PB)))/100,2) " +
-    //                             " end as COMPO " +
-    //                     "from " +
-    //                         " ( " +
-    //                             "Select  round(Sum((PB) - ((PB) * Discpro/100)) ,2) as PB, Round(Sum(POINT * ((PB) - ((PB) * Discpro/100)) /10000),2) as AMTPOINT,Round(Sum(((PB) - ((PB) * Discpro/100)) * RateSp/100),2) as COMSP,Round(Sum(DIFFN),2) as CUMS ,CodeG,NameG  From POPOINT  Where   Month(POPOINT.Docdate) =  MONTH(GETDATE())  and year(Docdate) =  year(CONVERT(VARCHAR, GETDATE(), 101))  and  DiscPro <> 0   Group by CodeG,NameG " +
-    //                             " union " +
-    //                             " Select  round(Sum(PB),2) as PB, Round(Sum(POINT * (PB) /10000),2) as AmtPoint,Round(Sum(ComSp),2) as ComSP,Round(Sum(DIFFN),2) as CUMS ,CodeG,NameG  From POPOINT  Where  Month(POPOINT.Docdate) =  MONTH(GETDATE())  and year(Docdate) =  year(CONVERT(VARCHAR, GETDATE(), 101)) and DiscPro  = 0  Group by CodeG,NameG "+
-    //                             " )tmp " +
-    //                             " group by tmp.codeG,tmp.NameG " +
-    //                          "), " + 
-
-    //             "sumPoPb as( " +
-    //                         " select sum(tmp.PBPO) as PBPO,sum(tmp.PBPOPOINT) as PBPOPOINT,sum(tmp.COMPBPO) as COMPBPO, " +
-    //                                  "sum(tmp.COMSPPBPO) as COMSPPBPO,sum(tmp.cumsPoPB) as cumsPoPB ,tmp.CodeG " +
-    //                         " from(  " +
-    //                         "select Pb.PB as PBPO, Pb.AMTPOINT as PBPOPOINT,Pb.COMPB as COMPBPO,Pb.comSP as COMSPPBPO,Pb.cums as cumsPoPB ,Pb.CodeG " +
-    //                         "from Pb " +
-    //                         "UNION ALL " +
-    //                         "select PO.PB as PBPO, PO.AMTPOINT as PBPOPOINT,PO.COMPO as COMPBPO,PO.comSP as COMSPPBPO ,PO.cums as cumsPoPB,PO.CodeG " +
-    //                         "from PO " +
-    //                         ")tmp group by tmp.CodeG " +
-    //                         ") " +            
-    //                         "SELECT Pb.PB,Pb.AMTPOINT,Pb.COMPB,Pb.comSP,Pb.cums,Po.PB as PO,Po.AMTPOINT as POPOINT,sumPoPb.PBPO,sumPoPb.PBPOPOINT,sumPoPb.COMPBPO, " +
-    //                         "sumPoPb.COMSPPBPO,sumPoPb.cumsPoPB " +
-    //                         "from sale a " +
-    //                         "left join Pb on Pb.CodeG = a.CodeG  " +
-    //                         "left join PO on PO.CodeG = a.CodeG " +
-    //                         "left join sumPoPb on sumPoPb.CodeG = a.CodeG " +
-    //                         "where a.CodeG = @Login and  a.ST = '1'  " +
-    //                         "group by   Pb.PB,Pb.AMTPOINT,Pb.COMPB,Pb.comSP,Pb.cums,Po.PB,Po.AMTPOINT,sumPoPb.PBPO,sumPoPb.PBPOPOINT,sumPoPb.COMPBPO," +
-    //                         "sumPoPb.COMSPPBPO,sumPoPb.cumsPoPB " +
-    //                         "order by Pb.AMTPOINT DESC " ; 
     const sql =  " Select   " +
     " 0 as num, " +
     "  NameG, " +
@@ -264,52 +230,22 @@ router.get('/pageTable2',requireLogin,function(req,res){
                 " Select  round(Sum(PB) ,2) as S1,CodeG  " +
                 " From V802   " +
                 "     inner join itemcomPI on v802.itemcode = itemcomPI.itemcode   " +
-                " Where  codeG = 'uno16' and Month(DocDate) = '01' and   year(Docdate) = YEAR(GETDATE())  " +
+                " Where  codeG = @Login and Month(DocDate) = Month(GETDATE()) and   year(Docdate) = YEAR(GETDATE())  " +
                 "  Group by CodeG " +
 " )b on b.CodeG = a.codeG " +
 " left join ( " +
-" Select  case when tier = '1' then " +
-" case when sum(PPoint) <350  then '0'  " +
-"             when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+
-"             when sum(PPoint) >=500 and sum(PPoint) < 750 then '1'  "+
-"             when sum(PPoint) >=750 then '1.5'  "+
-"             end   "+
-" when tier = '2' then  "+
-"     case when sum(PPoint) <350  then '0' "+
-"             when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+
-"             when sum(PPoint) >=500 and sum(PPoint) < 700 then '1' "+
-"             when sum(PPoint) >=700 then '1.5' "+
-"             end  "+
-" when tier = '3' then "+
-"     case when sum(PPoint) <350  then '0' "+
-"             when sum(PPoint) >=350 and sum(PPoint) < 450 then '0.5' "+ 
-"             when sum(PPoint) >=450 and sum(PPoint) < 550 then '1'  "+
-"             when sum(PPoint) >=550 then '1.5'"+
-"             end  "+
-" when tier = '4' then  "+
-"     case when sum(PPoint) <350  then '0' "+
-"             when sum(PPoint) >=350 and sum(PPoint) < 400 then '0.5' "+
-"             when sum(PPoint) >=400 and sum(PPoint) < 450 then '1' "+
-"             when sum(PPoint) >=450 then '1.5'  "+
-"             end "+
-" when tier = '5' then  "+
-"     case when sum(PPoint) <220  then '0' "+
-"             when sum(PPoint) >=220 and sum(PPoint) < 400 then '0.5' "+
-"             when sum(PPoint) >=400 and sum(PPoint) < 450 then '1' "+
-"             when sum(PPoint) >=450 then '1.5'  "+
-"             end "+
-" end as RateCom "+
-" ,CodeG , "+
-" case   when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000  "+
-" when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+
-" when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000  "+
-" when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000  "+
-" when tier = '5' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000  "+
-" else 0  "+
-"  end as incentive  , sum(PPoint) as point "+
-" From V802   "+
-" Where   codeG = @Login and Month(DocDate) =  Month(GETDATE()) and  year(Docdate) = YEAR(GETDATE())   "+
-" Group by CodeG, tier " +
+" select  case when sum(a.PPoint) < A1  then '0'   " +
+"              when sum(a.PPoint) >=A1 and sum(a.PPoint) < A2 then Rate1 " +
+"              when sum(a.PPoint) >=A3 and sum(a.PPoint) < A4 then Rate2   " +
+"              when sum(a.PPoint) >=A5 then Rate3   " +
+"              end as RateCom,sum(a.PPoint) as point , " +
+" 					case when sum(a.PPoint) < MPoint then '0' else cast(((sum(a.PPoint)  - c.MPoint)/c.PPoint) as int) * c.Incen end as  incentive, a.CodeG " +
+"  from V802 a  " +
+" 	inner join ItemTier b on b.CodeG = a.CodeG " +
+" 	inner join Tier c on c.Code = b.TierCode " +
+"  where a.CodeG = @Login and Month(a.DocDate) =  Month(GETDATE()) and  year(a.Docdate) = YEAR(GETDATE()) and b.YearCal = YEAR(GETDATE())+543 " +
+"  GROUP BY  " +
+"     c.A1, c.A2, c.A3, c.A4, c.A5, c.Rate1, c.Rate2, c.Rate3,c.MPoint, c.Incen,c.PPoint,a.CodeG " +
 " )c on c.CodeG = a.codeG " +
 " left join ( "+
     " select sum(tmp.S1) as s1 ,tmp.CodeG " +
@@ -328,7 +264,7 @@ router.get('/pageTable2',requireLogin,function(req,res){
                 " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode " +  
                 " from v802  " +
                     " inner join ItemG on v802.itemcode = ItemG.code  " + 
-                " Where   MONTH(docDate) = Month(GETDATE())  and year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'  "+ 
+                " Where   MONTH(docDate) = Month(GETDATE()) and year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'  "+ 
                 " group by codeG,V802.ItemCode " +  
             " )tmp  " +
         " GROUP BY tmp.CodeG " +    
@@ -356,118 +292,10 @@ router.get('/pageTable2',requireLogin,function(req,res){
         }    
         monthFil = toThaiMonthString(date1);
 
-        
-        // let data1 = data.recordsets[0][0];
-        // let data2 = data.recordsets[1][0];
-        // let data3 = data.recordsets[2][0];
-        // let dataArr = [];
-        // let dataMerge;
-        // console.log(data1)
-        // console.log(data2)
-        // console.log(data3)
- 
-        // if( data1 === undefined &&  data2 === undefined && data3 === undefined){
-        //     console.log("a")
-        //     dataMerge = "";
-        // }else if (data1 === undefined && data3 === undefined){
-        //     console.log("a1")
-        //     dataMerge = Object.assign(data2);
-        // }else if(data1 === undefined && data2 === undefined ){
-        //     console.log("a2")
-        //     dataMerge = Object.assign(data3);
-        // }else if(data2 === undefined&& data3 === undefined){
-        //     console.log("a3")
-        //     dataMerge = Object.assign(data1);
-        // }else if(data1 === undefined){
-        //     console.log("a4")
-        //     dataMerge = Object.assign(data2,data3);
-        // }else if(data2 === undefined){
-        //     console.log("a5")
-        //     dataMerge = Object.assign(data1,data3);
-        // }else if(data3 === undefined){
-        //     console.log("a6")
-        //     dataMerge = Object.assign(data1,data2);
-        // }else{
-        //     dataMerge = Object.assign(data1,data2,data3);
-        // }
-        // dataArr.push(dataMerge)
-        // let dataTest = arr.splice(0, 1, dataMerge)
-        // console.log(dataMerge)
-        // let dataTest =JSON.stringify(dataMerge)
-    //    console.log(dataArr)
         res.render('pageTable2',  {testData,monthFil});
     }); 
 })
 router.post('/pageTable2',function(req,res){
-    // const sql = "with Pb as ( " +
-    //                 " select sum(tmp.PB) as PB, sum(tmp.AMTPOINT) as AMTPOINT, sum(tmp.ComSP) as comSP,sum(tmp.cumS) as cums, tmp.CodeG,tmp.NameG,case when   Round(Sum(AmtPoint),2) <350 " +
-    //                     " then 0 " +
-    //                     " when Round(sum(tmp.AMTPOINT),2) >=350 and Round(sum(tmp.AMTPOINT),2) <650 " + 
-    //                     " then Round((0.5*sum(tmp.PB))/100,2) " +
-    //                     " when Round(sum(tmp.AMTPOINT),2) >=650 and Round(sum(tmp.AMTPOINT),2) <950 " +
-    //                     " then Round((sum(tmp.PB))/100,2) " +
-    //                     " when Round(sum(tmp.AMTPOINT),2) >=950 and Round(sum(tmp.AMTPOINT),2) <1250 " +
-    //                     " then Round((1.5*(sum(tmp.PB)))/100,2) " +
-    //                     " when Round(sum(tmp.AMTPOINT),2) >=1250 and Round(sum(tmp.AMTPOINT),2) <1550 " +
-    //                     " then Round((2*(sum(tmp.PB)))/100,2) " +
-    //                     " else Round((2.5*(sum(tmp.PB)))/100,2) " +
-    //                     " end as COMPB " +
-    //                 " from " +
-    //                 "( " +
-    //                     "Select  round(Sum((Amt-CUMS) - ((Amt-CUMS) * Discpro/100)) ,2) as PB, Round(Sum(POINT * ((Amt-CUMS) - ((Amt-CUMS) * Discpro/100)) /10000),2) as AMTPOINT,Round(Sum(((Amt-CUMS) - ((Amt-CUMS) * Discpro/100)) * RateSp/100),2) as COMSP,Round(Sum(CUMS),2) as CUMS ,CodeG  ,NameG " +
-    //                     " From V801 " +  
-    //                     " Where   Month(V801.Docdate) =  @month1  and year(Docdate) =  year(CONVERT(VARCHAR, GETDATE(), 101)) and DiscPro <> 0   Group by CodeG,NameG " +
-    //                     " union " + 
-    //                     " Select  round(Sum(Amt-CUMS),2) as PB, Round(Sum(POINT * (Amt-CUMS) /10000),2) as AmtPoint,Round(Sum(ComSp),2) as ComSP,Round(Sum(CUMS),2) as CUMS ,CodeG,NameG " +  
-    //                     " From V801 " +  
-    //                     " Where  Month(V801.Docdate) =  @month2 and year(Docdate) =  year(CONVERT(VARCHAR, GETDATE(), 101)) and DiscPro  = 0  Group by CodeG ,NameG " +
-    //                     " )tmp " +
-    //                     "group by tmp.codeG,tmp.NameG " +
-    //                 "), " +  
-    //             "PO as ( " +
-    //                     "select sum(tmp.PB) as PB, sum(tmp.AMTPOINT) as AMTPOINT, sum(tmp.ComSP) as comSP,sum(tmp.cumS) as cums, tmp.CodeG,NameG, " +
-    //                             " case when   Round( sum(tmp.AMTPOINT),2) <350  " +
-    //                             " then 0 " + 
-    //                             " when Round(sum(tmp.AMTPOINT),2) >=350 and Round( sum(tmp.AMTPOINT),2) <650 " +
-    //                             " then Round((0.5*(sum(tmp.PB)))/100,2) " +
-    //                             " when Round( sum(tmp.AMTPOINT),2) >=650 and Round( sum(tmp.AMTPOINT),2) <950 " +
-    //                             " then Round((sum(tmp.PB))/100,2) " +
-    //                             " when Round( sum(tmp.AMTPOINT),2) >=950 and Round( sum(tmp.AMTPOINT),2) <1250 " +
-    //                             " then Round((1.5*(sum(tmp.PB)))/100,2) " +
-    //                             " when Round( sum(tmp.AMTPOINT),2) >=1250 and Round( sum(tmp.AMTPOINT),2) <1550 " +
-    //                             " then Round((2*(sum(tmp.PB)))/100,2) " +
-    //                             " else Round((2.5*(sum(tmp.PB)))/100,2) " +
-    //                             " end as COMPO " +
-    //                     "from " +
-    //                         " ( " +
-    //                             "Select  round(Sum((PB) - ((PB) * Discpro/100)) ,2) as PB, Round(Sum(POINT * ((PB) - ((PB) * Discpro/100)) /10000),2) as AMTPOINT,Round(Sum(((PB) - ((PB) * Discpro/100)) * RateSp/100),2) as COMSP,Round(Sum(DIFFN),2) as CUMS ,CodeG,NameG  From POPOINT  Where   Month(POPOINT.Docdate) =  @month3  and year(Docdate) =  year(CONVERT(VARCHAR, GETDATE(), 101))  and  DiscPro <> 0   Group by CodeG,NameG " +
-    //                             " union " +
-    //                             " Select  round(Sum(PB),2) as PB, Round(Sum(POINT * (PB) /10000),2) as AmtPoint,Round(Sum(ComSp),2) as ComSP,Round(Sum(DIFFN),2) as CUMS ,CodeG,NameG  From POPOINT  Where  Month(POPOINT.Docdate) =  @month4  and year(Docdate) =  year(CONVERT(VARCHAR, GETDATE(), 101)) and DiscPro  = 0  Group by CodeG,NameG "+
-    //                             " )tmp " +
-    //                             " group by tmp.codeG,tmp.NameG " +
-    //                          "), " + 
-
-    //             "sumPoPb as( " +
-    //                         " select sum(tmp.PBPO) as PBPO,sum(tmp.PBPOPOINT) as PBPOPOINT,sum(tmp.COMPBPO) as COMPBPO, " +
-    //                                  "sum(tmp.COMSPPBPO) as COMSPPBPO,sum(tmp.cumsPoPB) as cumsPoPB ,tmp.CodeG " +
-    //                         " from(  " +
-    //                         "select Pb.PB as PBPO, Pb.AMTPOINT as PBPOPOINT,Pb.COMPB as COMPBPO,Pb.comSP as COMSPPBPO,Pb.cums as cumsPoPB ,Pb.CodeG " +
-    //                         "from Pb " +
-    //                         "UNION ALL " +
-    //                         "select PO.PB as PBPO, PO.AMTPOINT as PBPOPOINT,PO.COMPO as COMPBPO,PO.comSP as COMSPPBPO ,PO.cums as cumsPoPB,PO.CodeG " +
-    //                         "from PO " +
-    //                         ")tmp group by tmp.CodeG " +
-    //                         ") " +            
-    //                         "SELECT Pb.PB,Pb.AMTPOINT,Pb.COMPB,Pb.comSP,Pb.cums,Po.PB as PO,Po.AMTPOINT as POPOINT,sumPoPb.PBPO,sumPoPb.PBPOPOINT,sumPoPb.COMPBPO, " +
-    //                         "sumPoPb.COMSPPBPO,sumPoPb.cumsPoPB " +
-    //                         "from sale a " +
-    //                         "left join Pb on Pb.CodeG = a.CodeG " +
-    //                         "left join PO on PO.CodeG = a.CodeG " +
-    //                         "left join sumPoPb on sumPoPb.CodeG = a.CodeG " +
-    //                         "where a.CodeG = @Login  and  a.ST = '1' " +
-    //                         "group by Pb.PB,Pb.AMTPOINT,Pb.COMPB,Pb.comSP,Pb.cums,Po.PB,Po.AMTPOINT,sumPoPb.PBPO,sumPoPb.PBPOPOINT,sumPoPb.COMPBPO," +
-    //                         "sumPoPb.COMSPPBPO,sumPoPb.cumsPoPB " +
-    //                         "order by Pb.AMTPOINT DESC " ;
     const sql = " Select   " +
 " 0 as num, " +
 "  NameG, " +
@@ -492,52 +320,22 @@ router.post('/pageTable2',function(req,res){
                 " Select  round(Sum(PB) ,2) as S1,CodeG  " +
                 " From V802   " +
                 "     inner join itemcomPI on v802.itemcode = itemcomPI.itemcode   " +
-                " Where  codeG = 'uno16' and Month(DocDate) = '01' and   year(Docdate) = YEAR(GETDATE())  " +
+                " Where  codeG = @Login and Month(DocDate) = Month(GETDATE()) and   year(Docdate) = YEAR(GETDATE())  " +
                 "  Group by CodeG " +
 " )b on b.CodeG = a.codeG " +
 " left join ( " +
-" Select  case when tier = '1' then " +
-" case when sum(PPoint) <350  then '0'  " +
-"             when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+
-"             when sum(PPoint) >=500 and sum(PPoint) < 750 then '1'  "+
-"             when sum(PPoint) >=750 then '1.5'  "+
-"             end   "+
-" when tier = '2' then  "+
-"     case when sum(PPoint) <350  then '0' "+
-"             when sum(PPoint) >=350 and sum(PPoint) < 500 then '0.5' "+
-"             when sum(PPoint) >=500 and sum(PPoint) < 700 then '1' "+
-"             when sum(PPoint) >=700 then '1.5' "+
-"             end  "+
-" when tier = '3' then "+
-"     case when sum(PPoint) <350  then '0' "+
-"             when sum(PPoint) >=350 and sum(PPoint) < 450 then '0.5' "+ 
-"             when sum(PPoint) >=450 and sum(PPoint) < 550 then '1'  "+
-"             when sum(PPoint) >=550 then '1.5'"+
-"             end  "+
-" when tier = '4' then  "+
-"     case when sum(PPoint) <350  then '0' "+
-"             when sum(PPoint) >=350 and sum(PPoint) < 400 then '0.5' "+
-"             when sum(PPoint) >=400 and sum(PPoint) < 450 then '1' "+
-"             when sum(PPoint) >=450 then '1.5'  "+
-"             end "+
-" when tier = '5' then  "+
-"     case when sum(PPoint) <220  then '0' "+
-"             when sum(PPoint) >=220 and sum(PPoint) < 400 then '0.5' "+
-"             when sum(PPoint) >=400 and sum(PPoint) < 450 then '1' "+
-"             when sum(PPoint) >=450 then '1.5'  "+
-"             end "+
-" end as RateCom "+
-" ,CodeG , "+
-" case   when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000  "+
-" when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+
-" when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000  "+
-" when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000  "+
-" when tier = '5' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000  "+
-" else 0  "+
-"  end as incentive  , sum(PPoint) as point "+
-" From V802   "+
-" Where   codeG = @Login and Month(DocDate) = @month1 and  year(Docdate) = YEAR(GETDATE())   "+
-" Group by CodeG, tier " +
+" select  case when sum(a.PPoint) < A1  then '0'   " +
+"              when sum(a.PPoint) >=A1 and sum(a.PPoint) < A2 then Rate1 " +
+"              when sum(a.PPoint) >=A3 and sum(a.PPoint) < A4 then Rate2   " +
+"              when sum(a.PPoint) >=A5 then Rate3   " +
+"              end as RateCom,sum(a.PPoint) as point , " +
+" 				case when sum(a.PPoint) < MPoint then '0' else cast(((sum(a.PPoint)  - c.MPoint)/c.PPoint) as int) * c.Incen end as  incentive, a.CodeG " +
+"  from V802 a  " +
+" 	inner join ItemTier b on b.CodeG = a.CodeG " +
+" 	inner join Tier c on c.Code = b.TierCode " +
+"  where a.CodeG = @Login and Month(a.DocDate) =  @month1 and year(a.Docdate) = YEAR(GETDATE()) and b.YearCal = YEAR(GETDATE())+543 " +
+"  GROUP BY  " +
+"     c.A1, c.A2, c.A3, c.A4, c.A5, c.Rate1, c.Rate2, c.Rate3,c.MPoint, c.Incen,c.PPoint,a.CodeG " +
 " )c on c.CodeG = a.codeG " +
 " left join ( "+
     " select sum(tmp.S1) as s1 ,tmp.CodeG " +
@@ -556,7 +354,7 @@ router.post('/pageTable2',function(req,res){
                 " select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode " +  
                 " from v802  " +
                     " inner join ItemG on v802.itemcode = ItemG.code  " + 
-                " Where   MONTH(docDate) = @month1  and year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H'  "+ 
+                " Where   MONTH(docDate) = @month1  and year(Docdate) = YEAR(GETDATE())  and ItemG.grItemCode ='H' "+ 
                 " group by codeG,V802.ItemCode " +  
             " )tmp  " +
         " GROUP BY tmp.CodeG " +    
@@ -575,25 +373,6 @@ router.post('/pageTable2',function(req,res){
       month1 = monthFil;
 
     }  
-    // if(monthFil == null || monthFil == 'เลือกไตรมาส'|| monthFil === undefined){
-    //     month1 = '1';
-    //     month2 = '3';
-    //     monthFil = '1';
-    //     // qauter(month);
-    // }else if (monthFil == '1'){
-    //   month1 = '1';
-    //   month2 = '3';
-    // }else if(monthFil == '2'){
-    //     console.log("qq" );
-    //     month1 = '4';
-    //     month2 = '6';
-    // }else if(monthFil == '3'){
-    //     month1 = '7';
-    //     month2 = '9';
-    // } else{
-    //     month1 = '10';
-    //     month2 = '12';
-    // } 
 
     var db = new mssql.Request();
         db.input('month1',mssql.VarChar(50),month1);
@@ -616,42 +395,6 @@ router.post('/pageTable2',function(req,res){
         return ` ${month}`;
     }    
         monthFil = toThaiMonthString(monthFil);
-    //     console.log(monthFil)
-        // const data1 = data.recordsets[0][0];
-        // const data2 = data.recordsets[1][0];
-        // const data3 = data.recordsets[2][0];
-        // let dataMerge;
-        // let dataArr = [];
-        // console.log(testData.length)
-        // if( data1 === undefined &&  data2 === undefined && data3 === undefined){
-        //     console.log("a")
-        //     dataMerge = "";
-        // }else if (data1 === undefined && data3 === undefined){
-        //     console.log("a1")
-        //     dataMerge = Object.assign(data2);
-        // }else if(data1 === undefined && data2 === undefined ){
-        //     console.log("a2")
-        //     dataMerge = Object.assign(data3);
-        // }else if(data2 === undefined&& data3 === undefined){
-        //     console.log("a3")
-        //     dataMerge = Object.assign(data1);
-        // }else if(data1 === undefined){
-        //     console.log("a4")
-        //     dataMerge = Object.assign(data2,data3);
-        // }else if(data2 === undefined){
-        //     console.log("a5")
-        //     dataMerge = Object.assign(data1,data3);
-        // }else if(data3 === undefined){
-        //     console.log("a6")
-        //     dataMerge = Object.assign(data1,data2);
-        // }else{
-        //     console.log("a7")
-        // }
-        // dataArr.push(dataMerge)
-        // let dataTest = arr.splice(0, 1, dataMerge)
-        // console.log(dataMerge)
-        // let dataTest =JSON.stringify(dataMerge)
-        //    console.log(dataArr)
         res.render('pageTable2',  {testData,monthFil});
     });    
 });
@@ -1266,46 +1009,43 @@ router.get('/salesQuater',requireLogin,function(req,res){
              "                           FROM Months  "+
              "                           ), "+
              "    newRate as ("+ 
-                    "                   select  tmp.CodeG , sum(tmp.incentive) as incentive , sum(tmp.point) as point  , " + 
-                    "                        case "+  
-                    "                                                                          when tier = '1' then "+  
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 500*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=500*3 and sum(tmp.point) < 750*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=750*3 then '1.5'  end "+    
-                    "                                                                          when tier = '2' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+  
-                    "                                                                                                                           when sum(tmp.point)>=350*3 and sum(tmp.point) < 500*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=500*3 and sum(tmp.point) < 700*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=700*3 then '1.5' end "+   
-                    "                                                                          when tier = '3' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 450*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=450*3 and sum(tmp.point) < 550*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=550*3 then '1.5' end "+   
-                    "                                                                        when tier = '4' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 400*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=400*3 and sum(tmp.point) < 450*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=450*3 then '1.5' end "+ 
-                    "                                                                        when tier = '5' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 220*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=220*3 and sum(tmp.point) < 400*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=400*3 and sum(tmp.point) < 450*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=450*3 then '1.5' end "+  
-                    "                                                          end as RateCom "+
-                    "                                      from ( "+ 
-                    "                                                   select "+
-                    "                                                          case when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000 "+   
-                    "                                                                   when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+   
-                    "                                                                   when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000 "+    
-                    "                                                                   when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000 "+
-                    "                                                                   when tier = '5' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000 "+    
-                    "                                                       else 0  end as incentive ,sum(PPoint) as point ,a.CodeG,Month(DocDate) as mon ,tier "+
-                    "                                               From V802 a "+  
-                    "                                               Where  Month(DocDate) in (select  MonthNum from monthTable where quater =  (select  quater from monthTable where quater = (select quater from monthTable where monthOri = Month(GETDATE()) ) group by quater) ) and  year(Docdate) = YEAR(GETDATE()) "+  
-                    "                                               Group by a.CodeG, tier,Month(DocDate) "+ 
-                    "                                               ) tmp GROUP BY tmp.codeG ,tmp.tier "+ 
+             `select
+             tmp.CodeG, 
+SUM(tmp.incentive) AS incentive, 
+SUM(tmp.point) AS point,
+CASE  
+WHEN SUM(tmp.point) < tmp.A1 * 3 THEN '0'   
+WHEN SUM(tmp.point) >= tmp.A1 * 3 AND SUM(tmp.point) < tmp.A2 * 3 THEN tmp.Rate1 
+WHEN SUM(tmp.point) >= tmp.A3 * 3 AND SUM(tmp.point) < tmp.A4 * 3 THEN tmp.Rate2   
+WHEN SUM(tmp.point) >= tmp.A5 * 3 THEN tmp.Rate3  
+END AS RateCom
+             from(
+ SELECT 
+a.CodeG,
+SUM(a.PPoint) AS point,
+CASE 
+WHEN SUM(a.PPoint) < c.MPoint THEN '0'
+ELSE CAST(((SUM(a.PPoint) - c.MPoint) / c.PPoint) AS INT) * c.Incen
+END AS incentive,
+MONTH(a.DocDate) AS mon,
+c.A1, c.A2, c.A3, c.A4, c.A5, 
+c.Rate1, c.Rate2, c.Rate3,
+c.MPoint, c.PPoint, c.Incen,
+b.TierCode as tier
+FROM 
+V802 a  
+INNER JOIN ItemTier b ON b.CodeG = a.CodeG 
+INNER JOIN Tier c ON c.Code = b.TierCode 
+WHERE  
+Month(a.DocDate) in (select  MonthNum from monthTable where quater =  (select  quater from monthTable where quater = (select quater from monthTable where monthOri = Month(GETDATE()) ) group by quater) )
+AND YEAR(a.DocDate) = YEAR(GETDATE()) 
+and b.YearCal = YEAR(GETDATE())+543   
+GROUP BY 
+a.CodeG, c.A1, c.A2, c.A3, c.A4, c.A5, 
+c.Rate1, c.Rate2, c.Rate3, c.MPoint, c.PPoint, c.Incen, b.TierCode, MONTH(a.DocDate)
+) tmp 
+GROUP BY 
+tmp.CodeG, tmp.tier, tmp.A1, tmp.A2, tmp.A3, tmp.A4, tmp.A5, tmp.Rate1, tmp.Rate2, tmp.Rate3` + 
                     "                        ), "+ 
              "   mainTable as ( Select 0 as num, NameG, ROW_NUMBER() OVER(ORDER BY sum(Amt) DESC) AS Row, "+
              "                                                CAST(ISNULL(Sum(Amt),0) AS DECIMAL(30,2)) as sales , CAST(ISNULL(Sum(PB),0) AS DECIMAL(30,2)) as PB,   "+
@@ -1322,19 +1062,19 @@ router.get('/salesQuater',requireLogin,function(req,res){
              "                                                                                Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())  "+
              "                                                                                Group by CodeG  "+
              "                                                                             )b on b.CodeG = a.codeG  "+
-             "                                                        left join ( Select  case  when sum(PPoint) <  1050 then '0'   "+
-             "                                                                                                            when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'   "+
-             "                                                                                                            when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1'  "+
-             "                                                                                                            when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5'  "+
-             "                                                                                                            when sum(PPoint) >= 3900   then '1.5'  "+
-             "                                                                                                                   end as RateCom ,CodeG, "+
-             "                                                                                                case  when sum(PPoint) <  1050 then 0  "+
-             "                                                                                                            when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   "+
-             "                                                                                                            when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000   "+
-             "                                                                                                            when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000   "+
-             "                                                                                                            when sum(PPoint) >= 3900   then 60000 end as incentive, sum(PPoint) as point "+
-             "                                                                                From V802 Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())  "+
-             "                                                                                Group by CodeG  "+
+             " left join ( "+
+             "                                                  select  case when sum(a.PPoint) < A1  then '0'   " +
+                    "              when sum(a.PPoint) >=A1 and sum(a.PPoint) < A2 then Rate1 " +
+                     "              when sum(a.PPoint) >=A3 and sum(a.PPoint) < A4 then Rate2   " +
+                     "              when sum(a.PPoint) >=A5 then Rate3   " +
+                     "              end as RateCom,sum(a.PPoint) as point , " +
+                    " 				case when sum(a.PPoint) < MPoint then '0' else cast(((sum(a.PPoint)  - c.MPoint)/c.PPoint) as int) * c.Incen end as  incentive, a.CodeG " +
+                    "  from V802 a  " +
+                    " 	inner join ItemTier b on b.CodeG = a.CodeG " +
+                    " 	inner join Tier c on c.Code = b.TierCode " +
+                    "  where  Month(a.DocDate) BETWEEN   @month1 and @month2 and year(a.Docdate) = YEAR(GETDATE()) and b.YearCal = YEAR(GETDATE())+543 " +
+                    "  GROUP BY  " +
+                    "     c.A1, c.A2, c.A3, c.A4, c.A5, c.Rate1, c.Rate2, c.Rate3,c.MPoint, c.Incen,c.PPoint,a.CodeG " +
              "                                                                            )c on c.CodeG = a.codeG  "+
              "                                                        left join ( select sum(tmp.S1) as s1 ,tmp.CodeG  "+
              "                                                                                from( select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode  "+
@@ -1371,7 +1111,6 @@ router.get('/salesQuater',requireLogin,function(req,res){
         db.query(sql,function(err,data,fields){
         if (err) throw err;
         let testData = data.recordset;
-         console.log(testData);
         res.render('salesQuater',  {testData,monthFil});
     }); 
 })
@@ -1390,47 +1129,44 @@ router.post('/salesQuater',function(req,res){
              "                                       else '4' end  as quater   "+
              "                           FROM Months  "+
              "                           ), "+
-            "    newRate as ("+ 
-                    "                   select  tmp.CodeG , sum(tmp.incentive) as incentive , sum(tmp.point) as point  , " + 
-                    "                        case "+  
-                    "                                                                          when tier = '1' then "+  
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 500*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=500*3 and sum(tmp.point) < 750*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=750*3 then '1.5'  end "+    
-                    "                                                                          when tier = '2' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+  
-                    "                                                                                                                           when sum(tmp.point)>=350*3 and sum(tmp.point) < 500*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=500*3 and sum(tmp.point) < 700*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=700*3 then '1.5' end "+   
-                    "                                                                          when tier = '3' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 450*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=450*3 and sum(tmp.point) < 550*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=550*3 then '1.5' end "+   
-                    "                                                                        when tier = '4' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 350*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=350*3 and sum(tmp.point) < 400*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=400*3 and sum(tmp.point) < 450*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=450*3 then '1.5' end "+
-                    "                                                                        when tier = '5' then "+   
-                    "                                                                                                                  case when sum(tmp.point) < 220*3  then '0' "+   
-                    "                                                                                                                           when sum(tmp.point) >=220*3 and sum(tmp.point) < 400*3 then '0.5' "+   
-                    "                                                                                                                           when sum(tmp.point) >=400*3 and sum(tmp.point) < 450*3 then '1' "+   
-                    "                                                                                                                           when sum(tmp.point) >=450*3 then '1.5' end "+   
-                    "                                                          end as RateCom "+
-                    "                                      from ( "+ 
-                    "                                                   select "+
-                    "                                                          case when tier = '1' AND sum(PPoint) >= 750 then ((cast(sum(PPoint) as int) -750)/50) *1000 "+   
-                    "                                                                   when tier = '2' AND sum(PPoint) >= 700 then ((cast(sum(PPoint) as int) -700)/50) *1000 "+   
-                    "                                                                   when tier = '3' AND sum(PPoint) >= 550 then ((cast(sum(PPoint) as int) -550)/50) *1000 "+    
-                    "                                                                   when tier = '4' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000 "+ 
-                    "                                                                   when tier = '5' AND sum(PPoint) >= 450 then ((cast(sum(PPoint) as int) -450)/50) *1000 "+   
-                    "                                                       else 0  end as incentive ,sum(PPoint) as point ,a.CodeG,Month(DocDate) as mon ,tier "+
-                    "                                               From V802 a "+  
-                    "                                               Where  Month(DocDate) in (select  MonthNum from monthTable where quater = @quater1 ) and  year(Docdate) = YEAR(GETDATE()) "+  
-                    "                                               Group by a.CodeG, tier,Month(DocDate) "+ 
-                    "                                               ) tmp GROUP BY tmp.codeG ,tmp.tier "+ 
+            "    newRate as ( "+ 
+            ` select
+            tmp.CodeG, 
+SUM(tmp.incentive) AS incentive, 
+SUM(tmp.point) AS point,
+CASE  
+WHEN SUM(tmp.point) < tmp.A1 * 3 THEN '0'   
+WHEN SUM(tmp.point) >= tmp.A1 * 3 AND SUM(tmp.point) < tmp.A2 * 3 THEN tmp.Rate1 
+WHEN SUM(tmp.point) >= tmp.A3 * 3 AND SUM(tmp.point) < tmp.A4 * 3 THEN tmp.Rate2   
+WHEN SUM(tmp.point) >= tmp.A5 * 3 THEN tmp.Rate3  
+END AS RateCom
+            from (
+SELECT 
+a.CodeG,
+SUM(a.PPoint) AS point,
+CASE 
+WHEN SUM(a.PPoint) < c.MPoint THEN '0'
+ELSE CAST(((SUM(a.PPoint) - c.MPoint) / c.PPoint) AS INT) * c.Incen
+END AS incentive,
+MONTH(a.DocDate) AS mon,
+c.A1, c.A2, c.A3, c.A4, c.A5, 
+c.Rate1, c.Rate2, c.Rate3,
+c.MPoint, c.PPoint, c.Incen,
+b.TierCode as tier
+FROM 
+V802 a  
+INNER JOIN ItemTier b ON b.CodeG = a.CodeG 
+INNER JOIN Tier c ON c.Code = b.TierCode 
+WHERE  
+Month(a.DocDate) in (select  MonthNum from monthTable where quater = @quater1 ) 
+AND YEAR(a.DocDate) = YEAR(GETDATE()) 
+and b.YearCal = YEAR(GETDATE())+543   
+GROUP BY 
+a.CodeG, c.A1, c.A2, c.A3, c.A4, c.A5, 
+c.Rate1, c.Rate2, c.Rate3, c.MPoint, c.PPoint, c.Incen, b.TierCode, MONTH(a.DocDate)
+) tmp 
+GROUP BY 
+tmp.CodeG, tmp.tier, tmp.A1, tmp.A2, tmp.A3, tmp.A4, tmp.A5, tmp.Rate1, tmp.Rate2, tmp.Rate3 ` + 
                     "                        ), "+ 
              "   mainTable as ( Select 0 as num, NameG, ROW_NUMBER() OVER(ORDER BY sum(Amt) DESC) AS Row, "+
              "                                                CAST(ISNULL(Sum(Amt),0) AS DECIMAL(30,2)) as sales , CAST(ISNULL(Sum(PB),0) AS DECIMAL(30,2)) as PB,   "+
@@ -1447,19 +1183,19 @@ router.post('/salesQuater',function(req,res){
              "                                                                                Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())  "+
              "                                                                                Group by CodeG  "+
              "                                                                             )b on b.CodeG = a.codeG  "+
-             "                                                        left join ( Select  case  when sum(PPoint) <  1050 then '0'   "+
-             "                                                                                                            when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then '0.5'   "+
-             "                                                                                                            when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then '1'  "+
-             "                                                                                                            when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then '1.5'  "+
-             "                                                                                                            when sum(PPoint) >= 3900   then '1.5'  "+
-             "                                                                                                                   end as RateCom ,CodeG, "+
-             "                                                                                                case  when sum(PPoint) <  1050 then 0  "+
-             "                                                                                                            when sum(PPoint) >= 1050  and sum(PPoint) < 1950  then 15000   "+
-             "                                                                                                            when sum(PPoint) >= 1950   and sum(PPoint) < 3000  then 30000   "+
-             "                                                                                                            when sum(PPoint) >= 3000   and sum(PPoint) < 3900  then 45000   "+
-             "                                                                                                            when sum(PPoint) >= 3900   then 60000 end as incentive, sum(PPoint) as point "+
-             "                                                                                From V802 Where   MONTH(docDate) between @month1 and @month2  and year(Docdate) = YEAR(GETDATE())  "+
-             "                                                                                Group by CodeG  "+
+             "                                                        left join ( "+
+                "                                                  select  case when sum(a.PPoint) < A1  then '0'   " +
+                "              when sum(a.PPoint) >=A1 and sum(a.PPoint) < A2 then Rate1 " +
+                 "              when sum(a.PPoint) >=A3 and sum(a.PPoint) < A4 then Rate2   " +
+                 "              when sum(a.PPoint) >=A5 then Rate3   " +
+                 "              end as RateCom,sum(a.PPoint) as point , " +
+                " 				case when sum(a.PPoint) < MPoint then '0' else cast(((sum(a.PPoint)  - c.MPoint)/c.PPoint) as int) * c.Incen end as  incentive, a.CodeG " +
+                "  from V802 a  " +
+                " 	inner join ItemTier b on b.CodeG = a.CodeG " +
+                " 	inner join Tier c on c.Code = b.TierCode " +
+                "  where  Month(a.DocDate) BETWEEN   @month1 and @month2 and year(a.Docdate) = YEAR(GETDATE()) and b.YearCal = YEAR(GETDATE())+543 " +
+                "  GROUP BY  " +
+                "     c.A1, c.A2, c.A3, c.A4, c.A5, c.Rate1, c.Rate2, c.Rate3,c.MPoint, c.Incen,c.PPoint,a.CodeG " +
              "                                                                            )c on c.CodeG = a.codeG  "+
              "                                                        left join ( select sum(tmp.S1) as s1 ,tmp.CodeG  "+
              "                                                                                from( select round(Sum(PB) ,2) as S1,CodeG,V802.ItemCode  "+
@@ -1486,7 +1222,7 @@ router.post('/salesQuater',function(req,res){
              "                   select 1 as num,'รวมทั้งหมด' as NameG,'' as Row,sum(tmp.sales) as sales , sum(PB) as PB , sum(POINTSALE) as POINTSALE, '' as RateCom,   "+
              "                               sum(incentive) as incentive,sum(PBI) as PBI , 0 as PP , sum(AmtPoint) as  AmtPoint ,sum(ComPBI) as ComPBI, sum(COMSP) as COMSP ,  "+
              "                               sum(SumCOMSP) as sumCOMSP,sum(CUMS) as CUMS, sum(PBH1) as PBH1 , sum(PBCal) as PBCal , sum(ComPBH1) as ComPBH1  "+
-                                " from mainTable tmp  ";
+                                " from mainTable  tmp";
     const username= req.session.Login;
     let monthFil = req.body.month;
     console.log(monthFil);
@@ -1510,7 +1246,7 @@ router.post('/salesQuater',function(req,res){
     } else{
         month1 = '10';
         month2 = '12';
-    } 
+    }
 
     var db = new mssql.Request();
         db.input('month1',mssql.VarChar(50),month1);
