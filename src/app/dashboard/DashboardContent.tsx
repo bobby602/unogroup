@@ -78,6 +78,7 @@ export function DashboardContent() {
       title: "ยอดขายประจำเดือน",
       value: data?.sumPointMonth || 0,
       icon: Calendar,
+      href: "/dashboard/points/monthly",
       gradient: "from-blue-500 via-blue-600 to-indigo-600",
       bgGradient: "from-blue-50 to-indigo-50",
       iconBg: "bg-blue-500",
