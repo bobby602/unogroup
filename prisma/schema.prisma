@@ -1,0 +1,215 @@
+// Prisma Schema for UNOGROUP Sales Management
+// Database: Microsoft SQL Server
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+// =====================
+// USER & AUTHENTICATION
+// =====================
+
+/// พนักงานขาย (sale table)
+model Sale {
+  CodeG     String  @id @map("CodeG") @db.VarChar(50)
+  Name      String? @map("Name") @db.NVarChar(100)
+  Surname   String? @map("Surname") @db.NVarChar(100)
+  NameG     String? @map("NameG") @db.NVarChar(100)
+  Password  String? @map("Password") @db.VarChar(100)
+  ST        String? @map("ST") @db.VarChar(10) // Status: 1 = active
+  
+  @@map("sale")
+}
+
+// =====================
+// VIEWS (Read-Only)
+// =====================
+
+/// View สำหรับข้อมูลขาย V801
+model V801 {
+  id        Int      @id @default(autoincrement())
+  CustName  String?  @db.NVarChar(200)
+  CustCode  String?  @db.VarChar(50)
+  CodeG     String?  @db.VarChar(50)
+  NameG     String?  @db.NVarChar(100)
+  DocDate   DateTime?
+  Point     Decimal? @db.Decimal(18, 2)
+  Amt       Decimal? @db.Decimal(18, 2)
+  CUMS      Decimal? @db.Decimal(18, 2)
+  DiscPro   Decimal? @db.Decimal(18, 2)
+  
+  @@map("V801")
+}
+
+/// View สำหรับคะแนน V802
+model V802 {
+  id        Int      @id @default(autoincrement())
+  CodeG     String?  @db.VarChar(50)
+  NameG     String?  @db.NVarChar(100)
+  DocDate   DateTime?
+  ItemCode  String?  @db.VarChar(50)
+  PPoint    Decimal? @db.Decimal(18, 2)
+  PB        Decimal? @db.Decimal(18, 2)
+  Amt       Decimal? @db.Decimal(18, 2)
+  
+  @@map("V802")
+}
+
+/// รายงานขาย RptSale3N
+model RptSale3N {
+  id        Int      @id @default(autoincrement())
+  CustCode  String?  @db.VarChar(50)
+  CustName2 String?  @db.NVarChar(200)
+  DocDate   DateTime?
+  Package   String?  @db.NVarChar(100)
+  ItemName  String?  @db.NVarChar(200)
+  Price     Decimal? @db.Decimal(18, 2)
+  Qty       Decimal? @db.Decimal(18, 2)
+  QtySale   Decimal? @db.Decimal(18, 2)
+  Amt       Decimal? @db.Decimal(18, 2)
+  Cost      Decimal? @db.Decimal(18, 2) // PB
+  CUMS      Decimal? @db.Decimal(18, 2)
+  CodeG     String?  @db.VarChar(50)
+  OrderNo   String?  @db.VarChar(50)
+  cu        Decimal? @db.Decimal(18, 2)
+  MS        Decimal? @db.Decimal(18, 2)
+  
+  @@map("RptSale3N")
+}
+
+/// รายงานขาย RptSale3 (Legacy)
+model RptSale3 {
+  id        Int      @id @default(autoincrement())
+  custCode  String?  @db.VarChar(50)
+  custName  String?  @db.NVarChar(200)
+  custName2 String?  @db.NVarChar(200)
+  saleName  String?  @db.NVarChar(100)
+  DocNo     String?  @db.VarChar(50)
+  DocDate   DateTime?
+  ItemName  String?  @db.NVarChar(200)
+  Package   String?  @db.NVarChar(100)
+  Price     Decimal? @db.Decimal(18, 2)
+  QtySale   Decimal? @db.Decimal(18, 2)
+  Amt       Decimal? @db.Decimal(18, 2)
+  Cost      Decimal? @db.Decimal(18, 2)
+  AmtDiff   Decimal? @db.Decimal(18, 2) // CUMS
+  MaxCr     Decimal? @db.Decimal(18, 2)
+  CodeG     String?  @db.VarChar(50)
+  SaleCode  String?  @db.VarChar(50)
+  DocSP     String?  @db.VarChar(10)
+  ComSP     Decimal? @db.Decimal(18, 2)
+  cu        Decimal? @db.Decimal(18, 2)
+  ms        Decimal? @db.Decimal(18, 2)
+  
+  @@map("rptSale3")
+}
+
+// =====================
+// PRODUCTS
+// =====================
+
+/// สินค้า ItemFG
+model ItemFG {
+  ItemCode     String  @id @db.VarChar(50)
+  Name         String? @db.NVarChar(200)
+  SName        String? @db.NVarChar(100)
+  CatName      String? @db.NVarChar(100)
+  Package      String? @db.NVarChar(100)
+  Point        Decimal? @db.Decimal(18, 2)
+  PriceList    Decimal? @db.Decimal(18, 2)
+  Price15      Decimal? @db.Decimal(18, 2)
+  Price25      Decimal? @db.Decimal(18, 2)
+  Price50      Decimal? @db.Decimal(18, 2)
+  Price120     Decimal? @db.Decimal(18, 2)
+  G            String? @db.VarChar(10)
+  StShowPrice  String? @db.VarChar(10)
+  NoteF        String? @db.NVarChar(500)
+  
+  @@map("ItemFG")
+}
+
+/// กลุ่มสินค้า ItemG
+model ItemG {
+  code       String  @id @db.VarChar(50)
+  grItemCode String? @db.VarChar(10) // H = หมวดพิเศษ
+  
+  @@map("ItemG")
+}
+
+/// สินค้าคอมมิชชั่น
+model ItemComPI {
+  itemcode String @id @db.VarChar(50)
+  
+  @@map("itemcomPI")
+}
+
+// =====================
+// TIER & COMMISSION
+// =====================
+
+/// Tier Configuration
+model Tier {
+  Code    String  @id @db.VarChar(50)
+  A1      Decimal? @db.Decimal(18, 2)
+  A2      Decimal? @db.Decimal(18, 2)
+  A3      Decimal? @db.Decimal(18, 2)
+  A4      Decimal? @db.Decimal(18, 2)
+  A5      Decimal? @db.Decimal(18, 2)
+  Rate1   Decimal? @db.Decimal(18, 2)
+  Rate2   Decimal? @db.Decimal(18, 2)
+  Rate3   Decimal? @db.Decimal(18, 2)
+  MPoint  Decimal? @db.Decimal(18, 2)
+  PPoint  Decimal? @db.Decimal(18, 2)
+  Incen   Decimal? @db.Decimal(18, 2)
+  
+  @@map("Tier")
+}
+
+/// พนักงาน-Tier Mapping
+model ItemTier {
+  id       Int     @id @default(autoincrement())
+  CodeG    String? @db.VarChar(50)
+  TierCode String? @db.VarChar(50)
+  YearCal  Int?
+  
+  @@map("ItemTier")
+}
+
+// =====================
+// ORDERS
+// =====================
+
+/// ข้อมูลออเดอร์ QSO2
+model QSO2 {
+  id        Int      @id @default(autoincrement())
+  DocNo     String?  @db.VarChar(50)
+  DocDate   DateTime?
+  CustName  String?  @db.NVarChar(200)
+  SendNo    String?  @db.VarChar(50)
+  itemName1 String?  @db.NVarChar(200)
+  Package   String?  @db.NVarChar(100)
+  qtypackd  Decimal? @db.Decimal(18, 2)
+  Price     Decimal? @db.Decimal(18, 2)
+  packd     String?  @db.NVarChar(50)
+  AmtCT1    Decimal? @db.Decimal(18, 2)
+  AmtCT2    Decimal? @db.Decimal(18, 2)
+  AmtCT3    Decimal? @db.Decimal(18, 2)
+  AMTCTT    Decimal? @db.Decimal(18, 2)
+  AmtT1     Decimal? @db.Decimal(18, 2)
+  AmtT2     Decimal? @db.Decimal(18, 2)
+  AmtT3     Decimal? @db.Decimal(18, 2)
+  AMTTT     Decimal? @db.Decimal(18, 2)
+  Note      String?  @db.NVarChar(500)
+  Note2     String?  @db.NVarChar(500)
+  Note3     String?  @db.NVarChar(500)
+  Note4     String?  @db.NVarChar(500)
+  Note5     String?  @db.NVarChar(500)
+  Note6     String?  @db.NVarChar(500)
+  
+  @@map("QSO2")
+}
