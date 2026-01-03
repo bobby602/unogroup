@@ -31,6 +31,18 @@ interface DashboardData {
   sumPointAllYear: number;
 }
 
+interface StatItem {
+  num: string;
+  title: string;
+  value: number;
+  icon: React.ComponentType<{ className?: string }>;
+  href: string;
+  gradient: string;
+  bgGradient: string;
+  iconBg: string;
+  textColor: string;
+}
+
 async function fetchDashboardData(): Promise<DashboardData> {
   const res = await fetch("/api/dashboard");
   if (!res.ok) throw new Error("Failed to fetch dashboard data");
@@ -72,7 +84,7 @@ export function DashboardContent() {
   if (isLoading) return <DashboardSkeleton />;
   if (error) return <div className="text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>;
 
-  const stats = [
+  const stats: StatItem[] = [
     {
       num: "1",
       title: "ยอดขายประจำเดือน",
@@ -89,6 +101,7 @@ export function DashboardContent() {
       title: "ยอดขายประจำไตรมาส",
       value: data?.sumPointQuarter || 0,
       icon: TrendingUp,
+      href: "/dashboard/points/quarterly",
       gradient: "from-emerald-500 via-green-500 to-teal-500",
       bgGradient: "from-emerald-50 to-teal-50",
       iconBg: "bg-emerald-500",
@@ -99,6 +112,7 @@ export function DashboardContent() {
       title: "ยอดขายประจำปี",
       value: data?.sumPointYear || 0,
       icon: Award,
+      href: "/dashboard/points/yearly",
       gradient: "from-violet-500 via-purple-500 to-fuchsia-500",
       bgGradient: "from-violet-50 to-fuchsia-50",
       iconBg: "bg-violet-500",
@@ -113,6 +127,7 @@ export function DashboardContent() {
       shortTitle: "ค่าคอมฯ เดือน UNOGROUP",
       value: data?.sumPointAllMonth || 0,
       icon: Building2,
+      href: "/dashboard/commission/monthly",
     },
     {
       num: "5",
@@ -120,6 +135,7 @@ export function DashboardContent() {
       shortTitle: "ค่าคอมฯ ไตรมาส UNOGROUP",
       value: data?.sumPointQuarterUno || 0,
       icon: Target,
+      href: "/dashboard/commission/quarterly",
     },
     {
       num: "6",
@@ -127,6 +143,7 @@ export function DashboardContent() {
       shortTitle: "ค่าคอมฯ ปี UNOGROUP",
       value: data?.sumPointAllYear || 0,
       icon: Users,
+      href: "/dashboard/commission/yearly",
     },
   ];
 
@@ -168,50 +185,61 @@ export function DashboardContent() {
       <motion.div variants={itemVariants}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {stats.map((stat) => (
-            <motion.div
-              key={stat.num}
-              variants={itemVariants}
-              whileHover={{ 
-                scale: 1.03, 
-                y: -8,
-                transition: { type: "spring", stiffness: 400 }
-              }}
-              whileTap={{ scale: 0.98 }}
-              className="group"
+            <Link 
+              key={stat.num} 
+              href={stat.href}
+              className="block" // ← สำคัญ! ทำให้ Link เป็น block element
             >
-              <div className={`relative rounded-2xl p-[2px] bg-gradient-to-br ${stat.gradient} shadow-lg hover:shadow-xl transition-shadow duration-300`}>
-                <div className={`bg-gradient-to-br ${stat.bgGradient} rounded-2xl p-5 sm:p-6 h-full backdrop-blur-sm`}>
-                  {/* Number badge */}
-                  <div className={`absolute -top-3 -left-2 w-8 h-8 rounded-full bg-gradient-to-br ${stat.gradient} flex items-center justify-center text-white font-bold text-sm shadow-lg`}>
-                    {stat.num}
-                  </div>
-                  
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 pt-2">
-                      <p className="text-sm sm:text-base font-semibold text-gray-700 mb-3">
-                        {stat.title}
-                      </p>
-                      <div className="flex items-baseline gap-2">
-                        <span className={`text-3xl sm:text-4xl font-bold ${stat.textColor}`}>
-                          {formatNumber(stat.value, 2)}
-                        </span>
-                        <span className="text-sm text-gray-500 font-medium">
-                          Points
-                        </span>
+              <motion.div
+                variants={itemVariants}
+                whileHover={{ 
+                  scale: 1.03, 
+                  y: -8,
+                  transition: { type: "spring", stiffness: 400 }
+                }}
+                whileTap={{ scale: 0.98 }}
+                className="group cursor-pointer h-full" // ← เพิ่ม cursor-pointer และ h-full
+              >
+                <div className={`relative rounded-2xl p-[2px] bg-gradient-to-br ${stat.gradient} shadow-lg hover:shadow-xl transition-shadow duration-300 h-full`}>
+                  <div className={`bg-gradient-to-br ${stat.bgGradient} rounded-2xl p-5 sm:p-6 h-full backdrop-blur-sm`}>
+                    {/* Number badge */}
+                    <div className={`absolute -top-3 -left-2 w-8 h-8 rounded-full bg-gradient-to-br ${stat.gradient} flex items-center justify-center text-white font-bold text-sm shadow-lg`}>
+                      {stat.num}
+                    </div>
+                    
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 pt-2">
+                        <p className="text-sm sm:text-base font-semibold text-gray-700 mb-3">
+                          {stat.title}
+                        </p>
+                        <div className="flex items-baseline gap-2">
+                          <span className={`text-3xl sm:text-4xl font-bold ${stat.textColor}`}>
+                            {formatNumber(stat.value, 2)}
+                          </span>
+                          <span className="text-sm text-gray-500 font-medium">
+                            Points
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Icon */}
+                      <div className={`${stat.iconBg} p-3 sm:p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                        <stat.icon className="text-white w-6 h-6 sm:w-7 sm:h-7" />
                       </div>
                     </div>
                     
-                    {/* Icon */}
-                    <div className={`${stat.iconBg} p-3 sm:p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                      <stat.icon className="text-white w-6 h-6 sm:w-7 sm:h-7" />
+                    {/* Click indicator */}
+                    <div className="mt-4 flex items-center gap-1 text-xs text-gray-400 group-hover:text-gray-600 transition-colors">
+                      <span>คลิกเพื่อดูรายละเอียด</span>
+                      <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                     </div>
+                    
+                    {/* Decorative element */}
+                    <div className={`absolute bottom-0 right-0 w-24 h-24 bg-gradient-to-br ${stat.gradient} opacity-5 rounded-tl-full`}></div>
                   </div>
-                  
-                  {/* Decorative element */}
-                  <div className={`absolute bottom-0 right-0 w-24 h-24 bg-gradient-to-br ${stat.gradient} opacity-5 rounded-tl-full`}></div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </Link>
           ))}
         </div>
       </motion.div>
@@ -232,46 +260,51 @@ export function DashboardContent() {
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {unoStats.map((stat) => (
-                <motion.div
-                  key={stat.num}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="group"
+                <Link 
+                  key={stat.num} 
+                  href={stat.href}
+                  className="block"
                 >
-                  <div className="relative bg-white rounded-2xl p-4 sm:p-5 shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden">
-                    {/* Number badge */}
-                    <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white font-bold text-xs shadow">
-                      {stat.num}
-                    </div>
-                    
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2.5 rounded-xl bg-gradient-to-br from-red-50 to-orange-50 group-hover:from-red-100 group-hover:to-orange-100 transition-colors">
-                        <stat.icon className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="group cursor-pointer h-full"
+                  >
+                    <div className="relative bg-white rounded-2xl p-4 sm:p-5 shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden h-full">
+                      {/* Number badge */}
+                      <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white font-bold text-xs shadow">
+                        {stat.num}
                       </div>
+                      
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2.5 rounded-xl bg-gradient-to-br from-red-50 to-orange-50 group-hover:from-red-100 group-hover:to-orange-100 transition-colors">
+                          <stat.icon className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
+                        </div>
+                      </div>
+                      
+                      {/* Title */}
+                      <p className="text-xs sm:text-sm text-gray-600 font-medium mb-2 sm:hidden">
+                        {stat.shortTitle}
+                      </p>
+                      <p className="text-xs sm:text-sm text-gray-600 font-medium mb-2 hidden sm:block">
+                        {stat.title}
+                      </p>
+                      
+                      {/* Value */}
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
+                          {formatNumber(stat.value, 2)}
+                        </span>
+                        <span className="text-xs sm:text-sm text-gray-400">
+                          Points
+                        </span>
+                      </div>
+                      
+                      {/* Bottom gradient line */}
+                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-500 to-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </div>
-                    
-                    {/* Title */}
-                    <p className="text-xs sm:text-sm text-gray-600 font-medium mb-2 sm:hidden">
-                      {stat.shortTitle}
-                    </p>
-                    <p className="text-xs sm:text-sm text-gray-600 font-medium mb-2 hidden sm:block">
-                      {stat.title}
-                    </p>
-                    
-                    {/* Value */}
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
-                        {formatNumber(stat.value, 2)}
-                      </span>
-                      <span className="text-xs sm:text-sm text-gray-400">
-                        Points
-                      </span>
-                    </div>
-                    
-                    {/* Bottom gradient line */}
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-500 to-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  </div>
-                </motion.div>
+                  </motion.div>
+                </Link>
               ))}
             </div>
           </div>
@@ -280,33 +313,33 @@ export function DashboardContent() {
 
       {/* PriceList Button - Modern style */}
       <motion.div variants={itemVariants}>
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 p-[2px]">
-          <div className="bg-white rounded-2xl">
-            <div className="flex items-center justify-between p-5 sm:p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl shadow-lg">
-                  <FileText className="w-6 h-6 text-white" />
+        <Link href="/dashboard/price-list" className="block">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 p-[2px] cursor-pointer group">
+            <div className="bg-white rounded-2xl">
+              <div className="flex items-center justify-between p-5 sm:p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+                    <FileText className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500 font-medium">รายการที่ 7</span>
+                    <p className="text-lg sm:text-xl font-bold text-gray-800">PriceList</p>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-xs text-gray-500 font-medium">รายการที่ 7</span>
-                  <p className="text-lg sm:text-xl font-bold text-gray-800">PriceList</p>
-                </div>
-              </div>
-              <Link href="/dashboard/price-list">
                 <Button className="h-11 sm:h-12 px-6 sm:px-8 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group">
                   <span>Click</span>
                   <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
-              </Link>
+              </div>
             </div>
           </div>
-        </div>
+        </Link>
       </motion.div>
 
       {/* Quick Links - Pill buttons */}
       <motion.div variants={itemVariants}>
         <div className="flex flex-wrap gap-3 sm:gap-4 justify-center">
-          {quickLinks.map((link, index) => (
+          {quickLinks.map((link) => (
             <Link key={link.href} href={link.href}>
               <motion.div
                 whileHover={{ scale: 1.05 }}

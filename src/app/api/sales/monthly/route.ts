@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { db } from '@/lib/db';
 import type { MonthlySalesData, MonthlySalesResponse } from '@/types/monthly-sales';
 
 // Thai month names
@@ -14,79 +17,140 @@ const THAI_MONTHS = [
  */
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Add authentication check
-    // const session = await getServerSession(authOptions);
-    // if (!session) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
+    // Authentication check
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.codeG) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
-    const searchParams = request.nextUrl.searchParams;
-    const userCode = searchParams.get('userCode') || 'demo';
-    
-    // Get current month
-    const currentMonth = new Date().getMonth();
-    const monthFil = THAI_MONTHS[currentMonth];
+    const codeG = session.user.codeG;
+    const currentMonth = new Date().getMonth() + 1; // 1-12
+    const currentYear = new Date().getFullYear();
+    const monthFil = THAI_MONTHS[currentMonth - 1];
 
-    // TODO: Replace with actual database query using Prisma
-    /*
-    Original SQL Query:
-    
-    SELECT
-      0 as num,
-      NameG,
-      ROW_NUMBER() OVER(ORDER BY sum(Amt) DESC) AS Row,
-      CAST(ISNULL(Sum(Amt),0) AS DECIMAL(30,2)) as sales,
-      CAST(ISNULL(Sum(PB),0) AS DECIMAL(30,2)) as PB,
-      CAST(ISNULL(Sum(PPoint),0) AS DECIMAL(30,2)) as POINTSALE,
-      c.RateCom,
-      c.incentive,
-      CAST(ISNULL(b.S1,0) AS DECIMAL(30,2)) as PBI,
-      CAST(ISNULL((Sum(PB) - ISNULL(b.s1,0)),0) as DECIMAL(30,2)) as PP,
-      CAST(ISNULL(((Sum(PB) - (ISNULL(b.s1,0)+ ( ISNULL(e.s1,0)-ISNULL(d.s1,0))))*c.rateCom/100)+(case when Cast(c.RateCom as float) ='0' then 0 when Cast(c.RateCom as float) ='0.5'  then 0.5 else 1 end*(ISNULL(e.s1,0)-ISNULL(d.s1,0))/100)+ case when c.RateCom = '0'  then '0'else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end,0) as DECIMAL(30,2)) as AmtPoint,
-      case when c.RateCom = '0' then '0' else CAST(ISNULL((b.S1 * 0.5 /100),0) as DECIMAL(30,2)) end as ComPBI,
-      CAST(ISNULL(Sum(ComSP),0) AS DECIMAL(30,2)) as COMSP,
-      CAST(ISNULL((Sum(ComSP)+(...)) AS DECIMAL(30,2)) as SumCOMSP,
-      CAST(ISNULL(Sum(cums),0) AS DECIMAL(30,2)) as CUMS,
-      (e.s1-ISNULL(d.s1,0)) as PBH1,
-      (ISNULL(Sum(PB),0)-(e.s1)) as PBCal,
-      (...) as ComPBH1
-    FROM V802 a
-    LEFT JOIN (...) b ON b.CodeG = a.codeG
-    LEFT JOIN (...) c ON c.CodeG = a.codeG
-    LEFT JOIN (...) d ON d.CodeG = a.CodeG
-    LEFT JOIN (...) e ON e.CodeG = a.CodeG
-    WHERE CodeG = @Login
-      AND Month(DocDate) = MONTH(GETDATE())
-      AND year(Docdate) = YEAR(GETDATE())
-    GROUP BY NameG, b.S1, c.RateCom, a.CodeG, c.incentive, e.s1, d.s1, c.point
-    */
+    // Query ข้อมูลจาก database
+    const salesData = await db.$queryRaw<MonthlySalesData[]>`
+      SELECT
+        0 as num,
+        a.NameG,
+        ROW_NUMBER() OVER(ORDER BY SUM(a.Amt) DESC) AS Row,
+        CAST(ISNULL(SUM(a.Amt), 0) AS DECIMAL(30,2)) as sales,
+        CAST(ISNULL(SUM(a.PB), 0) AS DECIMAL(30,2)) as PB,
+        CAST(ISNULL(SUM(a.PPoint), 0) AS DECIMAL(30,2)) as POINTSALE,
+        ISNULL(c.RateCom, '0') as RateCom,
+        ISNULL(c.incentive, 0) as incentive,
+        CAST(ISNULL(b.S1, 0) AS DECIMAL(30,2)) as PBI,
+        CAST(ISNULL((SUM(a.PB) - ISNULL(b.S1, 0)), 0) AS DECIMAL(30,2)) as PP,
+        CAST(
+          ISNULL(
+            ((SUM(a.PB) - (ISNULL(b.S1, 0) + (ISNULL(e.S1, 0) - ISNULL(d.S1, 0)))) * CAST(c.RateCom AS FLOAT) / 100)
+            + (CASE 
+                WHEN CAST(c.RateCom AS FLOAT) = 0 THEN 0 
+                WHEN CAST(c.RateCom AS FLOAT) = 0.5 THEN 0.5 
+                ELSE 1 
+              END * (ISNULL(e.S1, 0) - ISNULL(d.S1, 0)) / 100)
+            + (CASE 
+                WHEN c.RateCom = '0' THEN 0 
+                ELSE CAST(ISNULL((b.S1 * 0.5 / 100), 0) AS DECIMAL(30,2)) 
+              END)
+          , 0) 
+        AS DECIMAL(30,2)) as AmtPoint,
+        CASE 
+          WHEN c.RateCom = '0' THEN 0 
+          ELSE CAST(ISNULL((b.S1 * 0.5 / 100), 0) AS DECIMAL(30,2)) 
+        END as ComPBI,
+        CAST(ISNULL(SUM(a.ComSP), 0) AS DECIMAL(30,2)) as COMSP,
+        CAST(
+          ISNULL(
+            SUM(a.ComSP) + 
+            ((SUM(a.PB) - (ISNULL(b.S1, 0) + (ISNULL(e.S1, 0) - ISNULL(d.S1, 0)))) * CAST(c.RateCom AS FLOAT) / 100)
+            + (CASE 
+                WHEN CAST(c.RateCom AS FLOAT) = 0 THEN 0 
+                WHEN CAST(c.RateCom AS FLOAT) = 0.5 THEN 0.5 
+                ELSE 1 
+              END * (ISNULL(e.S1, 0) - ISNULL(d.S1, 0)) / 100)
+            + (CASE 
+                WHEN c.RateCom = '0' THEN 0 
+                ELSE CAST(ISNULL((b.S1 * 0.5 / 100), 0) AS DECIMAL(30,2)) 
+              END)
+          , 0)
+        AS DECIMAL(30,2)) as SumCOMSP,
+        CAST(ISNULL(SUM(a.cums), 0) AS DECIMAL(30,2)) as CUMS,
+        CAST((ISNULL(e.S1, 0) - ISNULL(d.S1, 0)) AS DECIMAL(30,2)) as PBH1,
+        CAST((ISNULL(SUM(a.PB), 0) - ISNULL(e.S1, 0)) AS DECIMAL(30,2)) as PBCal,
+        CAST(
+          (CASE 
+            WHEN CAST(c.RateCom AS FLOAT) = 0 THEN 0 
+            WHEN CAST(c.RateCom AS FLOAT) = 0.5 THEN 0.5 
+            ELSE 1 
+          END * (ISNULL(e.S1, 0) - ISNULL(d.S1, 0)) / 100)
+        AS DECIMAL(30,2)) as ComPBH1
+      FROM V802 a
+      LEFT JOIN (
+        SELECT CodeG, SUM(PB) as S1 
+        FROM V802 
+        WHERE MONTH(DocDate) = ${currentMonth} 
+          AND YEAR(DocDate) = ${currentYear}
+          AND ItemType = 'I'
+        GROUP BY CodeG
+      ) b ON b.CodeG = a.CodeG
+      LEFT JOIN (
+        SELECT CodeG, RateCom, incentive, point 
+        FROM SalesRate 
+        WHERE MONTH(EffectiveDate) <= ${currentMonth} 
+          AND YEAR(EffectiveDate) = ${currentYear}
+      ) c ON c.CodeG = a.CodeG
+      LEFT JOIN (
+        SELECT CodeG, SUM(PB) as S1 
+        FROM V802 
+        WHERE MONTH(DocDate) = ${currentMonth} 
+          AND YEAR(DocDate) = ${currentYear}
+          AND ItemType = 'H1'
+          AND CustType = 'OLD'
+        GROUP BY CodeG
+      ) d ON d.CodeG = a.CodeG
+      LEFT JOIN (
+        SELECT CodeG, SUM(PB) as S1 
+        FROM V802 
+        WHERE MONTH(DocDate) = ${currentMonth} 
+          AND YEAR(DocDate) = ${currentYear}
+          AND ItemType = 'H1'
+        GROUP BY CodeG
+      ) e ON e.CodeG = a.CodeG
+      WHERE a.CodeG = ${codeG}
+        AND MONTH(a.DocDate) = ${currentMonth}
+        AND YEAR(a.DocDate) = ${currentYear}
+      GROUP BY a.NameG, b.S1, c.RateCom, a.CodeG, c.incentive, e.S1, d.S1, c.point
+      ORDER BY SUM(a.Amt) DESC
+    `;
 
-    // Mock data for demonstration
-    const mockData: MonthlySalesData[] = [
-      {
-        num: 0,
-        NameG: 'ทดสอบ Sales',
-        Row: 1,
-        sales: 1250000.50,
-        PB: 980000.25,
-        POINTSALE: 12500.75,
-        RateCom: '1.5',
-        incentive: 45000.00,
-        PBI: 50000.00,
-        PP: 930000.25,
-        AmtPoint: 14850.00,
-        ComPBI: 250.00,
-        COMSP: 3500.00,
-        SumCOMSP: 18600.00,
-        CUMS: 270000.00,
-        PBH1: 25000.00,
-        PBCal: 905000.25,
-        ComPBH1: 375.00
-      }
-    ];
+    // แปลงค่าให้เป็น number (Prisma อาจ return เป็น Decimal)
+    const formattedData: MonthlySalesData[] = salesData.map((item, index) => ({
+      num: index,
+      NameG: item.NameG || '',
+      Row: Number(item.Row) || index + 1,
+      sales: Number(item.sales) || 0,
+      PB: Number(item.PB) || 0,
+      POINTSALE: Number(item.POINTSALE) || 0,
+      RateCom: String(item.RateCom) || '0',
+      incentive: Number(item.incentive) || 0,
+      PBI: Number(item.PBI) || 0,
+      PP: Number(item.PP) || 0,
+      AmtPoint: Number(item.AmtPoint) || 0,
+      ComPBI: Number(item.ComPBI) || 0,
+      COMSP: Number(item.COMSP) || 0,
+      SumCOMSP: Number(item.SumCOMSP) || 0,
+      CUMS: Number(item.CUMS) || 0,
+      PBH1: Number(item.PBH1) || 0,
+      PBCal: Number(item.PBCal) || 0,
+      ComPBH1: Number(item.ComPBH1) || 0,
+    }));
 
     const response: MonthlySalesResponse = {
-      testData: mockData,
+      testData: formattedData,
       monthFil: monthFil
     };
 
@@ -110,8 +174,18 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    // Authentication check
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.codeG) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
-    const { month, userCode } = body;
+    const { month } = body;
+    const codeG = session.user.codeG;
 
     // Validate month
     const monthNum = parseInt(month, 10);
@@ -122,44 +196,129 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const currentYear = new Date().getFullYear();
     const monthFil = THAI_MONTHS[monthNum - 1];
 
-    // TODO: Replace with actual database query using Prisma
-    /*
-    Original SQL Query (POST version - with selected month):
-    
-    Same as GET but with:
-    WHERE CodeG = @Login
-      AND Month(DocDate) = @selectedMonth
-      AND year(Docdate) = YEAR(GETDATE())
-    */
+    // Query ข้อมูลจาก database ตามเดือนที่เลือก
+    const salesData = await db.$queryRaw<MonthlySalesData[]>`
+      SELECT
+        0 as num,
+        a.NameG,
+        ROW_NUMBER() OVER(ORDER BY SUM(a.Amt) DESC) AS Row,
+        CAST(ISNULL(SUM(a.Amt), 0) AS DECIMAL(30,2)) as sales,
+        CAST(ISNULL(SUM(a.PB), 0) AS DECIMAL(30,2)) as PB,
+        CAST(ISNULL(SUM(a.PPoint), 0) AS DECIMAL(30,2)) as POINTSALE,
+        ISNULL(c.RateCom, '0') as RateCom,
+        ISNULL(c.incentive, 0) as incentive,
+        CAST(ISNULL(b.S1, 0) AS DECIMAL(30,2)) as PBI,
+        CAST(ISNULL((SUM(a.PB) - ISNULL(b.S1, 0)), 0) AS DECIMAL(30,2)) as PP,
+        CAST(
+          ISNULL(
+            ((SUM(a.PB) - (ISNULL(b.S1, 0) + (ISNULL(e.S1, 0) - ISNULL(d.S1, 0)))) * CAST(c.RateCom AS FLOAT) / 100)
+            + (CASE 
+                WHEN CAST(c.RateCom AS FLOAT) = 0 THEN 0 
+                WHEN CAST(c.RateCom AS FLOAT) = 0.5 THEN 0.5 
+                ELSE 1 
+              END * (ISNULL(e.S1, 0) - ISNULL(d.S1, 0)) / 100)
+            + (CASE 
+                WHEN c.RateCom = '0' THEN 0 
+                ELSE CAST(ISNULL((b.S1 * 0.5 / 100), 0) AS DECIMAL(30,2)) 
+              END)
+          , 0) 
+        AS DECIMAL(30,2)) as AmtPoint,
+        CASE 
+          WHEN c.RateCom = '0' THEN 0 
+          ELSE CAST(ISNULL((b.S1 * 0.5 / 100), 0) AS DECIMAL(30,2)) 
+        END as ComPBI,
+        CAST(ISNULL(SUM(a.ComSP), 0) AS DECIMAL(30,2)) as COMSP,
+        CAST(
+          ISNULL(
+            SUM(a.ComSP) + 
+            ((SUM(a.PB) - (ISNULL(b.S1, 0) + (ISNULL(e.S1, 0) - ISNULL(d.S1, 0)))) * CAST(c.RateCom AS FLOAT) / 100)
+            + (CASE 
+                WHEN CAST(c.RateCom AS FLOAT) = 0 THEN 0 
+                WHEN CAST(c.RateCom AS FLOAT) = 0.5 THEN 0.5 
+                ELSE 1 
+              END * (ISNULL(e.S1, 0) - ISNULL(d.S1, 0)) / 100)
+            + (CASE 
+                WHEN c.RateCom = '0' THEN 0 
+                ELSE CAST(ISNULL((b.S1 * 0.5 / 100), 0) AS DECIMAL(30,2)) 
+              END)
+          , 0)
+        AS DECIMAL(30,2)) as SumCOMSP,
+        CAST(ISNULL(SUM(a.cums), 0) AS DECIMAL(30,2)) as CUMS,
+        CAST((ISNULL(e.S1, 0) - ISNULL(d.S1, 0)) AS DECIMAL(30,2)) as PBH1,
+        CAST((ISNULL(SUM(a.PB), 0) - ISNULL(e.S1, 0)) AS DECIMAL(30,2)) as PBCal,
+        CAST(
+          (CASE 
+            WHEN CAST(c.RateCom AS FLOAT) = 0 THEN 0 
+            WHEN CAST(c.RateCom AS FLOAT) = 0.5 THEN 0.5 
+            ELSE 1 
+          END * (ISNULL(e.S1, 0) - ISNULL(d.S1, 0)) / 100)
+        AS DECIMAL(30,2)) as ComPBH1
+      FROM V802 a
+      LEFT JOIN (
+        SELECT CodeG, SUM(PB) as S1 
+        FROM V802 
+        WHERE MONTH(DocDate) = ${monthNum} 
+          AND YEAR(DocDate) = ${currentYear}
+          AND ItemType = 'I'
+        GROUP BY CodeG
+      ) b ON b.CodeG = a.CodeG
+      LEFT JOIN (
+        SELECT CodeG, RateCom, incentive, point 
+        FROM SalesRate 
+        WHERE MONTH(EffectiveDate) <= ${monthNum} 
+          AND YEAR(EffectiveDate) = ${currentYear}
+      ) c ON c.CodeG = a.CodeG
+      LEFT JOIN (
+        SELECT CodeG, SUM(PB) as S1 
+        FROM V802 
+        WHERE MONTH(DocDate) = ${monthNum} 
+          AND YEAR(DocDate) = ${currentYear}
+          AND ItemType = 'H1'
+          AND CustType = 'OLD'
+        GROUP BY CodeG
+      ) d ON d.CodeG = a.CodeG
+      LEFT JOIN (
+        SELECT CodeG, SUM(PB) as S1 
+        FROM V802 
+        WHERE MONTH(DocDate) = ${monthNum} 
+          AND YEAR(DocDate) = ${currentYear}
+          AND ItemType = 'H1'
+        GROUP BY CodeG
+      ) e ON e.CodeG = a.CodeG
+      WHERE a.CodeG = ${codeG}
+        AND MONTH(a.DocDate) = ${monthNum}
+        AND YEAR(a.DocDate) = ${currentYear}
+      GROUP BY a.NameG, b.S1, c.RateCom, a.CodeG, c.incentive, e.S1, d.S1, c.point
+      ORDER BY SUM(a.Amt) DESC
+    `;
 
-    // Mock data - adjust values based on selected month
-    const mockData: MonthlySalesData[] = [
-      {
-        num: 0,
-        NameG: 'ทดสอบ Sales',
-        Row: 1,
-        sales: 1000000 + (monthNum * 50000),
-        PB: 800000 + (monthNum * 40000),
-        POINTSALE: 10000 + (monthNum * 500),
-        RateCom: monthNum > 6 ? '1.5' : '1',
-        incentive: monthNum > 6 ? 45000 : 30000,
-        PBI: 45000 + (monthNum * 1000),
-        PP: 755000 + (monthNum * 39000),
-        AmtPoint: 12000 + (monthNum * 600),
-        ComPBI: 225 + (monthNum * 5),
-        COMSP: 3000 + (monthNum * 100),
-        SumCOMSP: 15225 + (monthNum * 705),
-        CUMS: 220000 + (monthNum * 10000),
-        PBH1: 20000 + (monthNum * 1000),
-        PBCal: 735000 + (monthNum * 38000),
-        ComPBH1: 300 + (monthNum * 15)
-      }
-    ];
+    // แปลงค่าให้เป็น number
+    const formattedData: MonthlySalesData[] = salesData.map((item, index) => ({
+      num: index,
+      NameG: item.NameG || '',
+      Row: Number(item.Row) || index + 1,
+      sales: Number(item.sales) || 0,
+      PB: Number(item.PB) || 0,
+      POINTSALE: Number(item.POINTSALE) || 0,
+      RateCom: String(item.RateCom) || '0',
+      incentive: Number(item.incentive) || 0,
+      PBI: Number(item.PBI) || 0,
+      PP: Number(item.PP) || 0,
+      AmtPoint: Number(item.AmtPoint) || 0,
+      ComPBI: Number(item.ComPBI) || 0,
+      COMSP: Number(item.COMSP) || 0,
+      SumCOMSP: Number(item.SumCOMSP) || 0,
+      CUMS: Number(item.CUMS) || 0,
+      PBH1: Number(item.PBH1) || 0,
+      PBCal: Number(item.PBCal) || 0,
+      ComPBH1: Number(item.ComPBH1) || 0,
+    }));
 
     const response: MonthlySalesResponse = {
-      testData: mockData,
+      testData: formattedData,
       monthFil: monthFil
     };
 
