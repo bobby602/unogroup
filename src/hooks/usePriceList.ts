@@ -202,11 +202,11 @@ export function useVirtualList(
     handleResize();
     
     container.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleResize);
+    globalThis.addEventListener('resize', handleResize);
     
     return () => {
       container.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleResize);
+      globalThis.removeEventListener('resize', handleResize);
     };
   }, [containerRef]);
   
@@ -214,7 +214,6 @@ export function useVirtualList(
   const virtualItems = useMemo((): VirtualItem[] => {
     if (containerHeight === 0 || itemCount === 0) return [];
     
-    const totalSize = itemCount * itemSize;
     const startIndex = Math.max(0, Math.floor(scrollTop / itemSize) - overscan);
     const endIndex = Math.min(
       itemCount - 1,

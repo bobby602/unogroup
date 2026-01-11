@@ -18,6 +18,7 @@ interface SalesData {
   cums: number;
   cu: number;
   ms: number;
+  [key: string]: string | number | boolean | undefined | null;
 }
 
 // Mock data for demonstration

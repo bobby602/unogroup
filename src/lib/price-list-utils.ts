@@ -1,6 +1,18 @@
 import { PriceListItem, PriceCategory, GroupOption, PriceListData } from '@/types/price-list';
 
 // =============================================================================
+// TYPES
+// =============================================================================
+
+export interface PriceListStats {
+  totalItems: number;
+  totalCategories: number;
+  avgPrice: number;
+  minPrice: number;
+  maxPrice: number;
+}
+
+// =============================================================================
 // CACHE CONFIGURATION
 // =============================================================================
 
@@ -31,11 +43,13 @@ export function clearCache(): void {
 }
 
 export function clearCacheByPrefix(prefix: string): void {
-  for (const key of cache.keys()) {
+  const keysToDelete: string[] = [];
+  cache.forEach((_, key) => {
     if (key.startsWith(prefix)) {
-      cache.delete(key);
+      keysToDelete.push(key);
     }
-  }
+  });
+  keysToDelete.forEach(key => cache.delete(key));
 }
 
 // =============================================================================
@@ -101,125 +115,31 @@ export function filterCategories(
   if (!query.trim()) return categories;
   
   return categories
-    .map(cat => ({
-      ...cat,
-      items: filterItems(cat.items, query),
+    .map(category => ({
+      ...category,
+      items: filterItems(category.items, query),
     }))
-    .filter(cat => cat.items.length > 0);
+    .filter(category => category.items.length > 0);
 }
 
 // =============================================================================
-// SORTING UTILITIES
+// STATISTICS UTILITIES
 // =============================================================================
-
-export type SortField = 'name' | 'point' | 'priceList' | 'price15' | 'price25' | 'price50';
-export type SortDirection = 'asc' | 'desc';
-
-export function sortItems(
-  items: PriceListItem[], 
-  field: SortField, 
-  direction: SortDirection
-): PriceListItem[] {
-  return [...items].sort((a, b) => {
-    let valueA: string | number;
-    let valueB: string | number;
-    
-    switch (field) {
-      case 'name':
-        valueA = a.name.toLowerCase();
-        valueB = b.name.toLowerCase();
-        break;
-      case 'point':
-        valueA = a.point;
-        valueB = b.point;
-        break;
-      case 'priceList':
-        valueA = a.priceList;
-        valueB = b.priceList;
-        break;
-      case 'price15':
-        valueA = a.price15;
-        valueB = b.price15;
-        break;
-      case 'price25':
-        valueA = a.price25;
-        valueB = b.price25;
-        break;
-      case 'price50':
-        valueA = a.price50;
-        valueB = b.price50;
-        break;
-      default:
-        return 0;
-    }
-    
-    if (valueA < valueB) return direction === 'asc' ? -1 : 1;
-    if (valueA > valueB) return direction === 'asc' ? 1 : -1;
-    return 0;
-  });
-}
-
-// =============================================================================
-// GROUPING UTILITIES
-// =============================================================================
-
-export function groupByMainName(items: PriceListItem[]): Map<string, PriceListItem[]> {
-  const groups = new Map<string, PriceListItem[]>();
-  
-  for (const item of items) {
-    const key = item.mainName;
-    if (!groups.has(key)) {
-      groups.set(key, []);
-    }
-    groups.get(key)!.push(item);
-  }
-  
-  return groups;
-}
-
-export function getMainItems(items: PriceListItem[]): PriceListItem[] {
-  return items.filter(item => item.num === 0 || item.num === 1);
-}
-
-export function getSubItems(items: PriceListItem[], mainName: string): PriceListItem[] {
-  return items.filter(item => item.mainName === mainName && item.num > 0);
-}
-
-// =============================================================================
-// STATISTICS
-// =============================================================================
-
-export interface PriceListStats {
-  totalItems: number;
-  totalCategories: number;
-  avgPrice: number;
-  minPrice: number;
-  maxPrice: number;
-  avgPoint: number;
-}
 
 export function calculateStats(data: PriceListData): PriceListStats {
   let totalItems = 0;
-  let sumPrice = 0;
-  let sumPoint = 0;
+  let totalPrice = 0;
   let minPrice = Infinity;
   let maxPrice = 0;
-  let priceCount = 0;
-  let pointCount = 0;
   
   for (const category of data.categories) {
-    totalItems += category.items.length;
-    
     for (const item of category.items) {
-      if (item.priceList > 0) {
-        sumPrice += item.priceList;
-        priceCount++;
-        if (item.priceList < minPrice) minPrice = item.priceList;
-        if (item.priceList > maxPrice) maxPrice = item.priceList;
-      }
-      if (item.point > 0) {
-        sumPoint += item.point;
-        pointCount++;
+      totalItems++;
+      const price = item.priceList || 0;
+      if (price > 0) {
+        totalPrice += price;
+        minPrice = Math.min(minPrice, price);
+        maxPrice = Math.max(maxPrice, price);
       }
     }
   }
@@ -227,10 +147,9 @@ export function calculateStats(data: PriceListData): PriceListStats {
   return {
     totalItems,
     totalCategories: data.categories.length,
-    avgPrice: priceCount > 0 ? Math.round(sumPrice / priceCount * 100) / 100 : 0,
+    avgPrice: totalItems > 0 ? totalPrice / totalItems : 0,
     minPrice: minPrice === Infinity ? 0 : minPrice,
     maxPrice,
-    avgPoint: pointCount > 0 ? Math.round(sumPoint / pointCount * 100) / 100 : 0,
   };
 }
 
@@ -238,22 +157,10 @@ export function calculateStats(data: PriceListData): PriceListStats {
 // EXPORT UTILITIES
 // =============================================================================
 
-export function exportToCSV(data: PriceListData): string {
-  const headers = [
-    'หมวดหมู่',
-    'ชื่อสามัญ',
-    'ชื่อหลัก',
-    'แพ็คกิ้ง',
-    'แต้ม',
-    'ขนาดบรรจุ',
-    'Price',
-    'Price15',
-    'Price25',
-    'Price50',
-    'หมายเหตุ',
-  ];
+export function downloadCSV(data: PriceListData, filename: string = 'price-list.csv'): void {
+  const headers = ['Category', 'Name', 'MainName', 'NamePack', 'Point', 'Package', 'PriceList', 'Price15', 'Price25', 'Price50', 'NoteF'];
   
-  const rows: string[][] = [headers];
+  const rows: string[][] = [];
   
   for (const category of data.categories) {
     for (const item of category.items) {
@@ -262,26 +169,53 @@ export function exportToCSV(data: PriceListData): string {
         item.name,
         item.mainName,
         item.namePack,
-        item.point.toString(),
+        String(item.point),
         item.package,
-        item.priceList.toString(),
-        item.price15.toString(),
-        item.price25.toString(),
-        item.price50.toString(),
+        String(item.priceList),
+        String(item.price15),
+        String(item.price25),
+        String(item.price50),
         item.noteF,
       ]);
     }
   }
   
-  return rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(',')),
+  ].join('\n');
+  
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
-export function downloadCSV(data: PriceListData, filename: string = 'price-list.csv'): void {
-  const csv = exportToCSV(data);
-  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(link.href);
+// =============================================================================
+// FORMATTING UTILITIES
+// =============================================================================
+
+export function formatNumber(num: number): string {
+  if (num === 0) return '-';
+  return num.toLocaleString('th-TH', { 
+    minimumFractionDigits: 2, 
+    maximumFractionDigits: 2 
+  });
+}
+
+export function formatCurrency(num: number): string {
+  if (num === 0) return '-';
+  return num.toLocaleString('th-TH', { 
+    style: 'currency',
+    currency: 'THB',
+    minimumFractionDigits: 2, 
+    maximumFractionDigits: 2 
+  });
 }
