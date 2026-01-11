@@ -15,7 +15,8 @@ import {
   BarChart3,
   Trophy,
   Medal,
-  Users
+  Users,
+  Layers
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatNumber } from "@/lib/utils";
@@ -35,9 +36,11 @@ interface ProductSummary {
   ratioCUMS: number;
 }
 
-interface SalesReportData {
+interface QuarterlyReportData {
   NameG: string;
   CodeG: string;
+  quarter: number;
+  quarterName: string;
   salesCR: number;
   salesPB: number;
   pointCUMS: number;
@@ -47,7 +50,7 @@ interface SalesReportData {
   comSP: number;
   CUMS: number;
   baselineTarget: number;
-  targetMonth: number;
+  targetQuarter: number;
   pctOfTarget: number;
   rankCR: number;
   rankPB: number;
@@ -69,10 +72,11 @@ interface SalesReportData {
 // CONSTANTS
 // =============================================================================
 
-const THAI_MONTHS = [
-  "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน",
-  "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม",
-  "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+const QUARTERS = [
+  { value: 1, label: "ไตรมาส 1", months: "ม.ค. - มี.ค." },
+  { value: 2, label: "ไตรมาส 2", months: "เม.ย. - มิ.ย." },
+  { value: 3, label: "ไตรมาส 3", months: "ก.ค. - ก.ย." },
+  { value: 4, label: "ไตรมาส 4", months: "ต.ค. - ธ.ค." },
 ];
 
 const AVAILABLE_YEARS = [2023, 2024, 2025, 2026];
@@ -80,6 +84,14 @@ const AVAILABLE_YEARS = [2023, 2024, 2025, 2026];
 // =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
+
+const getCurrentQuarter = (): number => {
+  const month = new Date().getMonth() + 1;
+  if (month <= 3) return 1;
+  if (month <= 6) return 2;
+  if (month <= 9) return 3;
+  return 4;
+};
 
 const getAchievementLevel = (pct: number): { label: string; color: string; icon: string } => {
   if (pct >= 135) return { label: 'Top Sales ระดับเพชร', color: 'from-purple-500 to-pink-500', icon: '💎' };
@@ -100,48 +112,44 @@ const getRankBadge = (rank: number): { color: string; icon: React.ReactNode } =>
 // MAIN COMPONENT
 // =============================================================================
 
-export default function MonthlyPointsPage() {
+export default function QuarterlyPointsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [report, setReport] = useState<SalesReportData | null>(null);
-  const [monthFil, setMonthFil] = useState("");
+  const [report, setReport] = useState<QuarterlyReportData | null>(null);
+  const [quarterFil, setQuarterFil] = useState("");
   const [yearFil, setYearFil] = useState<number>(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState("");
+  const [selectedQuarter, setSelectedQuarter] = useState<number>(getCurrentQuarter());
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const currentMonth = (new Date().getMonth() + 1).toString();
-    const currentYear = new Date().getFullYear();
-    setSelectedMonth(currentMonth);
-    setSelectedYear(currentYear);
     fetchSalesData();
   }, []);
 
-  const fetchSalesData = async (month?: string, year?: number) => {
+  const fetchSalesData = async (quarter?: number, year?: number) => {
     try {
       setLoading(true);
       setError(null);
       
       let response;
-      if (month || year) {
-        response = await fetch("/api/sales/monthly", {
+      if (quarter || year) {
+        response = await fetch("/api/sales/quarterly", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
-            month: month || selectedMonth,
+            quarter: quarter || selectedQuarter,
             year: year || selectedYear
           })
         });
       } else {
-        response = await fetch("/api/sales/monthly");
+        response = await fetch("/api/sales/quarterly");
       }
       
       const result = await response.json();
       
       if (result.success && result.data) {
         setReport(result.data.report);
-        setMonthFil(result.data.monthFil);
+        setQuarterFil(result.data.quarterFil);
         setYearFil(result.data.yearFil);
       } else {
         setError(result.error || 'ไม่สามารถโหลดข้อมูลได้');
@@ -155,7 +163,7 @@ export default function MonthlyPointsPage() {
   };
 
   const handleSearch = () => {
-    fetchSalesData(selectedMonth, selectedYear);
+    fetchSalesData(selectedQuarter, selectedYear);
   };
 
   return (
@@ -166,30 +174,31 @@ export default function MonthlyPointsPage() {
           หน้าหลัก
         </Link>
         <span>/</span>
-        <span className="text-gray-900 font-medium">ยอดขายประจำเดือน</span>
+        <span className="text-gray-900 font-medium">ยอดขายประจำไตรมาส</span>
       </nav>
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            รายงานยอดขายสะสมประจำเดือน
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
+            <Layers className="w-8 h-8 text-brand-primary" />
+            รายงานยอดขายสะสมประจำไตรมาส
           </h1>
           <p className="text-brand-primary text-lg font-semibold mt-1">
-            {monthFil || THAI_MONTHS[new Date().getMonth()]} {yearFil}
+            {quarterFil || `ไตรมาส ${getCurrentQuarter()}`} ปี {yearFil}
           </p>
         </div>
 
         {/* Controls */}
         <div className="flex flex-wrap items-center gap-3">
           <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
+            value={selectedQuarter}
+            onChange={(e) => setSelectedQuarter(parseInt(e.target.value))}
             className="px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
           >
-            {THAI_MONTHS.map((month, index) => (
-              <option key={index} value={(index + 1).toString()}>
-                {month}
+            {QUARTERS.map((q) => (
+              <option key={q.value} value={q.value}>
+                {q.label} ({q.months})
               </option>
             ))}
           </select>
@@ -208,7 +217,7 @@ export default function MonthlyPointsPage() {
 
           <Button 
             onClick={handleSearch}
-            className="bg-brand-primary hover:bg-brand-dark"
+            className="bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700"
           >
             <Search className="w-4 h-4 mr-2" />
             ค้นหา
@@ -224,7 +233,7 @@ export default function MonthlyPointsPage() {
       ) : !report ? (
         <NoDataDisplay />
       ) : (
-        <SalesReport report={report} />
+        <QuarterlyReport report={report} />
       )}
 
       {/* Back Button */}
@@ -250,7 +259,7 @@ function LoadingSkeleton() {
   return (
     <div className="flex items-center justify-center py-20">
       <div className="text-center">
-        <div className="w-16 h-16 border-4 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin mx-auto mb-4" />
+        <div className="w-16 h-16 border-4 border-teal-500/30 border-t-teal-500 rounded-full animate-spin mx-auto mb-4" />
         <p className="text-gray-500">กำลังโหลดข้อมูล...</p>
       </div>
     </div>
@@ -272,16 +281,16 @@ function NoDataDisplay() {
   return (
     <div className="text-center py-12 bg-white rounded-2xl border">
       <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-      <p className="text-gray-500">ไม่พบข้อมูลในเดือนนี้</p>
+      <p className="text-gray-500">ไม่พบข้อมูลในไตรมาสนี้</p>
     </div>
   );
 }
 
 // =============================================================================
-// SALES REPORT COMPONENT
+// QUARTERLY REPORT COMPONENT
 // =============================================================================
 
-function SalesReport({ report }: { report: SalesReportData }) {
+function QuarterlyReport({ report }: { report: QuarterlyReportData }) {
   const achievement = getAchievementLevel(report.pctOfTarget);
 
   return (
@@ -290,15 +299,21 @@ function SalesReport({ report }: { report: SalesReportData }) {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl text-white p-6"
+        className="relative overflow-hidden bg-gradient-to-r from-teal-600 to-cyan-700 rounded-2xl text-white p-6"
       >
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24" />
         
+        {/* Quarter Badge */}
+        <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+          <span className="text-sm font-medium">Q{report.quarter}</span>
+        </div>
+        
         <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <p className="text-blue-200 text-sm">ฝ่ายขาย</p>
+            <p className="text-teal-200 text-sm">ฝ่ายขาย</p>
             <h2 className="text-2xl font-bold">{report.NameG}</h2>
+            <p className="text-teal-100 text-sm mt-1">{report.quarterName}</p>
             <div className={`inline-flex items-center gap-2 mt-2 px-3 py-1 rounded-full bg-gradient-to-r ${achievement.color}`}>
               <span>{achievement.icon}</span>
               <span className="text-sm font-medium">{achievement.label}</span>
@@ -306,11 +321,10 @@ function SalesReport({ report }: { report: SalesReportData }) {
           </div>
           
           <div className="text-right">
-            <p className="text-blue-200 text-sm">Baseline Target</p>
-            <p className="text-3xl font-bold">{formatNumber(report.baselineTarget, 0)}</p>
-            <p className="text-blue-200 text-sm mt-1">
-              Target/เดือน: {formatNumber(report.targetMonth, 0)}
-            </p>
+            <p className="text-teal-200 text-sm">Baseline Target (ปี)</p>
+            <p className="text-2xl font-bold">{formatNumber(report.baselineTarget, 0)}</p>
+            <p className="text-teal-100 text-sm mt-2">Target/ไตรมาส</p>
+            <p className="text-xl font-semibold">{formatNumber(report.targetQuarter, 0)}</p>
           </div>
         </div>
       </motion.div>
@@ -323,7 +337,7 @@ function SalesReport({ report }: { report: SalesReportData }) {
           value={formatNumber(report.salesCR, 2)}
           rank={report.rankCR}
           total={report.totalSales}
-          color="blue"
+          color="teal"
         />
         <SummaryCardWithRank
           icon={<TrendingUp className="w-5 h-5" />}
@@ -331,7 +345,7 @@ function SalesReport({ report }: { report: SalesReportData }) {
           value={formatNumber(report.salesPB, 2)}
           rank={report.rankPB}
           total={report.totalSales}
-          color="green"
+          color="cyan"
         />
         <SummaryCard
           icon={<Target className="w-5 h-5" />}
@@ -359,8 +373,8 @@ function SalesReport({ report }: { report: SalesReportData }) {
         className="bg-white rounded-2xl border shadow-sm p-6"
       >
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <Users className="w-5 h-5 text-brand-primary" />
-          อันดับในบริษัท
+          <Users className="w-5 h-5 text-teal-600" />
+          อันดับในบริษัท (ไตรมาส {report.quarter})
         </h3>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -369,18 +383,21 @@ function SalesReport({ report }: { report: SalesReportData }) {
             rank={report.rankCR}
             total={report.totalSales}
             description="เรียงตามยอดขายสูงสุด"
+            color="teal"
           />
           <RankingCard
             label="อันดับยอดขาย (PB)"
             rank={report.rankPB}
             total={report.totalSales}
             description="เรียงตาม PB สูงสุด"
+            color="cyan"
           />
           <RankingCard
             label="อันดับการเก็บ CUMS"
             rank={report.rankCUMS}
             total={report.totalSales}
             description="เรียงตาม CUMS สูงสุด"
+            color="emerald"
           />
         </div>
       </motion.div>
@@ -393,8 +410,8 @@ function SalesReport({ report }: { report: SalesReportData }) {
         className="bg-white rounded-2xl border shadow-sm p-6"
       >
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <Award className="w-5 h-5 text-brand-primary" />
-          สรุปค่าคอมมิชชั่น
+          <Award className="w-5 h-5 text-teal-600" />
+          สรุปค่าคอมมิชชั่น (ไตรมาส {report.quarter})
         </h3>
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -412,28 +429,28 @@ function SalesReport({ report }: { report: SalesReportData }) {
         <div className="mt-4 pt-4 border-t">
           <p className="text-sm text-gray-500 mb-3">รายละเอียดการคำนวณ</p>
           <div className="grid grid-cols-3 md:grid-cols-6 gap-3 text-sm">
-            <div className="bg-gray-50 p-2 rounded-lg">
+            <div className="bg-teal-50 p-2 rounded-lg">
               <p className="text-gray-500 text-xs">PP</p>
               <p className="font-medium">{formatNumber(report.PP, 2)}</p>
             </div>
-            <div className="bg-gray-50 p-2 rounded-lg">
+            <div className="bg-teal-50 p-2 rounded-lg">
               <p className="text-gray-500 text-xs">PBI</p>
               <p className="font-medium">{formatNumber(report.PBI, 2)}</p>
             </div>
-            <div className="bg-gray-50 p-2 rounded-lg">
+            <div className="bg-teal-50 p-2 rounded-lg">
               <p className="text-gray-500 text-xs">PBH</p>
               <p className="font-medium">{formatNumber(report.PBH, 2)}</p>
             </div>
-            <div className="bg-gray-50 p-2 rounded-lg">
+            <div className="bg-cyan-50 p-2 rounded-lg">
               <p className="text-gray-500 text-xs">ค่าคอม PP</p>
               <p className="font-medium">{formatNumber(report.AmtPoint, 2)}</p>
             </div>
-            <div className="bg-gray-50 p-2 rounded-lg">
-              <p className="text-gray-500 text-xs">ค่าคอม PBI</p>
+            <div className="bg-cyan-50 p-2 rounded-lg">
+              <p className="text-gray-500 text-xs">ค่าคอม PBI (max 0.5%)</p>
               <p className="font-medium">{formatNumber(report.ComPBI, 2)}</p>
             </div>
-            <div className="bg-gray-50 p-2 rounded-lg">
-              <p className="text-gray-500 text-xs">ค่าคอม PBH</p>
+            <div className="bg-cyan-50 p-2 rounded-lg">
+              <p className="text-gray-500 text-xs">ค่าคอม PBH (max 1%)</p>
               <p className="font-medium">{formatNumber(report.ComPBH, 2)}</p>
             </div>
           </div>
@@ -447,10 +464,10 @@ function SalesReport({ report }: { report: SalesReportData }) {
         transition={{ delay: 0.2 }}
         className="bg-white rounded-2xl border shadow-sm overflow-hidden"
       >
-        <div className="p-4 border-b bg-gray-50">
+        <div className="p-4 border-b bg-gradient-to-r from-teal-50 to-cyan-50">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-brand-primary" />
-            สรุปตามประเภทสินค้า
+            <BarChart3 className="w-5 h-5 text-teal-600" />
+            สรุปตามประเภทสินค้า (ไตรมาส {report.quarter})
           </h3>
           <p className="text-sm text-gray-500 mt-1">
             H1 = กลุ่ม H (ไม่รวม I), H2 = กลุ่ม I, MP = PB - (H1 + H2)
@@ -460,7 +477,7 @@ function SalesReport({ report }: { report: SalesReportData }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-brand-primary text-white">
+              <tr className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white">
                 <th className="px-4 py-3 text-left font-semibold">ประเภทสินค้า</th>
                 <th className="px-4 py-3 text-right font-semibold">CR</th>
                 <th className="px-4 py-3 text-right font-semibold">สัดส่วน</th>
@@ -476,7 +493,7 @@ function SalesReport({ report }: { report: SalesReportData }) {
                   key={product.code}
                   className={`
                     border-b hover:bg-gray-50 transition-colors
-                    ${product.code === 'Total' ? 'bg-blue-50 font-semibold' : index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}
+                    ${product.code === 'Total' ? 'bg-teal-50 font-semibold' : index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}
                   `}
                 >
                   <td className="px-4 py-3">
@@ -488,11 +505,11 @@ function SalesReport({ report }: { report: SalesReportData }) {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right">{formatNumber(product.CR, 2)}</td>
-                  <td className="px-4 py-3 text-right text-blue-600">{product.ratioCR.toFixed(2)}%</td>
+                  <td className="px-4 py-3 text-right text-teal-600">{product.ratioCR.toFixed(2)}%</td>
                   <td className="px-4 py-3 text-right">{formatNumber(product.PB, 2)}</td>
-                  <td className="px-4 py-3 text-right text-blue-600">{product.ratioPB.toFixed(2)}%</td>
+                  <td className="px-4 py-3 text-right text-teal-600">{product.ratioPB.toFixed(2)}%</td>
                   <td className="px-4 py-3 text-right">{formatNumber(product.CUMS, 2)}</td>
-                  <td className="px-4 py-3 text-right text-blue-600">{product.ratioCUMS.toFixed(2)}%</td>
+                  <td className="px-4 py-3 text-right text-teal-600">{product.ratioCUMS.toFixed(2)}%</td>
                 </tr>
               ))}
             </tbody>
@@ -519,12 +536,12 @@ function SummaryCard({
   label: string; 
   value: string; 
   subLabel?: string;
-  color: 'blue' | 'green' | 'purple' | 'yellow';
+  color: 'teal' | 'cyan' | 'purple' | 'yellow';
   highlight?: boolean;
 }) {
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
+    teal: 'bg-teal-50 text-teal-600',
+    cyan: 'bg-cyan-50 text-cyan-600',
     purple: 'bg-purple-50 text-purple-600',
     yellow: 'bg-yellow-50 text-yellow-600',
   };
@@ -564,12 +581,12 @@ function SummaryCardWithRank({
   value: string; 
   rank: number;
   total: number;
-  color: 'blue' | 'green' | 'purple' | 'yellow';
+  color: 'teal' | 'cyan' | 'purple' | 'yellow';
   highlight?: boolean;
 }) {
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
+    teal: 'bg-teal-50 text-teal-600',
+    cyan: 'bg-cyan-50 text-cyan-600',
     purple: 'bg-purple-50 text-purple-600',
     yellow: 'bg-yellow-50 text-yellow-600',
   };
@@ -605,19 +622,27 @@ function RankingCard({
   label, 
   rank, 
   total,
-  description 
+  description,
+  color = 'teal'
 }: { 
   label: string; 
   rank: number; 
   total: number;
   description: string;
+  color?: 'teal' | 'cyan' | 'emerald';
 }) {
   const rankBadge = getRankBadge(rank);
   const percentage = total > 0 ? ((total - rank + 1) / total * 100).toFixed(0) : 0;
 
+  const gradientColors = {
+    teal: 'from-teal-500 to-teal-600',
+    cyan: 'from-cyan-500 to-cyan-600',
+    emerald: 'from-emerald-500 to-emerald-600',
+  };
+
   return (
     <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-brand-primary/5 to-brand-primary/10 rounded-full -translate-y-10 translate-x-10" />
+      <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${gradientColors[color]}/10 rounded-full -translate-y-10 translate-x-10`} />
       
       <p className="text-sm font-medium text-gray-700">{label}</p>
       <p className="text-xs text-gray-500 mt-1">{description}</p>
@@ -632,14 +657,14 @@ function RankingCard({
         </div>
         <div className="text-right">
           <p className="text-xs text-gray-500">Top</p>
-          <p className="text-lg font-bold text-brand-primary">{percentage}%</p>
+          <p className={`text-lg font-bold text-${color}-600`}>{percentage}%</p>
         </div>
       </div>
       
       {/* Progress bar */}
       <div className="mt-3 h-2 bg-gray-200 rounded-full overflow-hidden">
         <div 
-          className="h-full bg-gradient-to-r from-brand-primary to-brand-dark rounded-full transition-all duration-500"
+          className={`h-full bg-gradient-to-r ${gradientColors[color]} rounded-full transition-all duration-500`}
           style={{ width: `${percentage}%` }}
         />
       </div>

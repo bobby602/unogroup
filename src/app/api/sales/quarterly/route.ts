@@ -7,19 +7,20 @@ import { db } from '@/lib/db';
 // TYPES & INTERFACES
 // =============================================================================
 
-interface MainSalesData {
+interface QuarterlySalesData {
   CodeG: string;
   NameG: string | null;
-  SaleAmt: number;    // CR
-  Amt: number;        // PB
-  PointSale: number;  // PPOINT
-  AmtSP: number;      // ComSP
-  CuMS: number;       // CUMS
+  QNo: number;
+  SaleAmt: number;
+  PB: number;
+  AmtSP: number;
+  CuMS: number;
 }
 
 interface TargetData {
   CodeG: string;
   AmtYT: number;
+  AmtQT: number;
 }
 
 interface RankingResult {
@@ -29,14 +30,6 @@ interface RankingResult {
   totalSales: number;
 }
 
-interface ProductGroupResult {
-  grItemCode: string;
-  SaleAmt: number;  // CR
-  Amt: number;      // PB
-  CuMS: number;     // CUMS
-}
-
-/** สรุปแต่ละประเภทสินค้า */
 interface ProductSummary {
   code: string;
   label: string;
@@ -48,11 +41,12 @@ interface ProductSummary {
   ratioCUMS: number;
 }
 
-/** ผลลัพธ์รายงาน */
-interface SalesReportData {
+interface QuarterlyReportData {
   // ข้อมูลพนักงาน
   NameG: string;
   CodeG: string;
+  quarter: number;
+  quarterName: string;
   
   // Summary Section
   salesCR: number;
@@ -65,17 +59,17 @@ interface SalesReportData {
   CUMS: number;
   
   // Target
-  baselineTarget: number;
-  targetMonth: number;
+  baselineTarget: number;    // Target ปี
+  targetQuarter: number;     // Target ไตรมาส
   pctOfTarget: number;
   
-  // ✅ Rankings (อันดับในบริษัท)
+  // Rankings
   rankCR: number;
   rankPB: number;
   rankCUMS: number;
   totalSales: number;
   
-  // ✅ Product breakdown (H1, H2, MP, SP)
+  // Product breakdown
   productSummary: ProductSummary[];
   
   // Commission breakdown
@@ -86,15 +80,15 @@ interface SalesReportData {
   ComPBI: number;
   ComPBH: number;
   
-  // เพิ่มสำหรับ Product calculation
-  PBH1: number;  // PBH - PBI (กลุ่ม H ลบ กลุ่ม I)
-  PBH2: number;  // PBI (กลุ่ม I)
-  PBMP: number;  // PB - PBH (MP = ยอดที่ไม่ใช่กลุ่ม H)
+  // Product values
+  PBH1: number;
+  PBH2: number;
+  PBMP: number;
 }
 
-interface MonthlySalesResponse {
-  report: SalesReportData | null;
-  monthFil: string;
+interface QuarterlySalesResponse {
+  report: QuarterlyReportData | null;
+  quarterFil: string;
   yearFil: number;
 }
 
@@ -108,12 +102,7 @@ interface ApiResponse<T = unknown> {
 // CONSTANTS
 // =============================================================================
 
-const THAI_MONTHS = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
-  'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม',
-  'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-] as const;
-
+const QUARTER_NAMES = ['ไตรมาส 1 (ม.ค. - มี.ค.)', 'ไตรมาส 2 (เม.ย. - มิ.ย.)', 'ไตรมาส 3 (ก.ค. - ก.ย.)', 'ไตรมาส 4 (ต.ค. - ธ.ค.)'] as const;
 const TARGET_THRESHOLD = 60000000;
 
 // =============================================================================
@@ -134,29 +123,32 @@ const round2 = (value: number): number => {
   return Math.round(value * 100) / 100;
 };
 
+const getCurrentQuarter = (): number => {
+  const month = new Date().getMonth() + 1;
+  if (month <= 3) return 1;
+  if (month <= 6) return 2;
+  if (month <= 9) return 3;
+  return 4;
+};
+
 const getCurrentDate = () => {
-  const now = new Date();
   return {
-    month: (now.getMonth() + 1).toString(),
-    year: now.getFullYear(),
+    quarter: getCurrentQuarter(),
+    year: new Date().getFullYear(),
   };
 };
 
-const normalizeMonth = (month: string | undefined): string => {
-  if (!month || month === 'เลือกเดือน') {
-    return getCurrentDate().month;
-  }
-  const monthNum = parseInt(month, 10);
-  if (Number.isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
-    return getCurrentDate().month;
-  }
-  return month;
+const normalizeQuarter = (quarter: number | string | undefined): number => {
+  if (!quarter) return getCurrentQuarter();
+  const q = typeof quarter === 'string' ? parseInt(quarter, 10) : quarter;
+  if (Number.isNaN(q) || q < 1 || q > 4) return getCurrentQuarter();
+  return q;
 };
 
 const normalizeYear = (year: number | string | undefined): number => {
-  if (!year) return getCurrentDate().year;
+  if (!year) return new Date().getFullYear();
   let yearNum = typeof year === 'string' ? parseInt(year, 10) : year;
-  if (Number.isNaN(yearNum) || yearNum < 1900) return getCurrentDate().year;
+  if (Number.isNaN(yearNum) || yearNum < 1900) return new Date().getFullYear();
   if (yearNum > 2500) yearNum = yearNum - 543;
   return yearNum;
 };
@@ -166,28 +158,38 @@ const calculateRatio = (value: number, total: number): number => {
   return round2((value / total) * 100);
 };
 
+const getQuarterMonths = (quarter: number): { start: number; end: number } => {
+  switch (quarter) {
+    case 1: return { start: 1, end: 3 };
+    case 2: return { start: 4, end: 6 };
+    case 3: return { start: 7, end: 9 };
+    case 4: return { start: 10, end: 12 };
+    default: return { start: 1, end: 3 };
+  }
+};
+
 // =============================================================================
 // SQL QUERIES
 // =============================================================================
 
-/** Query 1: ข้อมูลยอดขายหลัก */
+/** Query 1: ข้อมูลยอดขายหลักรายไตรมาส */
 const MAIN_SALES_QUERY = `
   SELECT 
     CodeG,
     NameG,
+    @p2 AS QNo,
     CAST(ISNULL(SUM(Amt), 0) AS DECIMAL(30,2)) AS SaleAmt,
-    CAST(ROUND(ISNULL(SUM(PB), 0), 2) AS DECIMAL(30,2)) AS Amt,
-    CAST(ROUND(ISNULL(SUM(PPOINT), 0), 2) AS DECIMAL(30,2)) AS PointSale,
+    CAST(ROUND(ISNULL(SUM(PB), 0), 2) AS DECIMAL(30,2)) AS PB,
     CAST(ROUND(ISNULL(SUM(ComSP), 0), 2) AS DECIMAL(30,2)) AS AmtSP,
     CAST(ROUND(ISNULL(SUM(CUMS), 0), 2) AS DECIMAL(30,2)) AS CuMS
   FROM V802
   WHERE CodeG = @p1 
-    AND MONTH(Docdate) = @p2 
-    AND YEAR(Docdate) = @p3
+    AND MONTH(Docdate) BETWEEN @p3 AND @p4
+    AND YEAR(Docdate) = @p5
   GROUP BY CodeG, NameG
 `;
 
-/** Query 2: PBH รวม (กลุ่ม H ทั้งหมด) */
+/** Query 2: PBH รวม (กลุ่ม H) */
 const GROUP_H_QUERY = `
   SELECT 
     v.CodeG,
@@ -197,14 +199,14 @@ const GROUP_H_QUERY = `
   FROM V802 v
   INNER JOIN ItemG g ON v.ItemCode = g.Code
   WHERE v.CodeG = @p1 
-    AND MONTH(v.Docdate) = @p2 
-    AND YEAR(v.Docdate) = @p3
+    AND MONTH(v.Docdate) BETWEEN @p2 AND @p3
+    AND YEAR(v.Docdate) = @p4
     AND g.grItemCode = 'H'
     AND g.tyitem = '1'
   GROUP BY v.CodeG
 `;
 
-/** Query 3: PBI รวม (กลุ่ม I จาก itemcomPI) */
+/** Query 3: PBI รวม (กลุ่ม I) */
 const GROUP_I_QUERY = `
   SELECT 
     v.CodeG,
@@ -212,66 +214,58 @@ const GROUP_I_QUERY = `
     CAST(ROUND(ISNULL(SUM(v.PB), 0), 2) AS DECIMAL(30,2)) AS Amt,
     CAST(ROUND(ISNULL(SUM(v.CUMS), 0), 2) AS DECIMAL(30,2)) AS CuMS
   FROM V802 v
-  INNER JOIN itemcomPI i ON v.ItemCode = i.itemcode
+  INNER JOIN ItemG g ON v.ItemCode = g.Code
   WHERE v.CodeG = @p1 
-    AND MONTH(v.Docdate) = @p2 
-    AND YEAR(v.Docdate) = @p3
+    AND MONTH(v.Docdate) BETWEEN @p2 AND @p3
+    AND YEAR(v.Docdate) = @p4
+    AND g.grItemCode = 'I'
+    AND g.tyitem = '1'
   GROUP BY v.CodeG
 `;
 
-/** Query 4: Target */
+/** Query 4: Target (AmtYT และ AmtQT) */
 const TARGET_QUERY = `
   SELECT 
     CodeG,
-    CAST(ISNULL(AmtYT, 0) AS DECIMAL(30,2)) AS AmtYT
+    CAST(ISNULL(AmtYT, 0) AS DECIMAL(30,2)) AS AmtYT,
+    CAST(ISNULL(AmtYT, 0) / 4 AS DECIMAL(30,2)) AS AmtQT
   FROM ItemTG
   WHERE CodeG = @p1 
     AND YearCal = @p2
 `;
 
-/** 
- * Query 5: Rankings (อันดับ CR, PB, CUMS ในบริษัท)
- * ใช้ CTE เพื่อ rank ทุก user แล้วดึงเฉพาะ user ที่ต้องการ
- */
+/** Query 5: Rankings รายไตรมาส */
 const RANKING_QUERY = `
-  WITH AllSalesRanking AS (
+  WITH QuarterlySales AS (
     SELECT 
       CodeG,
       SUM(Amt) as TotalCR,
       SUM(PB) as TotalPB,
-      SUM(CUMS) as TotalCUMS,
-      ROW_NUMBER() OVER (ORDER BY SUM(Amt) DESC) as RankCR,
-      ROW_NUMBER() OVER (ORDER BY SUM(PB) DESC) as RankPB,
-      ROW_NUMBER() OVER (ORDER BY SUM(CUMS) DESC) as RankCUMS,
-      COUNT(*) OVER () as TotalUsers
+      SUM(CUMS) as TotalCUMS
     FROM V802
-    WHERE MONTH(Docdate) = @p1 
-      AND YEAR(Docdate) = @p2
+    WHERE MONTH(Docdate) BETWEEN @p1 AND @p2
+      AND YEAR(Docdate) = @p3
     GROUP BY CodeG
+  ),
+  RankedSales AS (
+    SELECT 
+      CodeG,
+      TotalCR,
+      TotalPB,
+      TotalCUMS,
+      ROW_NUMBER() OVER (ORDER BY TotalCR DESC) as RankCR,
+      ROW_NUMBER() OVER (ORDER BY TotalPB DESC) as RankPB,
+      ROW_NUMBER() OVER (ORDER BY TotalCUMS DESC) as RankCUMS,
+      COUNT(*) OVER () as TotalUsers
+    FROM QuarterlySales
   )
   SELECT 
     RankCR as rankCR,
     RankPB as rankPB,
     RankCUMS as rankCUMS,
     TotalUsers as totalSales
-  FROM AllSalesRanking
-  WHERE CodeG = @p3
-`;
-
-/** Query 6: ยอดแยกตามประเภทสินค้า (grItemCode) */
-const PRODUCT_GROUP_QUERY = `
-  SELECT 
-    g.grItemCode,
-    CAST(ROUND(ISNULL(SUM(v.Amt), 0), 2) AS DECIMAL(30,2)) AS SaleAmt,
-    CAST(ROUND(ISNULL(SUM(v.PB), 0), 2) AS DECIMAL(30,2)) AS Amt,
-    CAST(ROUND(ISNULL(SUM(v.CUMS), 0), 2) AS DECIMAL(30,2)) AS CuMS
-  FROM V802 v
-  INNER JOIN ItemG g ON v.ItemCode = g.Code
-  WHERE v.CodeG = @p1 
-    AND MONTH(v.Docdate) = @p2 
-    AND YEAR(v.Docdate) = @p3
-    AND g.tyitem = '1'
-  GROUP BY g.grItemCode
+  FROM RankedSales
+  WHERE CodeG = @p4
 `;
 
 // =============================================================================
@@ -280,42 +274,45 @@ const PRODUCT_GROUP_QUERY = `
 
 interface QueryParams {
   userCode: string;
-  month: string;
+  quarter: number;
   year: number;
   thaiYear: number;
+  monthStart: number;
+  monthEnd: number;
 }
 
 async function fetchAllData(params: QueryParams) {
-  const { userCode, month, year, thaiYear } = params;
+  const { userCode, quarter, year, thaiYear, monthStart, monthEnd } = params;
 
   const [
     mainData,
     groupHData,
     groupIData,
     targetData,
-    rankingData,
-    productGroupData
+    rankingData
   ] = await Promise.all([
-    db.$queryRawUnsafe<MainSalesData[]>(MAIN_SALES_QUERY, userCode, month, year),
-    db.$queryRawUnsafe<{ CodeG: string; SaleAmt: number; Amt: number; CuMS: number }[]>(GROUP_H_QUERY, userCode, month, year),
-    db.$queryRawUnsafe<{ CodeG: string; SaleAmt: number; Amt: number; CuMS: number }[]>(GROUP_I_QUERY, userCode, month, year),
+    db.$queryRawUnsafe<QuarterlySalesData[]>(MAIN_SALES_QUERY, userCode, quarter, monthStart, monthEnd, year),
+    db.$queryRawUnsafe<{ CodeG: string; SaleAmt: number; Amt: number; CuMS: number }[]>(GROUP_H_QUERY, userCode, monthStart, monthEnd, year),
+    db.$queryRawUnsafe<{ CodeG: string; SaleAmt: number; Amt: number; CuMS: number }[]>(GROUP_I_QUERY, userCode, monthStart, monthEnd, year),
     db.$queryRawUnsafe<TargetData[]>(TARGET_QUERY, userCode, thaiYear),
-    db.$queryRawUnsafe<RankingResult[]>(RANKING_QUERY, month, year, userCode),
-    db.$queryRawUnsafe<ProductGroupResult[]>(PRODUCT_GROUP_QUERY, userCode, month, year),
+    db.$queryRawUnsafe<RankingResult[]>(RANKING_QUERY, monthStart, monthEnd, year, userCode),
   ]);
 
-  return { mainData, groupHData, groupIData, targetData, rankingData, productGroupData };
+  return { mainData, groupHData, groupIData, targetData, rankingData };
 }
 
 // =============================================================================
 // CALCULATION FUNCTIONS
 // =============================================================================
 
-function calculateRateCom(Amt: number, AmtYT: number): number {
-  if (AmtYT <= 0 || Amt <= 0) return 0;
+/**
+ * คำนวณ RateCom แบบ Target-based สำหรับรายไตรมาส
+ * ใช้ AmtQT (Target ไตรมาส) แทน AmtYT/12
+ */
+function calculateRateCom(PB: number, AmtQT: number, AmtYT: number): number {
+  if (AmtQT <= 0 || PB <= 0 || AmtYT <= 0) return 0;
   
-  const targetMonth = AmtYT / 12;
-  const ratio = Amt / targetMonth;
+  const ratio = PB / AmtQT;
   
   if (AmtYT < TARGET_THRESHOLD) {
     // กรณีเป้าปี < 60 ล้าน
@@ -336,22 +333,32 @@ function calculateRateCom(Amt: number, AmtYT: number): number {
   }
 }
 
-function calculatePP(Amt: number, PBH: number, PBI: number): number {
-  return round2(Amt - PBH - PBI);
+function calculatePP(PB: number, PBH: number, PBI: number): number {
+  return round2(PB - PBH - PBI);
 }
 
 function calculateAmtPoint(PP: number, RateCom: number): number {
   return round2((PP * RateCom) / 100);
 }
 
+/**
+ * ComPBI - max rate 0.5%
+ * ถ้า RateCom > 0.5 ใช้ 0.5, ไม่งั้นใช้ RateCom
+ */
 function calculateComPBI(PBI: number, RateCom: number): number {
   if (RateCom <= 0) return 0;
-  return round2((PBI * 0.5) / 100);
+  const effectiveRate = Math.min(RateCom, 0.5);
+  return round2((PBI * effectiveRate) / 100);
 }
 
+/**
+ * ComPBH - max rate 1%
+ * ถ้า RateCom > 1 ใช้ 1, ไม่งั้นใช้ RateCom
+ */
 function calculateComPBH(PBH: number, RateCom: number): number {
   if (RateCom <= 0) return 0;
-  return round2((PBH * 1) / 100);
+  const effectiveRate = Math.min(RateCom, 1);
+  return round2((PBH * effectiveRate) / 100);
 }
 
 function calculateSumCOMSP(AmtSP: number, AmtPoint: number, ComPBI: number, ComPBH: number): number {
@@ -363,16 +370,16 @@ function calculateSumCOMSP(AmtSP: number, AmtPoint: number, ComPBI: number, ComP
 // =============================================================================
 
 interface TransformParams {
-  mainData: MainSalesData[];
+  mainData: QuarterlySalesData[];
   groupHData: { CodeG: string; SaleAmt: number; Amt: number; CuMS: number }[];
   groupIData: { CodeG: string; SaleAmt: number; Amt: number; CuMS: number }[];
   targetData: TargetData[];
   rankingData: RankingResult[];
-  productGroupData: ProductGroupResult[];
+  quarter: number;
 }
 
-function transformToReport(params: TransformParams): SalesReportData | null {
-  const { mainData, groupHData, groupIData, targetData, rankingData, productGroupData } = params;
+function transformToReport(params: TransformParams): QuarterlyReportData | null {
+  const { mainData, groupHData, groupIData, targetData, rankingData, quarter } = params;
 
   if (!mainData || mainData.length === 0) {
     return null;
@@ -385,23 +392,24 @@ function transformToReport(params: TransformParams): SalesReportData | null {
   const groupH = groupHData[0] || { SaleAmt: 0, Amt: 0, CuMS: 0 };
   const groupI = groupIData[0] || { SaleAmt: 0, Amt: 0, CuMS: 0 };
   
-  const PBH = toNumber(groupH.Amt);   // PB กลุ่ม H ทั้งหมด
-  const PBI = toNumber(groupI.Amt);   // PB กลุ่ม I (itemcomPI)
-  const AmtYT = toNumber(targetData[0]?.AmtYT);
+  const PBH = toNumber(groupH.Amt);
+  const PBI = toNumber(groupI.Amt);
+  const target = targetData[0] || { AmtYT: 0, AmtQT: 0 };
+  const AmtYT = toNumber(target.AmtYT);
+  const AmtQT = toNumber(target.AmtQT);
   const ranking = rankingData[0] || { rankCR: 0, rankPB: 0, rankCUMS: 0, totalSales: 0 };
 
   // ค่าพื้นฐาน
   const salesCR = toNumber(main.SaleAmt);
-  const salesPB = toNumber(main.Amt);
+  const salesPB = toNumber(main.PB);
   const AmtSP = toNumber(main.AmtSP);
   const CUMS = toNumber(main.CuMS);
 
   // Target
-  const targetMonth = AmtYT > 0 ? round2(AmtYT / 12) : 0;
-  const pctOfTarget = targetMonth > 0 ? round2((salesPB / targetMonth) * 100) : 0;
+  const pctOfTarget = AmtQT > 0 ? round2((salesPB / AmtQT) * 100) : 0;
   
-  // RateCom (แก้ไข Bug แล้ว)
-  const RateComNum = calculateRateCom(salesPB, AmtYT);
+  // RateCom
+  const RateComNum = calculateRateCom(salesPB, AmtQT, AmtYT);
   
   // Commission calculations
   const PP = calculatePP(salesPB, PBH, PBI);
@@ -410,17 +418,11 @@ function transformToReport(params: TransformParams): SalesReportData | null {
   const ComPBH = calculateComPBH(PBH, RateComNum);
   const SumCOMSP = calculateSumCOMSP(AmtSP, AmtPoint, ComPBI, ComPBH);
 
-  // ===== Product Breakdown (H1, H2, MP, SP) =====
-  // จาก project เก่า:
-  // - PBH1 = PBH - PBI (กลุ่ม H ที่ไม่ใช่ I)
-  // - PBH2 = PBI (กลุ่ม I)
-  // - MP = PB - PBH (ยอดที่ไม่ใช่กลุ่ม H)
-  
-  const PBH1 = round2(PBH - PBI);  // กลุ่ม H ลบ กลุ่ม I
-  const PBH2 = PBI;                 // กลุ่ม I
-  const PBMP = round2(salesPB - PBH); // MP = PB - กลุ่ม H ทั้งหมด
+  // Product Breakdown
+  const PBH1 = round2(PBH - PBI);
+  const PBH2 = PBI;
+  const PBMP = round2(salesPB - PBH);
 
-  // CR และ CUMS ของแต่ละกลุ่ม
   const CRH = toNumber(groupH.SaleAmt);
   const CRI = toNumber(groupI.SaleAmt);
   const CRH1 = round2(CRH - CRI);
@@ -431,7 +433,6 @@ function transformToReport(params: TransformParams): SalesReportData | null {
   const CUMSH1 = round2(CUMSH - CUMSI);
   const CUMSMP = round2(CUMS - CUMSH);
 
-  // สร้าง Product Summary
   const productSummary: ProductSummary[] = [
     {
       code: 'H1',
@@ -466,9 +467,9 @@ function transformToReport(params: TransformParams): SalesReportData | null {
     {
       code: 'SP',
       label: 'SP (ยาพิเศษ)',
-      CR: 0,  // SP ไม่มี CR แยก
+      CR: 0,
       ratioCR: 0,
-      PB: 0,  // SP ไม่มี PB แยก
+      PB: 0,
       ratioPB: 0,
       CUMS: 0,
       ratioCUMS: 0,
@@ -488,6 +489,8 @@ function transformToReport(params: TransformParams): SalesReportData | null {
   return {
     NameG: toString(main.NameG),
     CodeG: codeG,
+    quarter,
+    quarterName: QUARTER_NAMES[quarter - 1],
     salesCR,
     salesPB,
     pointCUMS: CUMS,
@@ -497,27 +500,19 @@ function transformToReport(params: TransformParams): SalesReportData | null {
     comSP: AmtSP,
     CUMS,
     baselineTarget: AmtYT,
-    targetMonth,
+    targetQuarter: AmtQT,
     pctOfTarget,
-    
-    // Rankings
     rankCR: toNumber(ranking.rankCR),
     rankPB: toNumber(ranking.rankPB),
     rankCUMS: toNumber(ranking.rankCUMS),
     totalSales: toNumber(ranking.totalSales),
-    
-    // Product breakdown
     productSummary,
-    
-    // Commission detail
     PP,
     PBI,
     PBH,
     AmtPoint,
     ComPBI,
     ComPBH,
-    
-    // Product values
     PBH1,
     PBH2,
     PBMP,
@@ -528,20 +523,28 @@ function transformToReport(params: TransformParams): SalesReportData | null {
 // CORE FUNCTION
 // =============================================================================
 
-async function getMonthlySalesReport(
+async function getQuarterlySalesReport(
   userCode: string,
-  month: string,
+  quarter: number,
   year: number
-): Promise<MonthlySalesResponse> {
-  const monthNum = parseInt(month, 10);
+): Promise<QuarterlySalesResponse> {
   const thaiYear = year + 543;
+  const { start: monthStart, end: monthEnd } = getQuarterMonths(quarter);
 
-  const rawData = await fetchAllData({ userCode, month, year, thaiYear });
-  const report = transformToReport(rawData);
+  const rawData = await fetchAllData({ 
+    userCode, 
+    quarter, 
+    year, 
+    thaiYear, 
+    monthStart, 
+    monthEnd 
+  });
+  
+  const report = transformToReport({ ...rawData, quarter });
 
   return {
     report,
-    monthFil: THAI_MONTHS[monthNum - 1] ?? '',
+    quarterFil: QUARTER_NAMES[quarter - 1],
     yearFil: year,
   };
 }
@@ -559,25 +562,25 @@ async function getAuthenticatedUserCode(): Promise<string | null> {
 // API HANDLERS
 // =============================================================================
 
-export async function GET(request: NextRequest): Promise<NextResponse<ApiResponse<MonthlySalesResponse>>> {
+export async function GET(request: NextRequest): Promise<NextResponse<ApiResponse<QuarterlySalesResponse>>> {
   try {
     const userCode = await getAuthenticatedUserCode();
     if (!userCode) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { month, year } = getCurrentDate();
-    const data = await getMonthlySalesReport(userCode, month, year);
+    const { quarter, year } = getCurrentDate();
+    const data = await getQuarterlySalesReport(userCode, quarter, year);
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('GET Monthly Sales Report Error:', error);
+    console.error('GET Quarterly Sales Report Error:', error);
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse<MonthlySalesResponse>>> {
+export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse<QuarterlySalesResponse>>> {
   try {
     const userCode = await getAuthenticatedUserCode();
     if (!userCode) {
@@ -585,15 +588,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }
 
     const body = await request.json();
-    const month = normalizeMonth(body.month);
+    const quarter = normalizeQuarter(body.quarter);
     const year = normalizeYear(body.year);
 
-    const data = await getMonthlySalesReport(userCode, month, year);
+    const data = await getQuarterlySalesReport(userCode, quarter, year);
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('POST Monthly Sales Report Error:', error);
+    console.error('POST Quarterly Sales Report Error:', error);
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
