@@ -1,0 +1,475 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { 
+  ArrowLeft, 
+  Calendar, 
+  Search, 
+  Trophy,
+  Calculator,
+  Target,
+  TrendingUp,
+  Award,
+  Gift,
+  CalendarCheck
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { formatNumber } from "@/lib/utils";
+
+// =============================================================================
+// TYPES
+// =============================================================================
+
+interface YearlyCommissionData {
+  NameG: string;
+  CodeG: string;
+  year: number;
+  salesGroup: string;
+  totalPB: number;
+  baselineTargetY: number;
+  achievementPct: number;
+  achievementLevel: string;
+  yearlyRateCom: number;
+  yearlyCommission: number;
+  totalReceivedCommission: number;
+  commissionTopUp: number;
+  comQ1: number;
+  comQ2: number;
+  comQ3: number;
+  comQ4: number;
+  specialBonus: number;
+}
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+const AVAILABLE_YEARS = [2023, 2024, 2025, 2026];
+
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
+
+const getCurrentYear = (): number => new Date().getFullYear();
+
+const getAchievementBadge = (level: string): { color: string; bgColor: string; icon: string } => {
+  if (level.includes('ตำนาน')) return { color: 'text-purple-700', bgColor: 'bg-purple-100', icon: '👑' };
+  if (level.includes('แนวหน้า')) return { color: 'text-yellow-700', bgColor: 'bg-yellow-100', icon: '⭐' };
+  if (level.includes('มาตรฐาน')) return { color: 'text-blue-700', bgColor: 'bg-blue-100', icon: '🎯' };
+  if (level.includes('ใกล้เป้า')) return { color: 'text-green-700', bgColor: 'bg-green-100', icon: '📈' };
+  if (level.includes('ต่ำกว่า')) return { color: 'text-orange-700', bgColor: 'bg-orange-100', icon: '⚠️' };
+  return { color: 'text-red-700', bgColor: 'bg-red-100', icon: '❌' };
+};
+
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
+
+export default function YearlyCommissionPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [report, setReport] = useState<YearlyCommissionData | null>(null);
+  const [yearFil, setYearFil] = useState<number>(getCurrentYear());
+  const [selectedYear, setSelectedYear] = useState<number>(getCurrentYear());
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchCommissionData();
+  }, []);
+
+  const fetchCommissionData = async (year?: number) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const targetYear = year ?? selectedYear;
+      
+      const response = await fetch("/api/commission/yearly", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ year: targetYear })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setReport(result.data.report);
+        setYearFil(result.data.yearFil);
+        setSelectedYear(targetYear);
+      } else {
+        setError(result.error || 'ไม่สามารถโหลดข้อมูลได้');
+      }
+    } catch (err) {
+      console.error("Failed to fetch commission data:", err);
+      setError('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = () => {
+    fetchCommissionData(selectedYear);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-2 text-sm text-gray-500">
+        <Link href="/dashboard" className="hover:text-purple-600 transition-colors">
+          หน้าหลัก
+        </Link>
+        <span>/</span>
+        <Link href="/dashboard/commission" className="hover:text-purple-600 transition-colors">
+          ค่าคอมมิชชั่น
+        </Link>
+        <span>/</span>
+        <span className="text-gray-900 font-medium">ประจำปี</span>
+      </nav>
+
+      {/* Header with Title and Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
+            <CalendarCheck className="w-8 h-8 text-purple-600" />
+            ค่าคอมมิชชั่นประจำปี
+          </h1>
+          <p className="text-purple-600 text-lg font-semibold mt-1">
+            ปี {yearFil} (พ.ศ. {yearFil + 543})
+          </p>
+        </div>
+
+        {/* Year Selector */}
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+            className="px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+          >
+            {AVAILABLE_YEARS.map((year) => (
+              <option key={year} value={year}>
+                {year} (พ.ศ. {year + 543})
+              </option>
+            ))}
+          </select>
+
+          <Button 
+            onClick={handleSearch}
+            className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700"
+          >
+            <Search className="w-4 h-4 mr-2" />
+            ค้นหา
+          </Button>
+        </div>
+      </div>
+
+      {/* Content */}
+      {loading ? (
+        <LoadingSkeleton />
+      ) : error ? (
+        <ErrorDisplay error={error} onRetry={() => fetchCommissionData()} />
+      ) : !report ? (
+        <NoDataDisplay />
+      ) : (
+        <CommissionReport report={report} />
+      )}
+
+      {/* Back Button */}
+      <div className="flex justify-center pt-4">
+        <Button
+          variant="outline"
+          onClick={() => router.push("/dashboard")}
+          className="gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          กลับหน้าหลัก
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// SUB COMPONENTS
+// =============================================================================
+
+function LoadingSkeleton() {
+  return (
+    <div className="flex items-center justify-center py-20">
+      <div className="text-center">
+        <div className="w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-gray-500">กำลังโหลดข้อมูล...</p>
+      </div>
+    </div>
+  );
+}
+
+function ErrorDisplay({ error, onRetry }: { error: string; onRetry: () => void }) {
+  return (
+    <div className="text-center py-12 bg-red-50 rounded-2xl border border-red-200">
+      <p className="text-red-600 font-medium mb-4">{error}</p>
+      <Button onClick={onRetry} variant="outline" className="text-red-600 border-red-300">
+        ลองใหม่
+      </Button>
+    </div>
+  );
+}
+
+function NoDataDisplay() {
+  return (
+    <div className="text-center py-12 bg-white rounded-2xl border">
+      <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+      <p className="text-gray-500">ไม่พบข้อมูลในปีนี้</p>
+    </div>
+  );
+}
+
+// =============================================================================
+// COMMISSION REPORT COMPONENT
+// =============================================================================
+
+function CommissionReport({ report }: { report: YearlyCommissionData }) {
+  const badge = getAchievementBadge(report.achievementLevel);
+
+  return (
+    <div className="space-y-6">
+      {/* Header Card - User Info & Target */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl text-white p-6"
+      >
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24" />
+        
+        {/* Sales Group Badge */}
+        <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
+          <span className="text-sm font-medium">{report.salesGroup === 'A' ? 'กลุ่ม A' : 'กลุ่ม B'}</span>
+        </div>
+        
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <p className="text-purple-200 text-sm">ฝ่ายขาย</p>
+            <h2 className="text-2xl font-bold">{report.NameG}</h2>
+            <p className="text-purple-100 text-sm mt-1">ประจำปี {report.year} (พ.ศ. {report.year + 543})</p>
+            <div className={`inline-flex items-center gap-2 mt-2 px-3 py-1 rounded-full ${badge.bgColor} ${badge.color}`}>
+              <span>{badge.icon}</span>
+              <span className="text-sm font-medium">{report.achievementLevel}</span>
+            </div>
+          </div>
+          
+          <div className="text-right">
+            <p className="text-purple-200 text-sm">Baseline Target (ปี)</p>
+            <p className="text-3xl font-bold">{formatNumber(report.baselineTargetY, 0)}</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Summary Section - ตามรูป */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        className="bg-white rounded-2xl border shadow-sm p-6"
+      >
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <Calculator className="w-5 h-5 text-purple-600" />
+          สรุปประจำปี {report.year}
+        </h3>
+        
+        <div className="space-y-3">
+          {/* ยอดขายรวม(PB) */}
+          <SummaryRow 
+            label="ยอดขายรวม(PB)"
+            value={formatNumber(report.totalPB, 2)} 
+          />
+          
+          {/* Baseline Target (Y) */}
+          <SummaryRow 
+            label="Baseline Target (Y)" 
+            value={formatNumber(report.baselineTargetY, 2)} 
+          />
+          
+          {/* Achievement (%) - Orange */}
+          <SummaryRow 
+            label="Achievement (%)" 
+            value={`${report.achievementPct.toFixed(2)}`} 
+            highlight="orange"
+          />
+          
+          {/* ระดับความสำเร็จ */}
+          <SummaryRow 
+            label="ระดับความสำเร็จ" 
+            value={report.achievementLevel} 
+          />
+          
+          {/* Commission รวมประจำปี */}
+          <SummaryRow 
+            label="Commission รวมประจำปี"
+            value={formatNumber(report.yearlyCommission, 2)} 
+          />
+          
+          {/* Commission ที่ได้รับแล้ว */}
+          <SummaryRow 
+            label="Commission ที่ได้รับแล้ว"
+            value={formatNumber(report.totalReceivedCommission, 2)} 
+          />
+          
+          {/* Commission Top up - Orange */}
+          <SummaryRow 
+            label="Commission Top up" 
+            value={formatNumber(report.commissionTopUp, 2)} 
+            highlight="orange"
+          />
+        </div>
+      </motion.div>
+
+      {/* Quarterly Commission Breakdown */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="bg-white rounded-2xl border shadow-sm p-6"
+      >
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-purple-600" />
+          Commission ที่ได้รับแต่ละไตรมาส
+        </h3>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <QuarterCard quarter={1} commission={report.comQ1} />
+          <QuarterCard quarter={2} commission={report.comQ2} />
+          <QuarterCard quarter={3} commission={report.comQ3} />
+          <QuarterCard quarter={4} commission={report.comQ4} />
+        </div>
+        
+        {/* Total Received */}
+        <div className="mt-4 flex items-center justify-between p-4 rounded-xl bg-purple-100 border-2 border-purple-300">
+          <span className="font-semibold text-purple-700">รวมที่ได้รับแล้ว (Q1-Q4)</span>
+          <span className="font-bold text-purple-700 text-xl">{formatNumber(report.totalReceivedCommission, 2)}</span>
+        </div>
+      </motion.div>
+
+      {/* Top-up Calculation */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl border border-purple-200 p-6"
+      >
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <Award className="w-5 h-5 text-purple-600" />
+          การคำนวณ Commission Top up
+        </h3>
+        
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-white">
+            <span className="text-gray-600">Commission รวมประจำปี (Rate ปี: {report.yearlyRateCom}%)</span>
+            <span className="font-bold text-gray-900">{formatNumber(report.yearlyCommission, 2)}</span>
+          </div>
+          
+          <div className="flex items-center justify-between p-3 rounded-lg bg-white">
+            <span className="text-gray-600">หัก Commission ที่ได้รับแล้ว</span>
+            <span className="font-bold text-red-600">- {formatNumber(report.totalReceivedCommission, 2)}</span>
+          </div>
+          
+          <div className="flex items-center justify-between p-4 rounded-xl bg-purple-600 text-white">
+            <span className="font-semibold">= Commission Top up</span>
+            <span className="font-bold text-2xl">{formatNumber(report.commissionTopUp, 2)}</span>
+          </div>
+          
+          {report.commissionTopUp === 0 && report.yearlyCommission < report.totalReceivedCommission && (
+            <p className="text-sm text-purple-600 text-center mt-2">
+              * ไม่มี Top up เนื่องจาก Commission ไตรมาสสูงกว่า Commission ปี (ฝ่ายขายไม่ต้องคืน)
+            </p>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Special Bonus - Only show if eligible */}
+      {report.specialBonus > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-2xl p-6 text-white"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Gift className="w-10 h-10" />
+              <div>
+                <h3 className="text-xl font-bold">🎉 รางวัลพิเศษระดับตำนาน!</h3>
+                <p className="text-yellow-100">ยินดีด้วย! คุณได้รับรางวัลพิเศษสำหรับ Top Sale ระดับตำนาน</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-yellow-100 text-sm">รางวัลพิเศษ</p>
+              <p className="text-3xl font-bold">{formatNumber(report.specialBonus, 0)}</p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Rate Info */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25 }}
+        className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-200"
+      >
+        <div className="flex items-center gap-2 text-purple-700">
+          <Calculator className="w-5 h-5" />
+          <span className="font-medium">หมายเหตุการคำนวณ:</span>
+        </div>
+        <ul className="mt-2 text-sm text-purple-600 space-y-1 ml-7">
+          <li>• Commission รวมประจำปี คำนวณจากยอด PB ทั้งปี ด้วย Rate ปี</li>
+          <li>• Commission ที่ได้รับแล้ว = รวม Commission Q1 + Q2 + Q3 + Q4</li>
+          <li>• Commission Top up = Commission ปี - Commission ที่ได้รับแล้ว (ถ้าติดลบ = 0)</li>
+          <li>• รางวัลพิเศษระดับตำนาน: 100,000 บาท สำหรับ Rate 2.5%</li>
+        </ul>
+      </motion.div>
+    </div>
+  );
+}
+
+// =============================================================================
+// HELPER COMPONENTS
+// =============================================================================
+
+interface SummaryRowProps {
+  label: string;
+  value: string;
+  highlight?: 'orange' | 'green';
+}
+
+function SummaryRow({ label, value, highlight }: SummaryRowProps) {
+  const bgColor = highlight === 'orange' 
+    ? 'bg-amber-100' 
+    : highlight === 'green'
+    ? 'bg-purple-100'
+    : 'bg-gray-50';
+  
+  const textColor = highlight === 'orange'
+    ? 'text-amber-700 font-bold'
+    : highlight === 'green'
+    ? 'text-purple-700 font-bold'
+    : 'text-gray-900 font-semibold';
+
+  return (
+    <div className={`flex items-center justify-between p-3 rounded-lg ${bgColor}`}>
+      <span className="text-gray-600 text-sm">{label}</span>
+      <span className={textColor}>{value}</span>
+    </div>
+  );
+}
+
+function QuarterCard({ quarter, commission }: { quarter: number; commission: number }) {
+  return (
+    <div className="bg-gray-50 rounded-xl p-4 text-center">
+      <p className="text-xs text-gray-500 mb-1">ไตรมาส {quarter}</p>
+      <p className="text-lg font-bold text-purple-600">{formatNumber(commission, 2)}</p>
+    </div>
+  );
+}
