@@ -1,7 +1,7 @@
 'use client';
 
 import { formatNumber } from '@/lib/utils';
-import type { MonthlySalesData, SalesDisplayField, SALES_DISPLAY_FIELDS } from '@/types/monthly-sales';
+import type { MonthlySalesData, SalesDisplayField, SALES_DISPLAY_FIELDS } from '../types/monthly-sales';
 
 interface SalesDataTableProps {
   data: MonthlySalesData[];

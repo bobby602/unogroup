@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { THAI_MONTHS, type MonthOption } from '@/types/monthly-sales';
+import { THAI_MONTHS, type MonthOption } from '../types/monthly-sales';
 
 interface MonthSelectorProps {
   currentMonth: string;

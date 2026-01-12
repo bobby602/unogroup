@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getCurrentQuarter } from "@/lib/quarter";
+export const dynamic = 'force-dynamic'; // เพิ่มบรรทัดนี้
+
+import { headers } from 'next/headers';
 
 export async function GET() {
   try {

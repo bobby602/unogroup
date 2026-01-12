@@ -6,8 +6,12 @@ const nextConfig = {
   
   // Image configuration
   images: {
-    domains: ['localhost'],
+    // เปลี่ยนจาก domains เป็น remotePatterns
     remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
       {
         protocol: 'https',
         hostname: 'drive.google.com',

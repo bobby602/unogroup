@@ -10,6 +10,7 @@ export interface PriceListStats {
   avgPrice: number;
   minPrice: number;
   maxPrice: number;
+  avgPoint: number;
 }
 
 // =============================================================================
@@ -132,14 +133,28 @@ export function calculateStats(data: PriceListData): PriceListStats {
   let minPrice = Infinity;
   let maxPrice = 0;
   
+  // Point calculation variables
+  let totalPoints = 0;
+  let itemsWithPointsCount = 0;
+  
   for (const category of data.categories) {
     for (const item of category.items) {
       totalItems++;
+      
+      // Price Statistics
       const price = item.priceList || 0;
       if (price > 0) {
         totalPrice += price;
         minPrice = Math.min(minPrice, price);
         maxPrice = Math.max(maxPrice, price);
+      }
+
+      // Point Statistics
+      // We calculate the average based on Main Rows (num === 0) 
+      // to avoid skewing the average with sub-items that have 0 points.
+      if (item.num === 0 && item.point > 0) {
+        totalPoints += item.point;
+        itemsWithPointsCount++;
       }
     }
   }
@@ -150,6 +165,8 @@ export function calculateStats(data: PriceListData): PriceListStats {
     avgPrice: totalItems > 0 ? totalPrice / totalItems : 0,
     minPrice: minPrice === Infinity ? 0 : minPrice,
     maxPrice,
+    // Calculate the average point
+    avgPoint: itemsWithPointsCount > 0 ? totalPoints / itemsWithPointsCount : 0,
   };
 }
 

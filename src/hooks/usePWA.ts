@@ -169,19 +169,21 @@ export function usePushNotifications() {
     return result;
   }, []);
 
-  const subscribe = useCallback(async (vapidPublicKey: string) => {
+ const subscribe = useCallback(async (vapidPublicKey: string) => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
       return null;
     }
 
     const registration = await navigator.serviceWorker.ready;
     
+    // ตรวจสอบให้แน่ใจว่ามี 'const sub =' อยู่ข้างหน้า
     const sub = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+      // ใส่ 'as any' เพื่อแก้ปัญหา Uint8Array ที่คุณเจอในขั้นตอนก่อนหน้า
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as any,
     });
 
-    setSubscription(sub);
+    setSubscription(sub); // ตอนนี้จะหา 'sub' เจอแล้ว
     return sub;
   }, []);
 

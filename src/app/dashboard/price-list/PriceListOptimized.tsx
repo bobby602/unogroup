@@ -18,21 +18,22 @@ import {
   Filter, 
   Loader2,
   Download,
-  RefreshCw
+  RefreshCw,
+  BarChart2
 } from 'lucide-react';
 import { 
+  PriceListData, 
   PriceListItem, 
   PriceCategory,
-  GroupOption,
   PRICE_ADJUSTMENT_RATES,
   UNDER_STANDARD_RATES 
-} from '@/types/price-list';
+} from '../../../types/price-list';
 import { 
   usePriceList, 
   useDebouncedValue,
   usePriceListPersistence 
-} from '../../hooks/usePriceList';
-import { downloadCSV } from '../../lib/price-list-utils';
+} from '../../../hooks/usePriceList';
+import { downloadCSV, calculateStats, PriceListStats } from '../../../lib/price-list-utils';
 
 // =============================================================================
 // PRICE CALCULATION (Preserved from legacy)
@@ -259,67 +260,82 @@ interface CategoryTableProps {
   pointAdjustments: Map<string, number>;
   onPointChange: (mainName: string, delta: number) => void;
   defaultCollapsed?: boolean;
-  searchQuery?: string;
 }
 
 const CategoryTable = memo(({ 
   category, 
-  pointAdjustments, 
+  pointAdjustments,
   onPointChange,
   defaultCollapsed = false,
-  searchQuery = ''
 }: CategoryTableProps) => {
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   
-  // Filter items based on search
-  const filteredItems = useMemo(() => {
-    if (!searchQuery) return category.items;
-    const query = searchQuery.toLowerCase();
-    return category.items.filter(item => 
-      item.name.toLowerCase().includes(query) ||
-      item.mainName.toLowerCase().includes(query) ||
-      item.noteF.toLowerCase().includes(query) ||
-      item.namePack.toLowerCase().includes(query)
-    );
-  }, [category.items, searchQuery]);
+  // Get adjustment for each product
+  const getAdjustment = useCallback((mainName: string) => {
+    return pointAdjustments.get(mainName) || 0;
+  }, [pointAdjustments]);
   
-  if (filteredItems.length === 0) return null;
+  if (category.items.length === 0) return null;
   
   return (
-    <div className="mb-6 bg-white rounded-lg shadow-md overflow-hidden">
+    <div className="mb-4 bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
       {/* Category Header */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-amber-500 to-amber-400 text-white font-semibold hover:from-amber-600 hover:to-amber-500 transition-all"
       >
         <span className="flex items-center gap-2">
           <Package size={18} />
-          {category.catName}
-          <span className="text-amber-200 text-sm">({filteredItems.length} รายการ)</span>
+          <span>{category.catName}</span>
+          <span className="text-amber-100 text-sm font-normal">
+            ({category.items.length} รายการ)
+          </span>
         </span>
-        {isCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+        {isCollapsed ? (
+          <ChevronDown size={20} className="transition-transform" />
+        ) : (
+          <ChevronUp size={20} className="transition-transform" />
+        )}
       </button>
       
       {/* Table */}
       {!isCollapsed && (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+          <table className="w-full border-collapse min-w-[800px]">
             <thead>
-              <tr className="bg-teal-700 text-white text-sm">
-                <th className="px-3 py-2 text-left font-medium border border-teal-600">ชื่อสามัญ</th>
-                <th className="px-3 py-2 text-center font-medium border border-teal-600">แพ็คกิ้ง</th>
-                <th className="px-3 py-2 text-center font-medium border border-teal-600 w-32">แต้ม</th>
-                <th className="px-3 py-2 text-center font-medium border border-teal-600">ขนาดบรรจุ</th>
-                <th className="px-3 py-2 text-center font-medium border border-teal-600">Price</th>
-                <th className="px-3 py-2 text-center font-medium border border-teal-600">Price15</th>
-                <th className="px-3 py-2 text-center font-medium border border-teal-600">Price25</th>
-                <th className="px-3 py-2 text-center font-medium border border-teal-600">Price50</th>
-                <th className="px-3 py-2 text-center font-medium border border-teal-600">NoteF</th>
+              <tr className="bg-gradient-to-r from-teal-700 to-teal-600 text-white text-sm">
+                <th className="px-3 py-3 text-left font-medium border border-teal-600 w-[20%]">
+                  ชื่อสามัญ
+                </th>
+                <th className="px-3 py-3 text-center font-medium border border-teal-600 w-[10%]">
+                  แพ็คกิ้ง
+                </th>
+                <th className="px-3 py-3 text-center font-medium border border-teal-600 w-[12%]">
+                  แต้ม
+                </th>
+                <th className="px-3 py-3 text-center font-medium border border-teal-600 w-[10%]">
+                  ขนาดบรรจุ
+                </th>
+                <th className="px-3 py-3 text-center font-medium border border-teal-600 w-[10%]">
+                  Price
+                </th>
+                <th className="px-3 py-3 text-center font-medium border border-teal-600 w-[10%]">
+                  Price15
+                </th>
+                <th className="px-3 py-3 text-center font-medium border border-teal-600 w-[10%]">
+                  Price25
+                </th>
+                <th className="px-3 py-3 text-center font-medium border border-teal-600 w-[10%]">
+                  Price50
+                </th>
+                <th className="px-3 py-3 text-center font-medium border border-teal-600 w-[8%]">
+                  หมายเหตุ
+                </th>
               </tr>
             </thead>
             <tbody>
-              {filteredItems.map((item, idx) => {
-                const adjustment = pointAdjustments.get(item.mainName) || 0;
+              {category.items.map((item, idx) => {
+                const adjustment = getAdjustment(item.mainName);
                 const isUnderStandard = adjustment < 0;
                 
                 return (
@@ -347,25 +363,34 @@ CategoryTable.displayName = 'CategoryTable';
 // =============================================================================
 
 interface StatsCardProps {
-  label: string;
-  value: string | number;
-  icon: React.ReactNode;
-  color: string;
+  stats: PriceListStats | null;
+  adjustmentCount: number;
 }
 
-const StatsCard = memo(({ label, value, icon, color }: StatsCardProps) => (
-  <div className={`bg-gradient-to-br ${color} rounded-xl p-4 text-white shadow-lg`}>
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm opacity-80">{label}</p>
-        <p className="text-2xl font-bold">{value}</p>
+const StatsCard = memo(({ stats, adjustmentCount }: StatsCardProps) => {
+  if (!stats) return null;
+  
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-100">
+        <div className="text-xs text-gray-500 uppercase tracking-wide">สินค้าทั้งหมด</div>
+        <div className="text-xl font-bold text-teal-600">{stats.totalItems.toLocaleString()}</div>
       </div>
-      <div className="opacity-80">
-        {icon}
+      <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-100">
+        <div className="text-xs text-gray-500 uppercase tracking-wide">หมวดหมู่</div>
+        <div className="text-xl font-bold text-amber-600">{stats.totalCategories}</div>
+      </div>
+      <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-100">
+        <div className="text-xs text-gray-500 uppercase tracking-wide">แต้มเฉลี่ย</div>
+        <div className="text-xl font-bold text-purple-600">{stats.avgPoint.toFixed(1)}</div>
+      </div>
+      <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-100">
+        <div className="text-xs text-gray-500 uppercase tracking-wide">ปรับแต้มแล้ว</div>
+        <div className="text-xl font-bold text-blue-600">{adjustmentCount}</div>
       </div>
     </div>
-  </div>
-));
+  );
+});
 StatsCard.displayName = 'StatsCard';
 
 // =============================================================================
@@ -387,15 +412,16 @@ export default function PriceListOptimized() {
     setSearchQuery,
     adjustPoint,
     resetPointAdjustments,
+    resetAll,
   } = usePriceList('1');
   
-  // Debounced search (for display purposes)
-  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
+  // Debounced search
+  const debouncedSearch = useDebouncedValue(searchQuery, 300);
   
   // Persist adjustments to localStorage
   usePriceListPersistence(
     pointAdjustments,
-    (_adjustments: Map<string, number>) => {
+    (adjustments) => {
       // Note: This is read-only, we don't update from localStorage
     },
     { enabled: false } // Disable for now
@@ -413,8 +439,8 @@ export default function PriceListOptimized() {
       }
     };
     
-    globalThis.addEventListener('keydown', handleKeyDown);
-    return () => globalThis.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
   
   // Handle export
@@ -427,7 +453,7 @@ export default function PriceListOptimized() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-teal-50 flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <div className="flex flex-col items-center gap-4 p-8 bg-white/80 backdrop-blur rounded-2xl shadow-lg">
           <Loader2 className="w-12 h-12 text-teal-600 animate-spin" />
           <p className="text-teal-700 font-medium">กำลังโหลดข้อมูลราคา...</p>
@@ -439,15 +465,18 @@ export default function PriceListOptimized() {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-teal-50 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
+      <div className="flex items-center justify-center py-20">
+        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-red-500 text-2xl">!</span>
+          </div>
           <p className="text-red-600 font-medium mb-4">{error}</p>
           <button
             onClick={() => fetchData(selectedGroup)}
-            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors flex items-center gap-2 mx-auto"
+            className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors flex items-center gap-2 mx-auto"
           >
-            <RefreshCw size={18} />
-            ลองใหม่
+            <RefreshCw size={16} />
+            ลองใหม่อีกครั้ง
           </button>
         </div>
       </div>
@@ -455,124 +484,104 @@ export default function PriceListOptimized() {
   }
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-teal-50">
-      <div className="container mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <img 
-            src="/icons/LOGOUNO.png" 
-            alt="UNOGROUP Logo" 
-            className="mx-auto h-24 w-auto mb-4"
-          />
-          <h1 className="text-3xl font-bold text-teal-800">Price List</h1>
-          <p className="text-teal-600">
-            {data?.currentMonth} {data?.currentYear} • {stats?.totalItems || 0} รายการ
-          </p>
-        </div>
-        
-        {/* Stats Cards */}
-        {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <StatsCard 
-              label="สินค้าทั้งหมด" 
-              value={stats.totalItems} 
-              icon={<Package size={24} />}
-              color="from-teal-500 to-teal-600"
-            />
-            <StatsCard 
-              label="หมวดหมู่" 
-              value={stats.totalCategories} 
-              icon={<Filter size={24} />}
-              color="from-amber-500 to-amber-600"
-            />
-            <StatsCard 
-              label="ราคาเฉลี่ย" 
-              value={formatNumber(stats.avgPrice)} 
-              icon={<span className="text-2xl">฿</span>}
-              color="from-blue-500 to-blue-600"
-            />
-            <StatsCard 
-              label="ราคาสูงสุด" 
-              value={formatNumber(stats.maxPrice)} 
-              icon={<span className="text-2xl">฿</span>}
-              color="from-purple-500 to-purple-600"
-            />
-          </div>
-        )}
+    <div>
+      {/* Page Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+          Price List
+        </h1>
+        <p className="text-gray-500 mt-1">
+          {data?.currentMonth} {data?.currentYear} • {stats?.totalItems.toLocaleString() || 0} รายการ
+        </p>
+      </div>
+      
+      {/* Stats */}
+      <StatsCard stats={stats} adjustmentCount={pointAdjustments.size} />
         
         {/* Controls */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            {/* Group Filter */}
+        <div className="bg-white rounded-xl shadow-md p-4 mb-6 border border-gray-100">
+          <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
+            {/* Left: Group Filter */}
             <div className="flex items-center gap-3">
-              <Filter size={20} className="text-gray-500" />
-              <label className="text-gray-700 font-medium">กลุ่มสินค้า:</label>
+              <Filter size={18} className="text-gray-400 flex-shrink-0" />
               <select
                 value={selectedGroup}
                 onChange={(e) => setSelectedGroup(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+                className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all bg-gray-50"
               >
-                {data?.groups.map((g: GroupOption) => (
+                {data?.groups.map(g => (
                   <option key={g.G} value={g.G}>กลุ่ม {g.G}</option>
                 ))}
               </select>
             </div>
             
-            {/* Search */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            {/* Center: Search */}
+            <div className="relative flex-1 max-w-lg">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
                 ref={searchInputRef}
                 type="text"
-                placeholder="ค้นหาสินค้า... (Ctrl+K)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+                placeholder="ค้นหาสินค้า... (⌘K)"
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all bg-gray-50"
               />
             </div>
             
-            {/* Actions */}
+            {/* Right: Action Buttons */}
             <div className="flex items-center gap-2">
-              <button
-                onClick={resetPointAdjustments}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
-              >
-                <RefreshCw size={18} />
-                รีเซ็ต
-              </button>
+              {pointAdjustments.size > 0 && (
+                <button
+                  onClick={resetPointAdjustments}
+                  className="px-3 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors flex items-center gap-1.5 text-sm font-medium"
+                >
+                  <RefreshCw size={14} />
+                  รีเซ็ต ({pointAdjustments.size})
+                </button>
+              )}
               <button
                 onClick={handleExport}
-                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors flex items-center gap-2"
+                className="px-3 py-2 bg-teal-100 text-teal-700 rounded-lg hover:bg-teal-200 transition-colors flex items-center gap-1.5 text-sm font-medium"
               >
-                <Download size={18} />
+                <Download size={14} />
                 Export CSV
               </button>
             </div>
           </div>
         </div>
         
-        {/* Categories */}
-        <div className="space-y-6">
-          {filteredCategories.map((category: PriceCategory, index: number) => (
-            <CategoryTable
-              key={category.catName}
-              category={category}
-              pointAdjustments={pointAdjustments}
-              onPointChange={adjustPoint}
-              defaultCollapsed={index > 2}
-              searchQuery={debouncedSearchQuery}
-            />
-          ))}
+        {/* Category Tables */}
+        <div className="space-y-4">
+          {filteredCategories.length > 0 ? (
+            filteredCategories.map((category, index) => (
+              <CategoryTable
+                key={category.catName}
+                category={category}
+                pointAdjustments={pointAdjustments}
+                onPointChange={adjustPoint}
+                defaultCollapsed={index > 2} // Collapse categories after 3rd
+              />
+            ))
+          ) : (
+            <div className="text-center py-16 bg-white rounded-xl shadow-md">
+              <Package size={48} className="mx-auto text-gray-300 mb-4" />
+              <p className="text-gray-500">
+                {searchQuery 
+                  ? `ไม่พบสินค้าที่ตรงกับ "${searchQuery}"` 
+                  : 'ไม่พบข้อมูลสินค้า'
+                }
+              </p>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="mt-3 text-teal-600 hover:text-teal-700 text-sm font-medium"
+                >
+                  ล้างการค้นหา
+                </button>
+              )}
+            </div>
+          )}
         </div>
-        
-        {/* Empty state */}
-        {filteredCategories.length === 0 && !loading && (
-          <div className="text-center py-12">
-            <Package size={48} className="mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-500">ไม่พบสินค้าที่ตรงกับการค้นหา</p>
-          </div>
-        )}
       </div>
-    </div>
   );
 }

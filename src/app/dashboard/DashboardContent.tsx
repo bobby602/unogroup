@@ -149,9 +149,9 @@ export function DashboardContent() {
   ];
 
   const quickLinks = [
-    {
+     {
       title: "รายละเอียดประวัติการขายลูกค้า",
-      href: "/dashboard/points/detail",
+      href: "/dashboard/points/detail",  // ✅ ตรงกับ path ที่เราสร้าง
     },
     {
       title: "รายงานการขาย",
@@ -159,7 +159,7 @@ export function DashboardContent() {
     },
     {
     title: "Price List (รายการราคาสินค้า)", // เพิ่มบรรทัดนี้
-    href: "/price-list", // แก้ไขให้ตรงกับ src/app/price-list/page.tsx
+    href: "/dashboard/price-list", // แก้ไขให้ตรงกับ src/app/price-list/page.tsx
     },
   ];
 
@@ -318,7 +318,7 @@ export function DashboardContent() {
 
       {/* PriceList Button - Modern style */}
       <motion.div variants={itemVariants}>
-        <Link href="/price-list" className="block">
+        <Link href="/dashboard/price-list" className="block">
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 p-[2px] cursor-pointer group">
             <div className="bg-white rounded-2xl">
               <div className="flex items-center justify-between p-5 sm:p-6">

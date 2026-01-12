@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import PriceListClient from './PriceListClient';
+import PriceListOptimized from './PriceListOptimized';
 
 export const metadata: Metadata = {
   title: 'Price List | UNOGROUP',
@@ -10,5 +10,5 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 export default function PriceListPage() {
-  return <PriceListClient />;
+  return <PriceListOptimized />;
 }
