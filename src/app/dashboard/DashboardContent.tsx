@@ -16,6 +16,7 @@ import {
   Smartphone,
   ArrowRight,
   Sparkles,
+  BarChart3, // เพิ่ม icon
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ interface DashboardData {
 interface StatItem {
   num: string;
   title: string;
+  shortTitle?: string;
   value: number;
   icon: React.ComponentType<{ className?: string }>;
   href: string;
@@ -145,21 +147,26 @@ export function DashboardContent() {
       icon: Users,
       href: "/dashboard/commission/yearly",
     },
-    
   ];
 
+  // =============================================================================
+  // QUICK LINKS - อัพเดทเพิ่ม Report Sale
+  // =============================================================================
   const quickLinks = [
-     {
+    {
       title: "รายละเอียดประวัติการขายลูกค้า",
-      href: "/dashboard/points/detail",  // ✅ ตรงกับ path ที่เราสร้าง
+      href: "/dashboard/points/detail",
+      icon: Users,
     },
     {
-      title: "รายงานการขาย",
-      href: "/dashboard/sales",
+      title: "รายงานการขาย", // ✅ เพิ่มใหม่
+      href: "/dashboard/report-sale",
+      icon: BarChart3,
     },
     {
-    title: "Price List (รายการราคาสินค้า)", // เพิ่มบรรทัดนี้
-    href: "/dashboard/price-list", // แก้ไขให้ตรงกับ src/app/price-list/page.tsx
+      title: "Price List (รายการราคาสินค้า)",
+      href: "/dashboard/price-list",
+      icon: FileText,
     },
   ];
 
@@ -193,7 +200,7 @@ export function DashboardContent() {
             <Link 
               key={stat.num} 
               href={stat.href}
-              className="block" // ← สำคัญ! ทำให้ Link เป็น block element
+              className="block"
             >
               <motion.div
                 variants={itemVariants}
@@ -203,7 +210,7 @@ export function DashboardContent() {
                   transition: { type: "spring", stiffness: 400 }
                 }}
                 whileTap={{ scale: 0.98 }}
-                className="group cursor-pointer h-full" // ← เพิ่ม cursor-pointer และ h-full
+                className="group cursor-pointer h-full"
               >
                 <div className={`relative rounded-2xl p-[2px] bg-gradient-to-br ${stat.gradient} shadow-lg hover:shadow-xl transition-shadow duration-300 h-full`}>
                   <div className={`bg-gradient-to-br ${stat.bgGradient} rounded-2xl p-5 sm:p-6 h-full backdrop-blur-sm`}>
@@ -234,13 +241,10 @@ export function DashboardContent() {
                     </div>
                     
                     {/* Click indicator */}
-                    <div className="mt-4 flex items-center gap-1 text-xs text-gray-400 group-hover:text-gray-600 transition-colors">
-                      <span>คลิกเพื่อดูรายละเอียด</span>
-                      <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                    <div className="mt-4 flex items-center text-sm text-gray-500 group-hover:text-gray-700 transition-colors">
+                      <span>ดูรายละเอียด</span>
+                      <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
                     </div>
-                    
-                    {/* Decorative element */}
-                    <div className={`absolute bottom-0 right-0 w-24 h-24 bg-gradient-to-br ${stat.gradient} opacity-5 rounded-tl-full`}></div>
                   </div>
                 </div>
               </motion.div>
@@ -249,69 +253,58 @@ export function DashboardContent() {
         </div>
       </motion.div>
 
-      {/* UNOGROUP Stats - Modern glass cards */}
+      {/* UNOGROUP Stats Section */}
       <motion.div variants={itemVariants}>
-        <div className="relative">
-          {/* Background decoration */}
-          <div className="absolute inset-0 bg-gradient-to-r from-red-100 via-orange-50 to-amber-100 rounded-3xl opacity-50"></div>
+        <div className="bg-gradient-to-br from-red-50 via-orange-50 to-amber-50 rounded-2xl p-4 sm:p-6 border border-red-100">
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="w-5 h-5 text-orange-500" />
+            <h3 className="text-lg font-bold text-gray-800">UNOGROUP</h3>
+          </div>
           
-          <div className="relative bg-white/70 backdrop-blur-sm rounded-3xl p-4 sm:p-6 border border-white/50 shadow-lg">
-            <div className="flex items-center gap-2 mb-4 sm:mb-6">
-              <div className="p-2 bg-gradient-to-br from-red-500 to-orange-500 rounded-lg">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold text-gray-800">UNOGROUP Commission</h3>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {unoStats.map((stat) => (
-                <Link 
-                  key={stat.num} 
-                  href={stat.href}
-                  className="block"
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {unoStats.map((stat) => (
+              <Link key={stat.num} href={stat.href} className="block">
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="group cursor-pointer"
                 >
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="group cursor-pointer h-full"
-                  >
-                    <div className="relative bg-white rounded-2xl p-4 sm:p-5 shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden h-full">
-                      {/* Number badge */}
-                      <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white font-bold text-xs shadow">
-                        {stat.num}
-                      </div>
-                      
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2.5 rounded-xl bg-gradient-to-br from-red-50 to-orange-50 group-hover:from-red-100 group-hover:to-orange-100 transition-colors">
-                          <stat.icon className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
-                        </div>
-                      </div>
-                      
-                      {/* Title */}
-                      <p className="text-xs sm:text-sm text-gray-600 font-medium mb-2 sm:hidden">
-                        {stat.shortTitle}
-                      </p>
-                      <p className="text-xs sm:text-sm text-gray-600 font-medium mb-2 hidden sm:block">
-                        {stat.title}
-                      </p>
-                      
-                      {/* Value */}
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
-                          {formatNumber(stat.value, 2)}
-                        </span>
-                        <span className="text-xs sm:text-sm text-gray-400">
-                          Points
-                        </span>
-                      </div>
-                      
-                      {/* Bottom gradient line */}
-                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-500 to-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="relative bg-white rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow border border-orange-100">
+                    {/* Number badge */}
+                    <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white font-bold text-xs shadow">
+                      {stat.num}
                     </div>
-                  </motion.div>
-                </Link>
-              ))}
-            </div>
+                    
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2.5 rounded-xl bg-gradient-to-br from-red-50 to-orange-50 group-hover:from-red-100 group-hover:to-orange-100 transition-colors">
+                        <stat.icon className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
+                      </div>
+                    </div>
+                    
+                    {/* Title */}
+                    <p className="text-xs sm:text-sm text-gray-600 font-medium mb-2 sm:hidden">
+                      {stat.shortTitle}
+                    </p>
+                    <p className="text-xs sm:text-sm text-gray-600 font-medium mb-2 hidden sm:block">
+                      {stat.title}
+                    </p>
+                    
+                    {/* Value */}
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
+                        {formatNumber(stat.value, 2)}
+                      </span>
+                      <span className="text-xs sm:text-sm text-gray-400">
+                        Points
+                      </span>
+                    </div>
+                    
+                    {/* Bottom gradient line */}
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-500 to-amber-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-b-xl"></div>
+                  </div>
+                </motion.div>
+              </Link>
+            ))}
           </div>
         </div>
       </motion.div>
@@ -341,7 +334,7 @@ export function DashboardContent() {
         </Link>
       </motion.div>
 
-      {/* Quick Links - Pill buttons */}
+      {/* Quick Links - Pill buttons - อัพเดทเพิ่ม Report Sale */}
       <motion.div variants={itemVariants}>
         <div className="flex flex-wrap gap-3 sm:gap-4 justify-center">
           {quickLinks.map((link) => (
@@ -349,8 +342,9 @@ export function DashboardContent() {
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-5 py-2.5 sm:px-6 sm:py-3 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-full border border-blue-200 hover:border-blue-300 transition-all duration-300 cursor-pointer group"
+                className="flex items-center gap-2 px-5 py-2.5 sm:px-6 sm:py-3 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-full border border-blue-200 hover:border-blue-300 transition-all duration-300 cursor-pointer group"
               >
+                <link.icon className="w-4 h-4 text-blue-500" />
                 <span className="text-blue-600 font-medium text-sm sm:text-base group-hover:text-blue-700">
                   {link.title}
                 </span>
@@ -362,46 +356,24 @@ export function DashboardContent() {
 
       {/* PWA Install Prompt - Mobile only */}
       <motion.div variants={itemVariants} className="sm:hidden">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-brand-primary via-teal-500 to-cyan-500 p-5 shadow-xl">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
-          
-          <div className="relative flex items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-              <Smartphone size={28} className="text-white" />
+        <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-4 text-white">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/10 rounded-lg">
+              <Smartphone className="w-5 h-5" />
             </div>
             <div className="flex-1">
-              <p className="font-bold text-white text-lg">ติดตั้งแอพ</p>
-              <p className="text-sm text-white/80">
-                เพิ่มไปที่หน้าจอหลักเพื่อเข้าถึงได้เร็วขึ้น
-              </p>
+              <p className="font-medium text-sm">ติดตั้งแอพ</p>
+              <p className="text-xs text-gray-400">เพิ่มไอคอนบนหน้าจอ</p>
             </div>
+            <Button 
+              size="sm" 
+              className="bg-white text-gray-900 hover:bg-gray-100 text-xs px-3"
+            >
+              ติดตั้ง
+            </Button>
           </div>
         </div>
       </motion.div>
-
-      {/* Admin User Selector */}
-      {session?.user?.isAdmin && (
-        <motion.div variants={itemVariants}>
-          <Card className="border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 shadow-lg overflow-hidden">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-amber-200 to-yellow-200 rounded-full -translate-y-1/2 translate-x-1/2 opacity-50"></div>
-            <CardHeader className="pb-2 sm:pb-4 relative">
-              <CardTitle className="text-base sm:text-lg text-amber-800 flex items-center gap-2">
-                <span className="text-2xl">🔐</span>
-                Admin Panel
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <p className="text-amber-700 mb-3 sm:mb-4 text-sm sm:text-base">
-                เลือกพนักงานขายเพื่อดูข้อมูล
-              </p>
-              <select className="w-full px-4 py-3 rounded-xl border-2 border-amber-200 bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-200 transition-all text-sm sm:text-base">
-                <option value="">เลือกพนักงาน...</option>
-              </select>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
     </motion.div>
   );
 }

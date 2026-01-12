@@ -27,16 +27,16 @@ import {
   PriceCategory,
   PRICE_ADJUSTMENT_RATES,
   UNDER_STANDARD_RATES 
-} from '../../../types/price-list';
+} from '@/types/price-list';
 import { 
   usePriceList, 
   useDebouncedValue,
   usePriceListPersistence 
-} from '../../../hooks/usePriceList';
-import { downloadCSV, calculateStats, PriceListStats } from '../../../lib/price-list-utils';
+} from '@/hooks/usePriceList';
+import { downloadCSV, calculateStats, PriceListStats } from '@/lib/price-list-utils';
 
 // =============================================================================
-// PRICE CALCULATION (Preserved from legacy)
+// PRICE CALCULATION (Preserved from legacy priceListPage.ejs)
 // =============================================================================
 
 interface AdjustedPrices {
@@ -46,21 +46,40 @@ interface AdjustedPrices {
   price50: number;
 }
 
+/**
+ * คำนวณราคาที่ปรับแล้วตาม point adjustment
+ * 
+ * Logic จาก legacy:
+ * - กด + (Over Standard): เพิ่มราคา ตาม PRICE_ADJUSTMENT_RATES
+ * - กด - (Under Standard): ลดราคา ตาม UNDER_STANDARD_RATES (max 2.5 step)
+ * 
+ * @param basePrices - ราคาฐาน
+ * @param adjustment - ค่า adjustment (+ หรือ -)
+ */
 const calculateAdjustedPrices = (
   basePrices: AdjustedPrices,
-  pointDiff: number,
-  isUnderStandard: boolean
+  adjustment: number
 ): AdjustedPrices => {
   const { priceList, price15, price25, price50 } = basePrices;
-  const step = Math.round(Math.abs(pointDiff) * 2) / 2;
+  
+  // ไม่มี adjustment = คืนราคาเดิม
+  if (adjustment === 0) {
+    return basePrices;
+  }
+  
+  const isUnderStandard = adjustment < 0;
+  const step = Math.round(Math.abs(adjustment) * 2) / 2; // Round to nearest 0.5
   
   let adjustmentRate = 0;
   
   if (isUnderStandard) {
-    adjustmentRate = -(UNDER_STANDARD_RATES[step] || 0);
+    // Under standard: ลดราคา (max 2.5 step = 16%)
+    const clampedStep = Math.min(step, 2.5);
+    adjustmentRate = -(UNDER_STANDARD_RATES[clampedStep] || 0);
   } else {
-    const rates = PRICE_ADJUSTMENT_RATES[step];
-    adjustmentRate = rates ? rates.over : 0;
+    // Over standard: เพิ่มราคา (max 10 step = 80%)
+    const clampedStep = Math.min(step, 10);
+    adjustmentRate = PRICE_ADJUSTMENT_RATES[clampedStep] || 0;
   }
   
   const multiplier = 1 + (adjustmentRate / 100);
@@ -113,17 +132,17 @@ PriceCell.displayName = 'PriceCell';
 const PointControl = memo(({
   point,
   adjustment,
-  isUnderStandard,
   onIncrease,
   onDecrease,
 }: {
   point: number;
   adjustment: number;
-  isUnderStandard: boolean;
   onIncrease: () => void;
   onDecrease: () => void;
 }) => {
   const currentPoint = point + adjustment;
+  const isUnderStandard = adjustment < 0;
+  const isOverStandard = adjustment > 0;
   
   return (
     <div className="flex items-center justify-center gap-1">
@@ -136,11 +155,11 @@ const PointControl = memo(({
       </button>
       <span className={`
         min-w-[3.5rem] px-2 py-1 rounded font-semibold text-sm text-center
-        ${adjustment !== 0 
-          ? isUnderStandard 
-            ? 'text-red-600 bg-red-100' 
-            : 'text-green-600 bg-green-100'
-          : 'text-white bg-teal-600'
+        ${isUnderStandard 
+          ? 'text-red-600 bg-red-100' 
+          : isOverStandard 
+            ? 'text-green-600 bg-green-100'
+            : 'text-white bg-teal-600'
         }
       `}>
         {currentPoint.toFixed(1)}
@@ -161,7 +180,6 @@ PointControl.displayName = 'PointControl';
 interface PriceRowProps {
   item: PriceListItem;
   adjustment: number;
-  isUnderStandard: boolean;
   onIncrease: () => void;
   onDecrease: () => void;
 }
@@ -169,21 +187,12 @@ interface PriceRowProps {
 const PriceRow = memo(({ 
   item, 
   adjustment, 
-  isUnderStandard,
   onIncrease,
   onDecrease 
 }: PriceRowProps) => {
   const isMainRow = item.num === 0;
   
   const adjustedPrices = useMemo(() => {
-    if (adjustment === 0) {
-      return {
-        priceList: item.priceList,
-        price15: item.price15,
-        price25: item.price25,
-        price50: item.price50,
-      };
-    }
     return calculateAdjustedPrices(
       {
         priceList: item.priceList,
@@ -191,10 +200,9 @@ const PriceRow = memo(({
         price25: item.price25,
         price50: item.price50,
       },
-      adjustment,
-      isUnderStandard
+      adjustment
     );
-  }, [item, adjustment, isUnderStandard]);
+  }, [item.priceList, item.price15, item.price25, item.price50, adjustment]);
   
   const hasAdjustment = adjustment !== 0;
   
@@ -225,7 +233,6 @@ const PriceRow = memo(({
           <PointControl
             point={item.point}
             adjustment={adjustment}
-            isUnderStandard={isUnderStandard}
             onIncrease={onIncrease}
             onDecrease={onDecrease}
           />
@@ -336,14 +343,12 @@ const CategoryTable = memo(({
             <tbody>
               {category.items.map((item, idx) => {
                 const adjustment = getAdjustment(item.mainName);
-                const isUnderStandard = adjustment < 0;
                 
                 return (
                   <PriceRow
                     key={`${item.mainName}-${item.num}-${idx}`}
                     item={item}
                     adjustment={adjustment}
-                    isUnderStandard={isUnderStandard}
                     onIncrease={() => onPointChange(item.mainName, 0.5)}
                     onDecrease={() => onPointChange(item.mainName, -0.5)}
                   />

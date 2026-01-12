@@ -17,12 +17,16 @@ import {
   DollarSign,
   List,
   Settings,
+  BarChart3, // เพิ่ม icon สำหรับรายงานการขาย
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+// =============================================================================
+// NAVIGATION LINKS - อัพเดทเพิ่ม Report Sale
+// =============================================================================
 const navLinks = [
   { href: "/dashboard", label: "หน้าหลัก", icon: Home },
-  { href: "/dashboard/sales", label: "รายงานการขาย", icon: FileText },
+  { href: "/dashboard/report-sale", label: "รายงานการขาย", icon: BarChart3 }, // ✅ เพิ่มใหม่
   { href: "/dashboard/points", label: "คะแนน", icon: Award },
   { href: "/dashboard/commission", label: "ค่าคอมมิชชั่น", icon: DollarSign },
   { href: "/dashboard/price-list", label: "Price List", icon: List },

@@ -103,21 +103,46 @@ export function usePriceList(initialGroup: string = '1'): UsePriceListReturn {
   const adjustPoint = useCallback((mainName: string, delta: number) => {
     setPointAdjustments(prev => {
       const newMap = new Map(prev);
+      
+      // 1. หาข้อมูลสินค้าตัวนี้เพื่อดูแต้มตั้งต้น (Standard Point)
+      const item = data?.categories
+        .flatMap(c => c.items)
+        .find(i => i.mainName === mainName && i.num === 0);
+      
+      if (!item) return prev;
+
+      const stdPoint = item.point; // แต้มเดิมจากฐานข้อมูล
       const currentAdjustment = newMap.get(mainName) || 0;
-      const newAdjustment = currentAdjustment + delta;
       
-      // Clamp to reasonable range (-2.5 to +10)
-      const clamped = Math.max(-2.5, Math.min(10, newAdjustment));
+      // 2. คำนวณแต้มใหม่ที่ควรจะเป็น (แต้มจริง)
+      let newPoint = stdPoint + currentAdjustment + delta;
+
+      // 3. --- LOGIC พิเศษจากต้นฉบับ (Legacy Match) ---
       
-      if (Math.abs(clamped) < 0.001) {
+      // การกระโดดข้ามตัวเลข (Skip Logic)
+      if (delta < 0 && newPoint === 1.0) newPoint = 0.5; // ถ้าลดจาก 1.5 ลงมา ให้ข้าม 1.0 ไปที่ 0.5
+      if (delta > 0 && newPoint === 4.5) newPoint = 5.0; // ถ้าเพิ่มจาก 4.0 ขึ้นมา ให้ข้าม 4.5 ไปที่ 5.0
+
+      // การกั้นขอบเขต (Constraints)
+      if (newPoint < 0.5) newPoint = 0.5; // ห้ามต่ำกว่า 0.5 (แก้ปัญหาตัวเลขติดลบ)
+      if (newPoint > 13) newPoint = 13;   // เพดานสูงสุดไม่เกิน 13
+      if (newPoint > stdPoint + 10) newPoint = stdPoint + 10; // เพดานเทียบกับแต้มเดิม
+      
+      // ---------------------------------------------
+
+      // 4. คำนวณผลต่างเพื่อเก็บลงใน Map (Adjustment)
+      const finalAdjustment = newPoint - stdPoint;
+      
+      // ถ้าแต้มกลับมาเท่ากับแต้มเดิม (ผลต่างเป็น 0) ให้ลบทิ้งจาก Map
+      if (Math.abs(finalAdjustment) < 0.001) {
         newMap.delete(mainName);
       } else {
-        newMap.set(mainName, clamped);
+        newMap.set(mainName, finalAdjustment);
       }
       
       return newMap;
     });
-  }, []);
+  }, [data]);
   
   // Reset point adjustments
   const resetPointAdjustments = useCallback(() => {

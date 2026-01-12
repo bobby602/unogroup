@@ -43,31 +43,34 @@ export interface PriceAdjustmentConfig {
 }
 
 // Price adjustment rates mapping
-export const PRICE_ADJUSTMENT_RATES: Record<number, { under: number; over: number }> = {
-  0: { under: 0, over: 0 },
-  0.5: { under: 4, over: 4 },
-  1: { under: 8, over: 8 },
-  1.5: { under: 12, over: 12 },
-  2: { under: 16, over: 16 },
-  2.5: { under: 20, over: 20 },
-  3: { under: 24, over: 24 },
-  3.5: { under: 28, over: 28 },
-  4: { under: 32, over: 32 },
-  4.5: { under: 36, over: 36 },
-  5: { under: 40, over: 40 },
-  5.5: { under: 44, over: 44 },
-  6: { under: 48, over: 48 },
-  6.5: { under: 52, over: 52 },
-  7: { under: 56, over: 56 },
-  7.5: { under: 60, over: 60 },
-  8: { under: 64, over: 64 },
-  8.5: { under: 68, over: 68 },
-  9: { under: 72, over: 72 },
-  9.5: { under: 76, over: 76 },
-  10: { under: 80, over: 80 },
+// OVER STANDARD: กด + เพิ่มราคา (ทุก 0.5 step เพิ่ม 4%)
+// UNDER STANDARD: กด - ลดราคา (ใช้ UNDER_STANDARD_RATES แยก)
+export const PRICE_ADJUSTMENT_RATES: Record<number, number> = {
+  0: 0,
+  0.5: 4,
+  1: 8,
+  1.5: 12,
+  2: 16,
+  2.5: 20,
+  3: 24,
+  3.5: 28,
+  4: 32,
+  4.5: 36,
+  5: 40,
+  5.5: 44,
+  6: 48,
+  6.5: 52,
+  7: 56,
+  7.5: 60,
+  8: 64,
+  8.5: 68,
+  9: 72,
+  9.5: 76,
+  10: 80,
 };
 
-// Under standard rates (negative adjustments)
+// Under standard rates (negative adjustments) - ค่าต่างจาก over!
+// Legacy: 0.5→4%, 1→7%, 1.5→10%, 2→13%, 2.5→16%
 export const UNDER_STANDARD_RATES: Record<number, number> = {
   0: 0,
   0.5: 4,

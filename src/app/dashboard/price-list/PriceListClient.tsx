@@ -11,7 +11,7 @@ import {
 } from '@/types/price-list';
 
 // =============================================================================
-// PRICE CALCULATION UTILITIES (Preserved from legacy)
+// PRICE CALCULATION UTILITIES (Preserved from legacy priceListPage.ejs)
 // =============================================================================
 
 interface AdjustedPrices {
@@ -22,29 +22,36 @@ interface AdjustedPrices {
 }
 
 /**
- * Calculate adjusted prices based on point changes
- * This preserves the exact logic from priceListPage.ejs
+ * คำนวณราคาที่ปรับแล้วตาม point adjustment
+ * 
+ * Logic จาก legacy:
+ * - กด + (Over Standard): เพิ่มราคา ตาม PRICE_ADJUSTMENT_RATES
+ * - กด - (Under Standard): ลดราคา ตาม UNDER_STANDARD_RATES (max 2.5 step)
  */
 function calculateAdjustedPrices(
   basePrices: { priceList: number; price15: number; price25: number; price50: number },
-  pointDiff: number, // ค่าความต่างของ point จาก original
-  isUnderStandard: boolean // ค่าต่ำกว่ามาตรฐาน (ลด point)
+  adjustment: number // ค่า adjustment (+ หรือ -)
 ): AdjustedPrices {
   const { priceList, price15, price25, price50 } = basePrices;
   
-  // Clamp pointDiff to valid range
-  const clampedDiff = Math.min(Math.max(pointDiff, 0), 10);
-  const step = Math.round(clampedDiff * 2) / 2; // Round to nearest 0.5
+  // ไม่มี adjustment = คืนราคาเดิม
+  if (adjustment === 0) {
+    return basePrices;
+  }
+  
+  const isUnderStandard = adjustment < 0;
+  const step = Math.round(Math.abs(adjustment) * 2) / 2; // Round to nearest 0.5
   
   let adjustmentRate = 0;
   
   if (isUnderStandard) {
-    // Under standard: use UNDER_STANDARD_RATES (negative adjustment)
-    adjustmentRate = -(UNDER_STANDARD_RATES[step] || 0);
+    // Under standard: ลดราคา (max 2.5 step = 16%)
+    const clampedStep = Math.min(step, 2.5);
+    adjustmentRate = -(UNDER_STANDARD_RATES[clampedStep] || 0);
   } else {
-    // Over standard: use PRICE_ADJUSTMENT_RATES (positive adjustment)
-    const rates = PRICE_ADJUSTMENT_RATES[step];
-    adjustmentRate = rates ? rates.over : 0;
+    // Over standard: เพิ่มราคา (max 10 step = 80%)
+    const clampedStep = Math.min(step, 10);
+    adjustmentRate = PRICE_ADJUSTMENT_RATES[clampedStep] || 0;
   }
   
   // Apply adjustment percentage
@@ -74,23 +81,16 @@ function formatNumber(num: number): string {
 interface PriceRowProps {
   item: PriceListItem;
   pointAdjustment: number;
-  isUnderStandard: boolean;
   onPointChange: (mainName: string, delta: number) => void;
 }
 
-const PriceRow = ({ item, pointAdjustment, isUnderStandard, onPointChange }: PriceRowProps) => {
-  const isMainRow = item.num === 0 || item.num === 1;
+const PriceRow = ({ item, pointAdjustment, onPointChange }: PriceRowProps) => {
+  const isMainRow = item.num === 0;  // เฉพาะ num = 0 เท่านั้น ตาม legacy
+  const isUnderStandard = pointAdjustment < 0;
+  const isOverStandard = pointAdjustment > 0;
   
   // Calculate adjusted prices
   const adjustedPrices = useMemo(() => {
-    if (pointAdjustment === 0) {
-      return {
-        priceList: item.priceList,
-        price15: item.price15,
-        price25: item.price25,
-        price50: item.price50,
-      };
-    }
     return calculateAdjustedPrices(
       {
         priceList: item.priceList,
@@ -98,10 +98,9 @@ const PriceRow = ({ item, pointAdjustment, isUnderStandard, onPointChange }: Pri
         price25: item.price25,
         price50: item.price50,
       },
-      Math.abs(pointAdjustment),
-      isUnderStandard
+      pointAdjustment
     );
-  }, [item, pointAdjustment, isUnderStandard]);
+  }, [item.priceList, item.price15, item.price25, item.price50, pointAdjustment]);
   
   const currentPoint = item.point + pointAdjustment;
   
@@ -142,7 +141,12 @@ const PriceRow = ({ item, pointAdjustment, isUnderStandard, onPointChange }: Pri
             </button>
             <span className={`
               min-w-[3rem] px-2 py-0.5 rounded font-medium text-sm
-              ${isUnderStandard ? 'text-red-600' : 'text-white'}
+              ${isUnderStandard 
+                ? 'text-red-600 bg-red-100' 
+                : isOverStandard 
+                  ? 'text-green-600 bg-green-100'
+                  : 'text-white'
+              }
             `}>
               {currentPoint.toFixed(1)}
             </span>
@@ -257,15 +261,12 @@ const CategoryTable = ({
             <tbody>
               {filteredItems.map((item, idx) => {
                 const adjustment = pointAdjustments.get(item.mainName) || 0;
-                const originalPoint = category.items.find(i => i.mainName === item.mainName && i.num === 0)?.point || item.point;
-                const isUnderStandard = adjustment < 0;
                 
                 return (
                   <PriceRow
                     key={`${item.mainName}-${item.num}-${idx}`}
                     item={item}
                     pointAdjustment={adjustment}
-                    isUnderStandard={isUnderStandard}
                     onPointChange={onPointChange}
                   />
                 );
@@ -361,7 +362,7 @@ export default function PriceListClient({ initialData }: PriceListClientProps) {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-cyan-50 to-teal-100 flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-12 h-12 text-teal-600 animate-spin" />
           <p className="text-teal-700 font-medium">กำลังโหลดข้อมูล...</p>
@@ -373,7 +374,7 @@ export default function PriceListClient({ initialData }: PriceListClientProps) {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-cyan-50 to-teal-100 flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
           <p className="text-red-600 font-medium mb-4">{error}</p>
           <button
@@ -388,22 +389,16 @@ export default function PriceListClient({ initialData }: PriceListClientProps) {
   }
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 to-teal-100">
-      <div className="container mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <img 
-            src="/icons/LOGOUNO.png" 
-            alt="UNOGROUP Logo" 
-            className="mx-auto h-24 w-auto mb-4"
-          />
-          <h1 className="text-3xl font-bold text-teal-800">Price List</h1>
-          <p className="text-teal-600">
-            {data?.currentMonth} {data?.currentYear} • {totalItems} รายการ
-          </p>
-        </div>
-        
-        {/* Controls */}
+    <div>
+      {/* Page Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Price List</h1>
+        <p className="text-gray-500 mt-1">
+          {data?.currentMonth} {data?.currentYear} • {totalItems} รายการ
+        </p>
+      </div>
+      
+      {/* Controls */}
         <div className="bg-white rounded-lg shadow-md p-4 mb-6">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             {/* Group Filter */}
@@ -467,6 +462,5 @@ export default function PriceListClient({ initialData }: PriceListClientProps) {
           </div>
         )}
       </div>
-    </div>
   );
 }
