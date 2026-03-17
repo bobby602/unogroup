@@ -2,7 +2,7 @@
 
 // =============================================================================
 // Page: รายละเอียดการขายของลูกค้า (Sales Detail / SubTableDetail)
-// แสดงประวัติการขายทั้งหมดของลูกค้าที่เลือก พร้อม pagination
+// แสดงประวัติการขายทั้งหมดของลูกค้าที่เลือก พร้อม pagination + ค้นหาสินค้า
 // =============================================================================
 
 import React, { memo, useMemo } from 'react';
@@ -14,12 +14,12 @@ import {
   Home,
   FileText,
   Package,
-  Calendar,
   DollarSign,
   RefreshCw,
   AlertCircle,
-  ExternalLink,
   TrendingUp,
+  Search,
+  X,
 } from 'lucide-react';
 import { useSalesDetail } from '@/hooks/useCustomerData';
 import Pagination from '../../../../../components/ui/pagination';
@@ -29,9 +29,6 @@ import type { SalesDetailRecord } from '@/types/customer';
 // HELPER FUNCTIONS
 // =============================================================================
 
-/**
- * Format number with commas and decimal places
- */
 function formatNumber(value: number, decimals: number = 2): string {
   return value.toLocaleString('th-TH', {
     minimumFractionDigits: decimals,
@@ -39,9 +36,6 @@ function formatNumber(value: number, decimals: number = 2): string {
   });
 }
 
-/**
- * Format currency (Baht)
- */
 function formatCurrency(value: number): string {
   return `฿${formatNumber(value)}`;
 }
@@ -100,13 +94,85 @@ const SummaryCard = memo(function SummaryCard({
       className={`p-4 rounded-xl border ${colorClasses[color]}`}
     >
       <div className="flex items-center gap-3">
-        <Icon className="w-5 h-5" />
-        <div>
+        <Icon className="w-5 h-5 shrink-0" />
+        <div className="min-w-0">
           <p className="text-sm opacity-80">{title}</p>
-          <p className="text-lg font-bold">{value}</p>
+          <p className="text-lg font-bold truncate">{value}</p>
         </div>
       </div>
     </motion.div>
+  );
+});
+
+/**
+ * Item Search Input Component
+ */
+const ItemSearchInput = memo(function ItemSearchInput({
+  value,
+  onChange,
+  disabled,
+  resultCount,
+  isSearching,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  disabled?: boolean;
+  resultCount?: number;
+  isSearching?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+      {/* Search box */}
+      <div className="relative flex-1 min-w-0 max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        <input
+          type="text"
+          placeholder="ค้นหาชื่อสินค้า..."
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+          className="w-full pl-9 pr-8 py-2 rounded-lg border border-gray-200
+                     bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500
+                     text-sm text-gray-900 placeholder-gray-400
+                     disabled:opacity-50 disabled:cursor-not-allowed
+                     transition-all duration-200"
+        />
+        {value && (
+          <button
+            onClick={() => onChange('')}
+            disabled={disabled}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2
+                       text-gray-400 hover:text-gray-600 transition-colors
+                       disabled:opacity-50"
+            aria-label="ล้างคำค้นหา"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Result count badge */}
+      {value && !isSearching && resultCount !== undefined && (
+        <motion.span
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-sm text-gray-500 whitespace-nowrap shrink-0"
+        >
+          พบ{' '}
+          <span className="font-semibold text-teal-600">
+            {resultCount.toLocaleString()}
+          </span>{' '}
+          รายการ
+        </motion.span>
+      )}
+
+      {/* Searching indicator */}
+      {value && isSearching && (
+        <span className="text-sm text-gray-400 whitespace-nowrap shrink-0">
+          กำลังค้นหา...
+        </span>
+      )}
+    </div>
   );
 });
 
@@ -191,18 +257,18 @@ const MobileSalesCard = memo(function MobileSalesCard({
         </Link>
         <span className="text-sm text-gray-500">{record.dateDoc}</span>
       </div>
-      
+
       <h4 className="font-medium text-gray-900 mb-2 line-clamp-2">
         {record.itemName}
       </h4>
-      
+
       {record.package && (
         <p className="text-sm text-gray-500 mb-2">
           <Package className="w-3 h-3 inline mr-1" />
           {record.package}
         </p>
       )}
-      
+
       <div className="grid grid-cols-2 gap-2 text-sm mt-3 pt-3 border-t border-gray-100">
         <div>
           <span className="text-gray-500">ราคา:</span>{' '}
@@ -231,19 +297,17 @@ const MobileSalesCard = memo(function MobileSalesCard({
 const LoadingSkeleton = memo(function LoadingSkeleton() {
   return (
     <div className="animate-pulse">
-      {/* Summary cards skeleton */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="h-20 bg-gray-200 rounded-xl"></div>
+          <div key={i} className="h-20 bg-gray-200 rounded-xl" />
         ))}
       </div>
-      {/* Table rows skeleton */}
-      {[...Array(5)].map((_, i) => (
+      {[...Array(8)].map((_, i) => (
         <div key={i} className="flex items-center gap-4 py-4 border-b border-gray-100">
-          <div className="w-20 h-4 bg-gray-200 rounded"></div>
-          <div className="w-24 h-4 bg-gray-200 rounded"></div>
-          <div className="flex-1 h-4 bg-gray-200 rounded"></div>
-          <div className="w-16 h-4 bg-gray-200 rounded"></div>
+          <div className="w-20 h-4 bg-gray-200 rounded" />
+          <div className="w-24 h-4 bg-gray-200 rounded" />
+          <div className="flex-1 h-4 bg-gray-200 rounded" />
+          <div className="w-16 h-4 bg-gray-200 rounded" />
         </div>
       ))}
     </div>
@@ -253,16 +317,40 @@ const LoadingSkeleton = memo(function LoadingSkeleton() {
 /**
  * Empty State Component
  */
-const EmptyState = memo(function EmptyState() {
+const EmptyState = memo(function EmptyState({
+  itemSearch,
+  onClearSearch,
+}: {
+  itemSearch: string;
+  onClearSearch: () => void;
+}) {
+  if (itemSearch) {
+    return (
+      <div className="text-center py-12">
+        <Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">
+          ไม่พบสินค้า &ldquo;{itemSearch}&rdquo;
+        </h3>
+        <p className="text-gray-500 mb-4">ลองค้นหาด้วยคำอื่น หรือล้างคำค้นหา</p>
+        <button
+          onClick={onClearSearch}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white
+                     rounded-lg hover:bg-teal-700 transition-colors text-sm"
+        >
+          <X className="w-4 h-4" />
+          ล้างคำค้นหา
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="text-center py-12">
       <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
       <h3 className="text-lg font-medium text-gray-900 mb-2">
         ไม่พบข้อมูลการขาย
       </h3>
-      <p className="text-gray-500">
-        ลูกค้ารายนี้ยังไม่มีประวัติการขาย
-      </p>
+      <p className="text-gray-500">ลูกค้ารายนี้ยังไม่มีประวัติการขาย</p>
     </div>
   );
 });
@@ -300,7 +388,6 @@ const ErrorState = memo(function ErrorState({
 
 export default function SalesDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const custCode = decodeURIComponent(params.custCode as string);
 
   // Use custom hook for data management
@@ -317,12 +404,13 @@ export default function SalesDetailPage() {
     isLoading,
     isError,
     error,
+    itemSearch,
+    setItemSearch,
   } = useSalesDetail({ custCode, initialPageSize: 50 });
 
   // Memoized summary cards
   const summaryCards = useMemo(() => {
     if (!summary) return null;
-
     return (
       <motion.div
         variants={containerVariants}
@@ -330,43 +418,18 @@ export default function SalesDetailPage() {
         animate="visible"
         className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6"
       >
-        <SummaryCard
-          title="ยอดขายรวม"
-          value={formatCurrency(summary.totalAmt)}
-          icon={DollarSign}
-          color="teal"
-        />
-        <SummaryCard
-          title="PB รวม"
-          value={formatNumber(summary.totalPB)}
-          icon={TrendingUp}
-          color="blue"
-        />
-        <SummaryCard
-          title="CUMS รวม"
-          value={formatNumber(summary.totalCums)}
-          icon={TrendingUp}
-          color="purple"
-        />
-        <SummaryCard
-          title="Cu รวม"
-          value={formatNumber(summary.totalCu)}
-          icon={TrendingUp}
-          color="orange"
-        />
-        <SummaryCard
-          title="MS รวม"
-          value={formatNumber(summary.totalMs)}
-          icon={TrendingUp}
-          color="green"
-        />
+        <SummaryCard title="ยอดขายรวม" value={formatCurrency(summary.totalAmt)} icon={DollarSign} color="teal" />
+        <SummaryCard title="PB รวม"    value={formatNumber(summary.totalPB)}    icon={TrendingUp} color="blue" />
+        <SummaryCard title="CUMS รวม"  value={formatNumber(summary.totalCums)}  icon={TrendingUp} color="purple" />
+        <SummaryCard title="Cu รวม"    value={formatNumber(summary.totalCu)}    icon={TrendingUp} color="orange" />
+        <SummaryCard title="MS รวม"    value={formatNumber(summary.totalMs)}    icon={TrendingUp} color="green" />
       </motion.div>
     );
   }, [summary]);
 
-  // Main content
-  const mainContent = useMemo(() => {
-    if (isLoading) {
+  // Table content (แยกจาก summary cards เพื่อให้ search bar อยู่ข้างนอก useMemo)
+  const tableContent = useMemo(() => {
+    if (isLoading && salesRecords.length === 0) {
       return <LoadingSkeleton />;
     }
 
@@ -375,14 +438,11 @@ export default function SalesDetailPage() {
     }
 
     if (salesRecords.length === 0) {
-      return <EmptyState />;
+      return <EmptyState itemSearch={itemSearch} onClearSearch={() => setItemSearch('')} />;
     }
 
     return (
       <>
-        {/* Summary Cards */}
-        {summaryCards}
-
         {/* Desktop Table */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
@@ -429,7 +489,7 @@ export default function SalesDetailPage() {
         </motion.div>
       </>
     );
-  }, [isLoading, isError, error, salesRecords, summaryCards, refresh]);
+  }, [isLoading, isError, error, salesRecords, refresh, itemSearch, setItemSearch]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-teal-50/30">
@@ -442,10 +502,7 @@ export default function SalesDetailPage() {
               <Home className="w-4 h-4" />
             </Link>
             <span>/</span>
-            <Link
-              href="/dashboard/points/detail"
-              className="hover:text-white transition-colors"
-            >
+            <Link href="/dashboard/points/detail" className="hover:text-white transition-colors">
               รายละเอียดลูกค้า
             </Link>
             <span>/</span>
@@ -457,19 +514,22 @@ export default function SalesDetailPage() {
             <Link
               href="/dashboard/points/detail"
               className="flex items-center justify-center w-10 h-10 rounded-lg
-                         bg-white/10 hover:bg-white/20 transition-colors mt-1"
+                         bg-white/10 hover:bg-white/20 transition-colors mt-1 shrink-0"
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl font-bold">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold truncate">
                 {customer?.custName || 'กำลังโหลด...'}
               </h1>
-              <p className="text-teal-100 mt-1">
+              <p className="text-teal-100 mt-1 text-sm">
                 รหัสลูกค้า: {custCode}
                 {summary && (
-                  <span className="ml-4">
-                    • {summary.totalRecords.toLocaleString()} รายการ
+                  <span className="ml-3">
+                    •{' '}
+                    {itemSearch
+                      ? `${summary.totalRecords.toLocaleString()} รายการ (กรองแล้ว)`
+                      : `${summary.totalRecords.toLocaleString()} รายการ`}
                   </span>
                 )}
               </p>
@@ -481,7 +541,7 @@ export default function SalesDetailPage() {
               disabled={isLoading}
               className="flex items-center justify-center w-10 h-10 rounded-lg
                          bg-white/10 hover:bg-white/20 transition-colors
-                         disabled:opacity-50 disabled:cursor-not-allowed"
+                         disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
               title="รีเฟรช"
             >
               <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -492,10 +552,27 @@ export default function SalesDetailPage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Table Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-4 sm:p-6">
-            {mainContent}
+
+            {/* Summary Cards */}
+            {summaryCards}
+
+            {/* ── Search Bar ── */}
+            {!isError && (
+              <div className="mb-4">
+                <ItemSearchInput
+                  value={itemSearch}
+                  onChange={setItemSearch}
+                  disabled={isLoading}
+                  resultCount={summary?.totalRecords}
+                  isSearching={isLoading && !!itemSearch}
+                />
+              </div>
+            )}
+
+            {/* Table / Cards / Loading / Empty / Error */}
+            {tableContent}
           </div>
 
           {/* Pagination */}

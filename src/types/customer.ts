@@ -93,6 +93,7 @@ export interface SalesDetailParams {
   pageSize?: number;
   startDate?: string;
   endDate?: string;
+  itemSearch?: string;
 }
 
 /**

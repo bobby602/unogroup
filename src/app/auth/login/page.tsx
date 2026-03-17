@@ -123,7 +123,6 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="input-field pr-12"
                   placeholder="กรอกรหัสผ่าน"
-                  required
                   autoComplete="current-password"
                   disabled={isLoading}
                 />

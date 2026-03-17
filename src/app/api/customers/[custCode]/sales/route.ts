@@ -29,7 +29,8 @@ function parseQueryParams(request: NextRequest) {
   
   let page = parseInt(searchParams.get('page') || '1', 10);
   let pageSize = parseInt(searchParams.get('pageSize') || String(DEFAULT_PAGE_SIZE), 10);
-  
+  const itemSearch = (searchParams.get('itemSearch') || '').trim();
+
   // Validate page
   if (isNaN(page) || page < 1) page = 1;
   
@@ -37,7 +38,7 @@ function parseQueryParams(request: NextRequest) {
   if (isNaN(pageSize) || pageSize < 1) pageSize = DEFAULT_PAGE_SIZE;
   if (pageSize > MAX_PAGE_SIZE) pageSize = MAX_PAGE_SIZE;
   
-  return { page, pageSize };
+  return { page, pageSize, itemSearch };
 }
 
 /**
@@ -82,6 +83,38 @@ function sanitizeCustCode(code: string): string {
 }
 
 // =============================================================================
+// ROW TYPE
+// =============================================================================
+
+type SalesRawRow = {
+  OrderNo: string | null;
+  CustCode: string | null;
+  CustName2: string | null;
+  DocDate: Date | null;
+  Package: string | null;
+  ItemName: string | null;
+  Price: Prisma.Decimal | null;
+  Qty: Prisma.Decimal | null;
+  QtySale: Prisma.Decimal | null;
+  Amt: Prisma.Decimal | null;
+  Cost: Prisma.Decimal | null;
+  CUMS: Prisma.Decimal | null;
+  cu: Prisma.Decimal | null;
+  MS: Prisma.Decimal | null;
+  CodeG: string | null;
+};
+
+type SummaryRawRow = {
+  TotalAmt: Prisma.Decimal | null;
+  TotalPB: Prisma.Decimal | null;
+  TotalCums: Prisma.Decimal | null;
+  TotalCu: Prisma.Decimal | null;
+  TotalMs: Prisma.Decimal | null;
+  TotalRecords: bigint;
+  CustName: string | null;
+};
+
+// =============================================================================
 // MAIN HANDLER
 // =============================================================================
 
@@ -122,92 +155,86 @@ export async function GET(
       );
     }
 
-    // 3. Parse query parameters
-    const { page, pageSize } = parseQueryParams(request);
+    // 3. Parse query parameters (รวม itemSearch)
+    const { page, pageSize, itemSearch } = parseQueryParams(request);
     
     // 4. Calculate skip for pagination
     const skip = (page - 1) * pageSize;
 
-    // 5. Execute queries in parallel for performance
+    // 5. สร้าง search pattern สำหรับ LIKE query
+    const itemSearchPattern = itemSearch ? `%${itemSearch}%` : null;
+
+    // 6. Execute queries in parallel for performance
     const [salesRecordsRaw, summaryResult] = await Promise.all([
-      // Detail query with pagination using raw SQL
-      db.$queryRaw<Array<{
-        OrderNo: string | null;
-        CustCode: string | null;
-        CustName2: string | null;
-        DocDate: Date | null;
-        Package: string | null;
-        ItemName: string | null;
-        Price: Prisma.Decimal | null;
-        Qty: Prisma.Decimal | null;
-        QtySale: Prisma.Decimal | null;
-        Amt: Prisma.Decimal | null;
-        Cost: Prisma.Decimal | null;
-        CUMS: Prisma.Decimal | null;
-        cu: Prisma.Decimal | null;
-        MS: Prisma.Decimal | null;
-        CodeG: string | null;
-      }>>`
-        SELECT 
-          OrderNo,
-          CustCode,
-          CustName2,
-          DocDate,
-          Package,
-          ItemName,
-          Price,
-          Qty,
-          QtySale,
-          Amt,
-          Cost,
-          CUMS,
-          cu,
-          MS,
-          CodeG
-        FROM RptSale3N
-        WHERE CodeG = ${userCode} 
-          AND CustCode = ${custCode}
-        ORDER BY DocDate DESC, OrderNo DESC
-        OFFSET ${skip} ROWS
-        FETCH NEXT ${pageSize} ROWS ONLY
-      `,
-      
+      // Detail query with pagination
+      itemSearchPattern
+        ? db.$queryRaw<SalesRawRow[]>`
+            SELECT 
+              OrderNo, CustCode, CustName2, DocDate, Package, ItemName,
+              Price, Qty, QtySale, Amt, Cost, CUMS, cu, MS, CodeG
+            FROM RptSale3N
+            WHERE CodeG = ${userCode}
+              AND CustCode = ${custCode}
+              AND ItemName LIKE ${itemSearchPattern}
+            ORDER BY DocDate DESC, OrderNo DESC
+            OFFSET ${skip} ROWS
+            FETCH NEXT ${pageSize} ROWS ONLY
+          `
+        : db.$queryRaw<SalesRawRow[]>`
+            SELECT 
+              OrderNo, CustCode, CustName2, DocDate, Package, ItemName,
+              Price, Qty, QtySale, Amt, Cost, CUMS, cu, MS, CodeG
+            FROM RptSale3N
+            WHERE CodeG = ${userCode}
+              AND CustCode = ${custCode}
+            ORDER BY DocDate DESC, OrderNo DESC
+            OFFSET ${skip} ROWS
+            FETCH NEXT ${pageSize} ROWS ONLY
+          `,
+
       // Summary query for totals
-      db.$queryRaw<Array<{
-        TotalAmt: Prisma.Decimal | null;
-        TotalPB: Prisma.Decimal | null;
-        TotalCums: Prisma.Decimal | null;
-        TotalCu: Prisma.Decimal | null;
-        TotalMs: Prisma.Decimal | null;
-        TotalRecords: bigint;
-        CustName: string | null;
-      }>>`
-        SELECT 
-          CAST(ISNULL(SUM(Amt), 0) AS DECIMAL(18,2)) AS TotalAmt,
-          CAST(ISNULL(SUM(Cost), 0) AS DECIMAL(18,2)) AS TotalPB,
-          CAST(ISNULL(SUM(CUMS), 0) AS DECIMAL(18,2)) AS TotalCums,
-          CAST(ISNULL(SUM(cu), 0) AS DECIMAL(18,2)) AS TotalCu,
-          CAST(ISNULL(SUM(MS), 0) AS DECIMAL(18,2)) AS TotalMs,
-          COUNT(*) AS TotalRecords,
-          MAX(CustName2) AS CustName
-        FROM RptSale3N
-        WHERE CodeG = ${userCode} 
-          AND CustCode = ${custCode}
-      `,
+      itemSearchPattern
+        ? db.$queryRaw<SummaryRawRow[]>`
+            SELECT 
+              CAST(ISNULL(SUM(Amt), 0) AS DECIMAL(18,2))  AS TotalAmt,
+              CAST(ISNULL(SUM(Cost), 0) AS DECIMAL(18,2)) AS TotalPB,
+              CAST(ISNULL(SUM(CUMS), 0) AS DECIMAL(18,2)) AS TotalCums,
+              CAST(ISNULL(SUM(cu), 0) AS DECIMAL(18,2))   AS TotalCu,
+              CAST(ISNULL(SUM(MS), 0) AS DECIMAL(18,2))   AS TotalMs,
+              COUNT(*) AS TotalRecords,
+              MAX(CustName2) AS CustName
+            FROM RptSale3N
+            WHERE CodeG = ${userCode}
+              AND CustCode = ${custCode}
+              AND ItemName LIKE ${itemSearchPattern}
+          `
+        : db.$queryRaw<SummaryRawRow[]>`
+            SELECT 
+              CAST(ISNULL(SUM(Amt), 0) AS DECIMAL(18,2))  AS TotalAmt,
+              CAST(ISNULL(SUM(Cost), 0) AS DECIMAL(18,2)) AS TotalPB,
+              CAST(ISNULL(SUM(CUMS), 0) AS DECIMAL(18,2)) AS TotalCums,
+              CAST(ISNULL(SUM(cu), 0) AS DECIMAL(18,2))   AS TotalCu,
+              CAST(ISNULL(SUM(MS), 0) AS DECIMAL(18,2))   AS TotalMs,
+              COUNT(*) AS TotalRecords,
+              MAX(CustName2) AS CustName
+            FROM RptSale3N
+            WHERE CodeG = ${userCode}
+              AND CustCode = ${custCode}
+          `,
     ]);
 
     const summary = summaryResult[0] || {};
 
-    // 6. Check if customer exists
+    // 7. Check if customer exists (เฉพาะหน้าแรก ถ้าไม่มี itemSearch)
     const totalRecords = Number(summary.TotalRecords) || 0;
-    if (totalRecords === 0 && page === 1) {
+    if (totalRecords === 0 && page === 1 && !itemSearch) {
       return NextResponse.json(
         { error: 'Not Found', message: 'ไม่พบข้อมูลลูกค้านี้' },
         { status: 404 }
       );
     }
 
-    // 7. Map results
+    // 8. Map results
     const salesDetails: SalesDetailRecord[] = salesRecordsRaw.map((row) => ({
       orderNo: row.OrderNo || '',
       custCode: row.CustCode || '',
@@ -226,10 +253,10 @@ export async function GET(
       codeG: row.CodeG || '',
     }));
 
-    // 8. Calculate pagination
+    // 9. Calculate pagination
     const pagination = calculatePagination(page, pageSize, totalRecords);
 
-    // 9. Return response
+    // 10. Return response
     const response: SalesDetailResponse = {
       data: salesDetails,
       customer: {

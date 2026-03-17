@@ -258,68 +258,51 @@ const TableRow = memo(function TableRow({ record, index }: TableRowProps) {
       variants={itemVariants}
       className="border-b border-gray-100 hover:bg-teal-50/30 transition-colors"
     >
-      {/* ลำดับ */}
-      <td className="px-3 py-3 text-center text-gray-500 text-sm">
-        {index + 1}
-      </td>
+      <td className="px-3 py-3 text-center text-gray-500 text-sm">{index + 1}</td>
 
-      {/* รหัสลูกค้า */}
       <td className="px-3 py-3">
-        <Link
-          href={`/dashboard/points/detail/${encodeURIComponent(record.custCode)}`}
-          className="text-teal-600 hover:text-teal-800 font-medium transition-colors"
-        >
+        <Link href={`/dashboard/points/detail/${encodeURIComponent(record.custCode)}`}
+          className="text-teal-600 hover:text-teal-800 font-medium transition-colors">
           {record.custCode}
         </Link>
       </td>
 
-      {/* ชื่อลูกค้า */}
-      <td className="px-3 py-3 text-gray-900 max-w-[200px] truncate">
-        {record.custName}
-      </td>
+      <td className="px-3 py-3 text-gray-900 max-w-[200px] truncate">{record.custName}</td>
 
-      {/* ชื่อพนักงาน */}
-      <td className="px-3 py-3 text-gray-600 hidden lg:table-cell">
-        {record.saleName}
-      </td>
-
-      {/* ยอดรวม */}
+      {/* ยอดรวม - Blue */}
       <td className="px-3 py-3 text-right font-mono text-gray-900 bg-blue-50/50">
         {formatNumber(record.netOne)}
       </td>
-      <td className="px-3 py-3 text-right font-mono text-gray-700 bg-blue-50/50 hidden md:table-cell">
-        {formatNumber(record.pbOne)}
-      </td>
-      <td className="px-3 py-3 text-right font-mono text-gray-700 bg-blue-50/50 hidden md:table-cell">
-        {formatNumber(record.cumsOne)}
-      </td>
-      <td className="px-3 py-3 text-right font-mono text-gray-600 bg-blue-50/50 hidden xl:table-cell">
+      <td className="px-3 py-3 text-right font-mono text-gray-600 bg-blue-50/50">
         {formatNumber(record.cuOne)}
       </td>
-      <td className="px-3 py-3 text-right font-mono text-gray-600 bg-blue-50/50 hidden xl:table-cell">
+      <td className="px-3 py-3 text-right font-mono text-gray-600 bg-blue-50/50">
         {formatNumber(record.msOne)}
       </td>
-
-      {/* ยอด DocSP='1' */}
-      <td className="px-3 py-3 text-right font-mono text-gray-700 bg-green-50/50 hidden lg:table-cell">
-        {formatNumber(record.netTwo)}
-      </td>
-      <td className="px-3 py-3 text-right font-mono text-gray-600 bg-green-50/50 hidden xl:table-cell">
-        {formatNumber(record.pbTwo)}
-      </td>
-      <td className="px-3 py-3 text-right font-mono text-gray-600 bg-green-50/50 hidden xl:table-cell">
-        {formatNumber(record.cumsTwo)}
+      <td className="px-3 py-3 text-right font-mono text-gray-700 bg-blue-50/50">
+        {formatNumber(record.pbOne)}
       </td>
 
-      {/* ยอด DocSP='2' */}
-      <td className="px-3 py-3 text-right font-mono text-gray-700 bg-orange-50/50 hidden lg:table-cell">
-        {formatNumber(record.netThree)}
+      {/* ยาปกติ (DocSP='1') - Green */}
+      <td className="px-3 py-3 text-right font-mono text-gray-700 bg-green-50/50">
+        {record.netTwo != null ? formatNumber(record.netTwo) : '-'}
       </td>
-      <td className="px-3 py-3 text-right font-mono text-gray-600 bg-orange-50/50 hidden xl:table-cell">
-        {formatNumber(record.pbThree)}
+      <td className="px-3 py-3 text-right font-mono text-gray-600 bg-green-50/50">
+        {record.cumsTwo != null ? formatNumber(record.cumsTwo) : '-'}
       </td>
-      <td className="px-3 py-3 text-right font-mono text-gray-600 bg-orange-50/50 hidden xl:table-cell">
-        {formatNumber(record.cumsThree)}
+      <td className="px-3 py-3 text-right font-mono text-gray-600 bg-green-50/50">
+        {record.pbTwo != null ? formatNumber(record.pbTwo) : '-'}
+      </td>
+
+      {/* ยาพิเศษ (DocSP='2') - Orange */}
+      <td className="px-3 py-3 text-right font-mono text-gray-700 bg-orange-50/50">
+        {record.netThree != null ? formatNumber(record.netThree) : '-'}
+      </td>
+      <td className="px-3 py-3 text-right font-mono text-gray-600 bg-orange-50/50">
+        {record.cumsThree != null ? formatNumber(record.cumsThree) : '-'}
+      </td>
+      <td className="px-3 py-3 text-right font-mono text-gray-600 bg-orange-50/50">
+        {record.pbThree != null ? formatNumber(record.pbThree) : '-'}
       </td>
     </motion.tr>
   );
@@ -680,44 +663,39 @@ export default function ReportSalePage() {
   const handleExport = useCallback(() => {
     if (!records.length) return;
 
-    const headers = [
-      'ลำดับ',
-      'รหัสลูกค้า',
-      'ชื่อลูกค้า',
-      'พนักงาน',
-      'ยอดขาย',
-      'PB',
-      'CUMS',
-      'Cu',
-      'MS',
-      'ยอดขาย(1)',
-      'PB(1)',
-      'CUMS(1)',
-      'ยอดขาย(2)',
-      'PB(2)',
-      'CUMS(2)',
-    ].join(',');
+   const headers = [
+  'ลำดับ',
+  'รหัสลูกค้า',
+  'ชื่อลูกค้า',
+  'ยอดขายรวม',
+  'CU',
+  'MS',
+  'PB รวม',
+  'ยอดขาย ยาปกติ',
+  'CUMS ยาปกติ',
+  'PB ยาปกติ',
+  'ยอดขาย ยาพิเศษ',
+  'CUMS ยาพิเศษ',
+  'PB ยาพิเศษ',
+].join(',');
 
-    const rows = records.map((r, i) =>
-      [
-        i + 1,
-        r.custCode,
-        `"${r.custName}"`,
-        `"${r.saleName}"`,
-        r.netOne,
-        r.pbOne,
-        r.cumsOne,
-        r.cuOne,
-        r.msOne,
-        r.netTwo ?? '',
-        r.pbTwo ?? '',
-        r.cumsTwo ?? '',
-        r.netThree ?? '',
-        r.pbThree ?? '',
-        r.cumsThree ?? '',
-      ].join(',')
-    );
-
+   const rows = records.map((r, i) =>
+  [
+    i + 1,
+    r.custCode,
+    `"${r.custName}"`,
+    r.netOne,
+    r.cuOne,
+    r.msOne,
+    r.pbOne,
+    r.netTwo ?? '',
+    r.cumsTwo ?? '',
+    r.pbTwo ?? '',
+    r.netThree ?? '',
+    r.cumsThree ?? '',
+    r.pbThree ?? '',
+  ].join(',')
+);
     const csv = [headers, ...rows].join('\n');
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -859,81 +837,24 @@ export default function ReportSalePage() {
                   <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase w-12">
                     #
                   </th>
-                  <SortableHeader
-                    label="รหัส"
-                    sortKey="custCode"
-                    currentSortBy={sortBy}
-                    currentSortOrder={sortOrder}
-                    onSort={setSorting}
-                  />
-                  <SortableHeader
-                    label="ชื่อลูกค้า"
-                    sortKey="custName"
-                    currentSortBy={sortBy}
-                    currentSortOrder={sortOrder}
-                    onSort={setSorting}
-                    className="min-w-[150px]"
-                  />
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase hidden lg:table-cell">
-                    พนักงาน
-                  </th>
+                  <SortableHeader label="รหัส" sortKey="custCode" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={setSorting} />
+                  <SortableHeader label="ชื่อลูกค้า" sortKey="custName" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={setSorting} />
 
                   {/* ยอดรวม - Blue */}
-                  <SortableHeader
-                    label="ยอดขาย"
-                    sortKey="netOne"
-                    currentSortBy={sortBy}
-                    currentSortOrder={sortOrder}
-                    onSort={setSorting}
-                    align="right"
-                    className="bg-blue-50"
-                  />
-                  <SortableHeader
-                    label="PB"
-                    sortKey="pbOne"
-                    currentSortBy={sortBy}
-                    currentSortOrder={sortOrder}
-                    onSort={setSorting}
-                    align="right"
-                    className="bg-blue-50 hidden md:table-cell"
-                  />
-                  <SortableHeader
-                    label="CUMS"
-                    sortKey="cumsOne"
-                    currentSortBy={sortBy}
-                    currentSortOrder={sortOrder}
-                    onSort={setSorting}
-                    align="right"
-                    className="bg-blue-50 hidden md:table-cell"
-                  />
-                  <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase bg-blue-50 hidden xl:table-cell">
-                    Cu
-                  </th>
-                  <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase bg-blue-50 hidden xl:table-cell">
-                    MS
-                  </th>
+                  <SortableHeader label="ยอดขายรวม" sortKey="netOne" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={setSorting} align="right" className="bg-blue-50" />
+                  <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase bg-blue-50">CU</th>
+                  <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase bg-blue-50">MS</th>
+                  <SortableHeader label="PB รวม" sortKey="pbOne" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={setSorting} align="right" className="bg-blue-50" />
 
-                  {/* DocSP='1' - Green */}
-                  <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase bg-green-50 hidden lg:table-cell">
-                    ยอด(1)
-                  </th>
-                  <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase bg-green-50 hidden xl:table-cell">
-                    PB(1)
-                  </th>
-                  <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase bg-green-50 hidden xl:table-cell">
-                    CUMS(1)
-                  </th>
+                  {/* ยาปกติ DocSP='1' - Green */}
+                  <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase bg-green-50">ยอดขาย ยาปกติ</th>
+                  <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase bg-green-50">CUMS ยาปกติ</th>
+                  <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase bg-green-50">PB ยาปกติ</th>
 
-                  {/* DocSP='2' - Orange */}
-                  <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase bg-orange-50 hidden lg:table-cell">
-                    ยอด(2)
-                  </th>
-                  <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase bg-orange-50 hidden xl:table-cell">
-                    PB(2)
-                  </th>
-                  <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase bg-orange-50 hidden xl:table-cell">
-                    CUMS(2)
-                  </th>
+                  {/* ยาพิเศษ DocSP='2' - Orange */}
+                  <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase bg-orange-50">ยอดขาย ยาพิเศษ</th>
+                  <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase bg-orange-50">CUMS ยาพิเศษ</th>
+                  <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase bg-orange-50">PB ยาพิเศษ</th>
                 </tr>
               </thead>
               <tbody>
@@ -948,7 +869,7 @@ export default function ReportSalePage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={15} className="py-0">
+                      <td colSpan={13} className="py-0">
                         <EmptyState
                           search={search}
                           onClear={() => setSearch('')}

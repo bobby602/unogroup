@@ -3,9 +3,9 @@
 // จัดการ state และ fetch data สำหรับ customer list
 // =============================================================================
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useDebounce } from '../types/useDebounce';
-import type { CustomerListResponse, CustomerBasic } from '@/types/customer';
+import type { CustomerListResponse, CustomerBasic, SalesDetailResponse, SalesDetailRecord } from '@/types/customer';
 
 interface UseCustomersOptions {
   initialPageSize?: number;
@@ -136,7 +136,7 @@ export function useCustomers(options: UseCustomersOptions = {}): UseCustomersRet
 
   const setPageSize = useCallback((size: number) => {
     setPageSizeState(size);
-    setPage(1); // Reset to first page when changing page size
+    setPage(1);
   }, []);
 
   const refresh = useCallback(() => {
@@ -166,14 +166,13 @@ export function useCustomers(options: UseCustomersOptions = {}): UseCustomersRet
 
 // =============================================================================
 // Custom Hook: useSalesDetail
-// จัดการ state และ fetch data สำหรับ sales detail
+// จัดการ state และ fetch data สำหรับ sales detail พร้อมค้นหาสินค้า
 // =============================================================================
-
-import type { SalesDetailResponse, SalesDetailRecord } from '@/types/customer';
 
 interface UseSalesDetailOptions {
   custCode: string;
   initialPageSize?: number;
+  debounceMs?: number;
 }
 
 interface UseSalesDetailReturn {
@@ -196,6 +195,10 @@ interface UseSalesDetailReturn {
   hasNextPage: boolean;
   hasPrevPage: boolean;
   
+  // Search
+  itemSearch: string;
+  setItemSearch: (term: string) => void;
+  
   // Actions
   goToPage: (page: number) => void;
   nextPage: () => void;
@@ -210,7 +213,7 @@ interface UseSalesDetailReturn {
 }
 
 export function useSalesDetail(options: UseSalesDetailOptions): UseSalesDetailReturn {
-  const { custCode, initialPageSize = 50 } = options;
+  const { custCode, initialPageSize = 50, debounceMs = 400 } = options;
 
   // State
   const [salesRecords, setSalesRecords] = useState<SalesDetailRecord[]>([]);
@@ -221,10 +224,14 @@ export function useSalesDetail(options: UseSalesDetailOptions): UseSalesDetailRe
   const [totalPages, setTotalPages] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [hasPrevPage, setHasPrevPage] = useState(false);
+  const [itemSearchTerm, setItemSearchTermState] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Debounced item search (400ms — ให้พิมพ์จบก่อนค่อย fetch)
+  const debouncedItemSearch = useDebounce(itemSearchTerm, debounceMs);
 
   // Fetch sales detail
   const fetchSalesDetail = useCallback(async () => {
@@ -239,6 +246,10 @@ export function useSalesDetail(options: UseSalesDetailOptions): UseSalesDetailRe
         page: String(page),
         pageSize: String(pageSize),
       });
+
+      if (debouncedItemSearch) {
+        params.set('itemSearch', debouncedItemSearch);
+      }
 
       const response = await fetch(
         `/api/customers/${encodeURIComponent(custCode)}/sales?${params.toString()}`
@@ -265,14 +276,23 @@ export function useSalesDetail(options: UseSalesDetailOptions): UseSalesDetailRe
     } finally {
       setIsLoading(false);
     }
-  }, [custCode, page, pageSize]);
+  }, [custCode, page, pageSize, debouncedItemSearch]);
 
   // Effect to fetch data
   useEffect(() => {
     fetchSalesDetail();
   }, [fetchSalesDetail, refreshTrigger]);
 
+  // Reset page 1 เมื่อคำค้นหาสินค้าเปลี่ยน
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedItemSearch]);
+
   // Actions
+  const setItemSearch = useCallback((term: string) => {
+    setItemSearchTermState(term);
+  }, []);
+
   const goToPage = useCallback((newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setPage(newPage);
@@ -309,6 +329,8 @@ export function useSalesDetail(options: UseSalesDetailOptions): UseSalesDetailRe
     totalPages,
     hasNextPage,
     hasPrevPage,
+    itemSearch: itemSearchTerm,
+    setItemSearch,
     goToPage,
     nextPage,
     prevPage,

@@ -229,7 +229,7 @@ export function DashboardContent() {
                             {formatNumber(stat.value, 2)}
                           </span>
                           <span className="text-sm text-gray-500 font-medium">
-                            Points
+                            บาท
                           </span>
                         </div>
                       </div>
@@ -295,7 +295,7 @@ export function DashboardContent() {
                         {formatNumber(stat.value, 2)}
                       </span>
                       <span className="text-xs sm:text-sm text-gray-400">
-                        Points
+                        บาท
                       </span>
                     </div>
                     

