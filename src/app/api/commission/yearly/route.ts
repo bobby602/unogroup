@@ -74,7 +74,7 @@ interface ApiResponse<T = unknown> {
 // CONSTANTS
 // =============================================================================
 
-const TARGET_THRESHOLD = 60000000;
+const TARGET_THRESHOLD = 50000000;
 const SPECIAL_BONUS_AMOUNT = 100000;
 
 // =============================================================================
@@ -252,22 +252,22 @@ function calculateRateCom(PB: number, target: number, AmtYT: number): number {
   
   const pctTarget = (PB / target) * 100;
   
-  // กลุ่ม A (Target >= 60 ล้าน)
-  if (AmtYT >= TARGET_THRESHOLD) {
+  // กลุ่ม A (Target < 50 ล้าน)
+  if (AmtYT < TARGET_THRESHOLD) {
     if (pctTarget < 60) return 0;
-    if (pctTarget < 80) return 0.5;
+    if (pctTarget < 85) return 0.5;
     if (pctTarget < 100) return 1.0;
-    if (pctTarget < 110) return 1.5;
-    if (pctTarget < 125) return 2.0;
+    if (pctTarget < 115) return 1.5;
+    if (pctTarget < 130) return 2.0;
     return 2.5;
   }
   
-  // กลุ่ม B (Target < 60 ล้าน)
+  // กลุ่ม B (Target >= 50 ล้าน)
   if (pctTarget < 60) return 0;
-  if (pctTarget < 80) return 0.5;
+  if (pctTarget < 85) return 0.5;
   if (pctTarget < 100) return 1.0;
-  if (pctTarget < 120) return 1.5;
-  if (pctTarget < 135) return 2.0;
+  if (pctTarget < 110) return 1.5;
+  if (pctTarget < 120) return 2.0;
   return 2.5;
 }
 
@@ -370,7 +370,7 @@ function transformToReport(params: TransformParams): YearlyCommissionData | null
   const targetQuarter = round2(AmtYT / 4);
   
   // Sales Group
-  const salesGroup = AmtYT >= TARGET_THRESHOLD ? 'A' : 'B';
+ const salesGroup = AmtYT < TARGET_THRESHOLD ? 'A' : 'B';
   
   // Achievement % ปี
   const achievementPct = AmtYT > 0 ? round2((totalPB / AmtYT) * 100) : 0;

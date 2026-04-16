@@ -127,15 +127,16 @@ const ItemSearchInput = memo(function ItemSearchInput({
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
         <input
           type="text"
+          inputMode="search"
+          autoComplete="off"
           placeholder="ค้นหาชื่อสินค้า..."
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          disabled={disabled}
-          className="w-full pl-9 pr-8 py-2 rounded-lg border border-gray-200
-                     bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500
-                     text-sm text-gray-900 placeholder-gray-400
-                     disabled:opacity-50 disabled:cursor-not-allowed
-                     transition-all duration-200"
+          // ✅ ลบ disabled ออก — ป้องกันแป้นพิมพ์ปิดตอน loading
+          className={`w-full pl-9 pr-8 py-2 rounded-lg border transition-all duration-200
+                      focus:ring-2 focus:ring-teal-500 focus:border-teal-500
+                      text-sm text-gray-900 placeholder-gray-400 bg-white
+                      ${isSearching ? 'border-teal-300' : 'border-gray-200'}`}
         />
         {value && (
           <button

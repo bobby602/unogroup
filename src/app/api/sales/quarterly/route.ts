@@ -103,7 +103,7 @@ interface ApiResponse<T = unknown> {
 // =============================================================================
 
 const QUARTER_NAMES = ['ไตรมาส 1 (ม.ค. - มี.ค.)', 'ไตรมาส 2 (เม.ย. - มิ.ย.)', 'ไตรมาส 3 (ก.ค. - ก.ย.)', 'ไตรมาส 4 (ต.ค. - ธ.ค.)'] as const;
-const TARGET_THRESHOLD = 60000000;
+const TARGET_THRESHOLD = 50000000;
 
 // =============================================================================
 // UTILITY FUNCTIONS
@@ -214,12 +214,10 @@ const GROUP_I_QUERY = `
     CAST(ROUND(ISNULL(SUM(v.PB), 0), 2) AS DECIMAL(30,2)) AS Amt,
     CAST(ROUND(ISNULL(SUM(v.CUMS), 0), 2) AS DECIMAL(30,2)) AS CuMS
   FROM V802 v
-  INNER JOIN ItemG g ON v.ItemCode = g.Code
+  INNER JOIN itemcomPI p ON v.ItemCode = p.ItemCode
   WHERE v.CodeG = @p1 
     AND MONTH(v.Docdate) BETWEEN @p2 AND @p3
     AND YEAR(v.Docdate) = @p4
-    AND g.grItemCode = 'I'
-    AND g.tyitem = '1'
   GROUP BY v.CodeG
 `;
 
@@ -315,20 +313,20 @@ function calculateRateCom(PB: number, AmtQT: number, AmtYT: number): number {
   const ratio = PB / AmtQT;
   
   if (AmtYT < TARGET_THRESHOLD) {
-    // กรณีเป้าปี < 60 ล้าน
+    // กลุ่ม A (เป้าปี < 50 ล้าน)
     if (ratio < 0.60) return 0;
-    if (ratio < 0.80) return 0.5;
+    if (ratio < 0.85) return 0.5;
     if (ratio < 1.00) return 1.0;
-    if (ratio < 1.20) return 1.5;
-    if (ratio < 1.35) return 2.0;
+    if (ratio < 1.15) return 1.5;
+    if (ratio < 1.30) return 2.0;
     return 2.5;
   } else {
-    // กรณีเป้าปี >= 60 ล้าน
+    // กลุ่ม B (เป้าปี >= 50 ล้าน)
     if (ratio < 0.60) return 0;
-    if (ratio < 0.80) return 0.5;
+    if (ratio < 0.85) return 0.5;
     if (ratio < 1.00) return 1.0;
     if (ratio < 1.10) return 1.5;
-    if (ratio < 1.25) return 2.0;
+    if (ratio < 1.20) return 2.0;
     return 2.5;
   }
 }

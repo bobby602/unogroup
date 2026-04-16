@@ -132,13 +132,13 @@ const PriceRow = ({ item, pointAdjustment, onPointChange }: PriceRowProps) => {
       `}>
         {isMainRow ? (
           <div className="flex items-center justify-center gap-1">
-            <button
+            {/* <button
               onClick={() => onPointChange(item.mainName, -0.5)}
               className="w-6 h-6 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded text-gray-700 transition-colors"
               aria-label="Decrease point"
             >
               <Minus size={14} />
-            </button>
+            </button> */}
             <span className={`
               min-w-[3rem] px-2 py-0.5 rounded font-medium text-sm
               ${isUnderStandard 
@@ -150,13 +150,13 @@ const PriceRow = ({ item, pointAdjustment, onPointChange }: PriceRowProps) => {
             `}>
               {currentPoint.toFixed(1)}
             </span>
-            <button
+            {/* <button
               onClick={() => onPointChange(item.mainName, 0.5)}
               className="w-6 h-6 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded text-gray-700 transition-colors"
               aria-label="Increase point"
             >
               <Plus size={14} />
-            </button>
+            </button> */}
           </div>
         ) : (
           <span className="text-gray-400">-</span>

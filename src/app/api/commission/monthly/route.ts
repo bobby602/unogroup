@@ -86,7 +86,7 @@ const THAI_MONTHS = [
   'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
 ] as const;
 
-const TARGET_THRESHOLD = 60000000;
+const TARGET_THRESHOLD = 50000000;
 
 // =============================================================================
 // UTILITY FUNCTIONS
@@ -215,25 +215,24 @@ function calculateRateCom(PB: number, targetMonth: number, AmtYT: number): numbe
   
   const pctTarget = (PB / targetMonth) * 100;
   
-  // กลุ่ม A (Target >= 60 ล้าน)
-  if (AmtYT >= TARGET_THRESHOLD) {
+  // กลุ่ม A (Target < 50 ล้าน)
+  if (AmtYT < TARGET_THRESHOLD) {
     if (pctTarget < 60) return 0;
-    if (pctTarget < 80) return 0.5;
+    if (pctTarget < 85) return 0.5;
     if (pctTarget < 100) return 1.0;
-    if (pctTarget < 110) return 1.5;
-    if (pctTarget < 125) return 2.0;
+    if (pctTarget < 115) return 1.5;
+    if (pctTarget < 130) return 2.0;
     return 2.5;
   }
   
-  // กลุ่ม B (Target < 60 ล้าน)
+  // กลุ่ม B (Target >= 50 ล้าน)
   if (pctTarget < 60) return 0;
-  if (pctTarget < 80) return 0.5;
+  if (pctTarget < 85) return 0.5;
   if (pctTarget < 100) return 1.0;
-  if (pctTarget < 120) return 1.5;
-  if (pctTarget < 135) return 2.0;
+  if (pctTarget < 110) return 1.5;
+  if (pctTarget < 120) return 2.0;
   return 2.5;
 }
-
 /**
  * คำนวณ Commission H1 (กลุ่ม H) - เพดาน 1.0%
  */
@@ -351,7 +350,7 @@ function transformToReport(params: TransformParams): MonthlyCommissionData | nul
   const targetMonth = round2(AmtYT / 12);
   
   // Sales Group
-  const salesGroup = AmtYT >= TARGET_THRESHOLD ? 'A' : 'B';
+  const salesGroup = AmtYT < TARGET_THRESHOLD ? 'A' : 'B';
   
   // Achievement %
   const achievementPct = targetMonth > 0 ? round2((salesPB / targetMonth) * 100) : 0;

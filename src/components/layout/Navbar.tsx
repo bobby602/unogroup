@@ -12,8 +12,8 @@ import {
   LogOut,
   ChevronDown,
   Home,
-  FileText,
   Award,
+  FileText,
   DollarSign,
   List,
   Settings,
@@ -26,9 +26,9 @@ import { Button } from "@/components/ui/button";
 // =============================================================================
 const navLinks = [
   { href: "/dashboard", label: "หน้าหลัก", icon: Home },
-  { href: "/dashboard/report-sale", label: "รายงานการขาย", icon: BarChart3 }, // ✅ เพิ่มใหม่
-  { href: "/dashboard/points", label: "คะแนน", icon: Award },
-  { href: "/dashboard/commission", label: "ค่าคอมมิชชั่น", icon: DollarSign },
+  { href: "/dashboard/report-sale", label: "รายงานการขาย", icon: BarChart3 }, 
+  { href: "/dashboard/points/detail", label: "ประวัติลูกค้า", icon: Award },
+  { href: "/dashboard/commission/monthly", label: "ค่าคอมมิชชั่น", icon: DollarSign },
   { href: "/dashboard/price-list", label: "Price List", icon: List },
 ];
 
@@ -232,7 +232,7 @@ export function Navbar() {
       </nav>
 
       {/* Bottom Navigation for Mobile - Fixed at bottom */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg lg:hidden safe-area-bottom">
+      <nav className="fixed bottom-0 left-0 right-0 z-[9999] bg-white border-t shadow-lg lg:hidden safe-area-bottom">
         <div className="grid grid-cols-5 h-16">
           {navLinks.map((link) => (
             <Link

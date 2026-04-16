@@ -146,13 +146,13 @@ const PointControl = memo(({
   
   return (
     <div className="flex items-center justify-center gap-1">
-      <button
+      {/* <button
         onClick={onDecrease}
         className="w-7 h-7 flex items-center justify-center bg-gray-200 hover:bg-red-200 rounded text-gray-700 transition-colors active:scale-95"
         aria-label="Decrease point"
       >
         <Minus size={14} />
-      </button>
+      </button> */}
       <span className={`
         min-w-[3.5rem] px-2 py-1 rounded font-semibold text-sm text-center
         ${isUnderStandard 
@@ -164,13 +164,13 @@ const PointControl = memo(({
       `}>
         {currentPoint.toFixed(1)}
       </span>
-      <button
+      {/* <button
         onClick={onIncrease}
         className="w-7 h-7 flex items-center justify-center bg-gray-200 hover:bg-green-200 rounded text-gray-700 transition-colors active:scale-95"
         aria-label="Increase point"
       >
         <Plus size={14} />
-      </button>
+      </button> */}
     </div>
   );
 });

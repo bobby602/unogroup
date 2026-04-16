@@ -19,7 +19,7 @@ export default async function DashboardLayout({
       <Navbar />
       
       {/* Main Content with responsive padding */}
-      <main className="flex-1 container-responsive py-4 sm:py-6 lg:py-8">
+      <main className="flex-1 container-responsive pt-4 sm:pt-6 lg:pt-8 pb-28 lg:pb-8">
         {children}
       </main>
       
