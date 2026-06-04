@@ -30,6 +30,14 @@ interface RankingResult {
   totalSales: number;
 }
 
+// ✅ ข้อมูล SP จาก rptSale3 WHERE DocSP='2'
+interface SPSalesData {
+  CodeG: string;
+  CR: number;
+  PB: number;
+  CUMS: number;
+}
+
 interface ProductSummary {
   code: string;
   label: string;
@@ -42,13 +50,11 @@ interface ProductSummary {
 }
 
 interface QuarterlyReportData {
-  // ข้อมูลพนักงาน
   NameG: string;
   CodeG: string;
   quarter: number;
   quarterName: string;
   
-  // Summary Section
   salesCR: number;
   salesPB: number;
   pointCUMS: number;
@@ -58,21 +64,17 @@ interface QuarterlyReportData {
   comSP: number;
   CUMS: number;
   
-  // Target
-  baselineTarget: number;    // Target ปี
-  targetQuarter: number;     // Target ไตรมาส
+  baselineTarget: number;
+  targetQuarter: number;
   pctOfTarget: number;
   
-  // Rankings
   rankCR: number;
   rankPB: number;
   rankCUMS: number;
   totalSales: number;
   
-  // Product breakdown
   productSummary: ProductSummary[];
   
-  // Commission breakdown
   PP: number;
   PBI: number;
   PBH: number;
@@ -80,7 +82,6 @@ interface QuarterlyReportData {
   ComPBI: number;
   ComPBH: number;
   
-  // Product values
   PBH1: number;
   PBH2: number;
   PBMP: number;
@@ -102,7 +103,12 @@ interface ApiResponse<T = unknown> {
 // CONSTANTS
 // =============================================================================
 
-const QUARTER_NAMES = ['ไตรมาส 1 (ม.ค. - มี.ค.)', 'ไตรมาส 2 (เม.ย. - มิ.ย.)', 'ไตรมาส 3 (ก.ค. - ก.ย.)', 'ไตรมาส 4 (ต.ค. - ธ.ค.)'] as const;
+const QUARTER_NAMES = [
+  'ไตรมาส 1 (ม.ค. - มี.ค.)', 
+  'ไตรมาส 2 (เม.ย. - มิ.ย.)', 
+  'ไตรมาส 3 (ก.ค. - ก.ย.)', 
+  'ไตรมาส 4 (ต.ค. - ธ.ค.)'
+] as const;
 const TARGET_THRESHOLD = 50000000;
 
 // =============================================================================
@@ -266,6 +272,28 @@ const RANKING_QUERY = `
   WHERE CodeG = @p4
 `;
 
+/** 
+ * ✅ Query 6: SP - ยาพิเศษ (ตรง Legacy: rptSale3 WHERE DocSP = '2')
+ * 
+ * Mapping:
+ *   CR   = SUM(Amt)       (NetAmt)
+ *   PB   = SUM(Cost)
+ *   CUMS = SUM(AmtDiff)
+ */
+const SP_QUERY = `
+  SELECT 
+    CodeG,
+    CAST(ISNULL(SUM(Amt), 0) AS DECIMAL(30,2)) AS CR,
+    CAST(ISNULL(SUM(Cost), 0) AS DECIMAL(30,2)) AS PB,
+    CAST(ISNULL(SUM(AmtDiff), 0) AS DECIMAL(30,2)) AS CUMS
+  FROM rptSale3
+  WHERE CodeG = @p1 
+    AND MONTH(DocDate) BETWEEN @p2 AND @p3
+    AND YEAR(DocDate) = @p4
+    AND DocSP = '2'
+  GROUP BY CodeG
+`;
+
 // =============================================================================
 // DATA FETCHING
 // =============================================================================
@@ -287,16 +315,18 @@ async function fetchAllData(params: QueryParams) {
     groupHData,
     groupIData,
     targetData,
-    rankingData
+    rankingData,
+    spData,
   ] = await Promise.all([
     db.$queryRawUnsafe<QuarterlySalesData[]>(MAIN_SALES_QUERY, userCode, quarter, monthStart, monthEnd, year),
     db.$queryRawUnsafe<{ CodeG: string; SaleAmt: number; Amt: number; CuMS: number }[]>(GROUP_H_QUERY, userCode, monthStart, monthEnd, year),
     db.$queryRawUnsafe<{ CodeG: string; SaleAmt: number; Amt: number; CuMS: number }[]>(GROUP_I_QUERY, userCode, monthStart, monthEnd, year),
     db.$queryRawUnsafe<TargetData[]>(TARGET_QUERY, userCode, thaiYear),
     db.$queryRawUnsafe<RankingResult[]>(RANKING_QUERY, monthStart, monthEnd, year, userCode),
+    db.$queryRawUnsafe<SPSalesData[]>(SP_QUERY, userCode, monthStart, monthEnd, year),
   ]);
 
-  return { mainData, groupHData, groupIData, targetData, rankingData };
+  return { mainData, groupHData, groupIData, targetData, rankingData, spData };
 }
 
 // =============================================================================
@@ -305,7 +335,7 @@ async function fetchAllData(params: QueryParams) {
 
 /**
  * คำนวณ RateCom แบบ Target-based สำหรับรายไตรมาส
- * ใช้ AmtQT (Target ไตรมาส) แทน AmtYT/12
+ * ใช้ AmtQT (Target ไตรมาส)
  */
 function calculateRateCom(PB: number, AmtQT: number, AmtYT: number): number {
   if (AmtQT <= 0 || PB <= 0 || AmtYT <= 0) return 0;
@@ -313,7 +343,6 @@ function calculateRateCom(PB: number, AmtQT: number, AmtYT: number): number {
   const ratio = PB / AmtQT;
   
   if (AmtYT < TARGET_THRESHOLD) {
-    // กลุ่ม A (เป้าปี < 50 ล้าน)
     if (ratio < 0.60) return 0;
     if (ratio < 0.85) return 0.5;
     if (ratio < 1.00) return 1.0;
@@ -321,7 +350,6 @@ function calculateRateCom(PB: number, AmtQT: number, AmtYT: number): number {
     if (ratio < 1.30) return 2.0;
     return 2.5;
   } else {
-    // กลุ่ม B (เป้าปี >= 50 ล้าน)
     if (ratio < 0.60) return 0;
     if (ratio < 0.85) return 0.5;
     if (ratio < 1.00) return 1.0;
@@ -331,28 +359,26 @@ function calculateRateCom(PB: number, AmtQT: number, AmtYT: number): number {
   }
 }
 
-function calculatePP(PB: number, PBH: number, PBI: number): number {
-  return round2(PB - PBH - PBI);
-}
-
-function calculateAmtPoint(PP: number, RateCom: number): number {
-  return round2((PP * RateCom) / 100);
+/**
+ * ✅ PP (display) = PB - PBI  (ตรง Legacy)
+ */
+function calculatePP(PB: number, PBI: number): number {
+  return round2(PB - PBI);
 }
 
 /**
- * ComPBI - max rate 0.5%
- * ถ้า RateCom > 0.5 ใช้ 0.5, ไม่งั้นใช้ RateCom
+ * ✅ AmtPoint (ค่าคอม MP) = (PB - PBH) × rate / 100  (ตรง Legacy)
  */
+function calculateAmtPoint(PB: number, PBH: number, RateCom: number): number {
+  return round2(((PB - PBH) * RateCom) / 100);
+}
+
 function calculateComPBI(PBI: number, RateCom: number): number {
   if (RateCom <= 0) return 0;
   const effectiveRate = Math.min(RateCom, 0.5);
   return round2((PBI * effectiveRate) / 100);
 }
 
-/**
- * ComPBH - max rate 1%
- * ถ้า RateCom > 1 ใช้ 1, ไม่งั้นใช้ RateCom
- */
 function calculateComPBH(PBH: number, RateCom: number): number {
   if (RateCom <= 0) return 0;
   const effectiveRate = Math.min(RateCom, 1);
@@ -373,11 +399,12 @@ interface TransformParams {
   groupIData: { CodeG: string; SaleAmt: number; Amt: number; CuMS: number }[];
   targetData: TargetData[];
   rankingData: RankingResult[];
+  spData: SPSalesData[];
   quarter: number;
 }
 
 function transformToReport(params: TransformParams): QuarterlyReportData | null {
-  const { mainData, groupHData, groupIData, targetData, rankingData, quarter } = params;
+  const { mainData, groupHData, groupIData, targetData, rankingData, spData, quarter } = params;
 
   if (!mainData || mainData.length === 0) {
     return null;
@@ -386,9 +413,9 @@ function transformToReport(params: TransformParams): QuarterlyReportData | null 
   const main = mainData[0];
   const codeG = main.CodeG;
 
-  // ดึงข้อมูลจาก results
   const groupH = groupHData[0] || { SaleAmt: 0, Amt: 0, CuMS: 0 };
   const groupI = groupIData[0] || { SaleAmt: 0, Amt: 0, CuMS: 0 };
+  const spRow = spData[0] || { CR: 0, PB: 0, CUMS: 0 };
   
   const PBH = toNumber(groupH.Amt);
   const PBI = toNumber(groupI.Amt);
@@ -397,21 +424,23 @@ function transformToReport(params: TransformParams): QuarterlyReportData | null 
   const AmtQT = toNumber(target.AmtQT);
   const ranking = rankingData[0] || { rankCR: 0, rankPB: 0, rankCUMS: 0, totalSales: 0 };
 
-  // ค่าพื้นฐาน
   const salesCR = toNumber(main.SaleAmt);
   const salesPB = toNumber(main.PB);
   const AmtSP = toNumber(main.AmtSP);
   const CUMS = toNumber(main.CuMS);
 
-  // Target
+  // ✅ SP Values (จาก rptSale3 WHERE DocSP='2')
+  const CRSP = toNumber(spRow.CR);
+  const PBSP = toNumber(spRow.PB);
+  const CUMSSP = toNumber(spRow.CUMS);
+
   const pctOfTarget = AmtQT > 0 ? round2((salesPB / AmtQT) * 100) : 0;
   
-  // RateCom
   const RateComNum = calculateRateCom(salesPB, AmtQT, AmtYT);
   
-  // Commission calculations
-  const PP = calculatePP(salesPB, PBH, PBI);
-  const AmtPoint = calculateAmtPoint(PP, RateComNum);
+  // ✅ Commission calculations (ตรง Legacy 100%)
+  const PP = calculatePP(salesPB, PBI);
+  const AmtPoint = calculateAmtPoint(salesPB, PBH, RateComNum);
   const ComPBI = calculateComPBI(PBI, RateComNum);
   const ComPBH = calculateComPBH(PBH, RateComNum);
   const SumCOMSP = calculateSumCOMSP(AmtSP, AmtPoint, ComPBI, ComPBH);
@@ -431,6 +460,7 @@ function transformToReport(params: TransformParams): QuarterlyReportData | null 
   const CUMSH1 = round2(CUMSH - CUMSI);
   const CUMSMP = round2(CUMS - CUMSH);
 
+  // ✅ Product Summary (SP ใช้ค่าจริง ไม่รวมใน Total)
   const productSummary: ProductSummary[] = [
     {
       code: 'H1',
@@ -465,11 +495,11 @@ function transformToReport(params: TransformParams): QuarterlyReportData | null 
     {
       code: 'SP',
       label: 'SP (ยาพิเศษ)',
-      CR: 0,
+      CR: CRSP,
       ratioCR: 0,
-      PB: 0,
+      PB: PBSP,
       ratioPB: 0,
-      CUMS: 0,
+      CUMS: CUMSSP,
       ratioCUMS: 0,
     },
     {

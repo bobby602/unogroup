@@ -36,6 +36,14 @@ interface ProductGroupResult {
   CuMS: number;     // CUMS
 }
 
+// ✅ ข้อมูล SP จาก rptSale3 WHERE DocSP='2'
+interface SPSalesData {
+  CodeG: string;
+  CR: number;
+  PB: number;
+  CUMS: number;
+}
+
 /** สรุปแต่ละประเภทสินค้า */
 interface ProductSummary {
   code: string;
@@ -50,11 +58,9 @@ interface ProductSummary {
 
 /** ผลลัพธ์รายงาน */
 interface SalesReportData {
-  // ข้อมูลพนักงาน
   NameG: string;
   CodeG: string;
   
-  // Summary Section
   salesCR: number;
   salesPB: number;
   pointCUMS: number;
@@ -64,21 +70,17 @@ interface SalesReportData {
   comSP: number;
   CUMS: number;
   
-  // Target
   baselineTarget: number;
   targetMonth: number;
   pctOfTarget: number;
   
-  // ✅ Rankings (อันดับในบริษัท)
   rankCR: number;
   rankPB: number;
   rankCUMS: number;
   totalSales: number;
   
-  // ✅ Product breakdown (H1, H2, MP, SP)
   productSummary: ProductSummary[];
   
-  // Commission breakdown
   PP: number;
   PBI: number;
   PBH: number;
@@ -86,10 +88,9 @@ interface SalesReportData {
   ComPBI: number;
   ComPBH: number;
   
-  // เพิ่มสำหรับ Product calculation
-  PBH1: number;  // PBH - PBI (กลุ่ม H ลบ กลุ่ม I)
-  PBH2: number;  // PBI (กลุ่ม I)
-  PBMP: number;  // PB - PBH (MP = ยอดที่ไม่ใช่กลุ่ม H)
+  PBH1: number;
+  PBH2: number;
+  PBMP: number;
 }
 
 interface MonthlySalesResponse {
@@ -229,10 +230,7 @@ const TARGET_QUERY = `
     AND YearCal = @p2
 `;
 
-/** 
- * Query 5: Rankings (อันดับ CR, PB, CUMS ในบริษัท)
- * ใช้ CTE เพื่อ rank ทุก user แล้วดึงเฉพาะ user ที่ต้องการ
- */
+/** Query 5: Rankings (อันดับ CR, PB, CUMS ในบริษัท) */
 const RANKING_QUERY = `
   WITH AllSalesRanking AS (
     SELECT 
@@ -274,6 +272,33 @@ const PRODUCT_GROUP_QUERY = `
   GROUP BY g.grItemCode
 `;
 
+/** 
+ * ✅ Query 7: SP - ยาพิเศษ (ตรง Legacy: rptSale3 WHERE DocSP = '2')
+ * 
+ * Legacy SQL (routes/users.js):
+ *   SELECT Sum(Amt) as NetAmt, Sum(Cost) as PB, Sum(AmtDiff) as CUMS
+ *   FROM rptSale3
+ *   WHERE DocSP = '2'  -- SP = ยาพิเศษ
+ * 
+ * Mapping:
+ *   CR   = SUM(Amt)       (NetAmt)
+ *   PB   = SUM(Cost)
+ *   CUMS = SUM(AmtDiff)
+ */
+const SP_QUERY = `
+  SELECT 
+    CodeG,
+    CAST(ISNULL(SUM(Amt), 0) AS DECIMAL(30,2)) AS CR,
+    CAST(ISNULL(SUM(Cost), 0) AS DECIMAL(30,2)) AS PB,
+    CAST(ISNULL(SUM(AmtDiff), 0) AS DECIMAL(30,2)) AS CUMS
+  FROM rptSale3
+  WHERE CodeG = @p1 
+    AND MONTH(DocDate) = @p2 
+    AND YEAR(DocDate) = @p3
+    AND DocSP = '2'
+  GROUP BY CodeG
+`;
+
 // =============================================================================
 // DATA FETCHING
 // =============================================================================
@@ -294,7 +319,8 @@ async function fetchAllData(params: QueryParams) {
     groupIData,
     targetData,
     rankingData,
-    productGroupData
+    productGroupData,
+    spData,
   ] = await Promise.all([
     db.$queryRawUnsafe<MainSalesData[]>(MAIN_SALES_QUERY, userCode, month, year),
     db.$queryRawUnsafe<{ CodeG: string; SaleAmt: number; Amt: number; CuMS: number }[]>(GROUP_H_QUERY, userCode, month, year),
@@ -302,9 +328,10 @@ async function fetchAllData(params: QueryParams) {
     db.$queryRawUnsafe<TargetData[]>(TARGET_QUERY, userCode, thaiYear),
     db.$queryRawUnsafe<RankingResult[]>(RANKING_QUERY, month, year, userCode),
     db.$queryRawUnsafe<ProductGroupResult[]>(PRODUCT_GROUP_QUERY, userCode, month, year),
+    db.$queryRawUnsafe<SPSalesData[]>(SP_QUERY, userCode, month, year),
   ]);
 
-  return { mainData, groupHData, groupIData, targetData, rankingData, productGroupData };
+  return { mainData, groupHData, groupIData, targetData, rankingData, productGroupData, spData };
 }
 
 // =============================================================================
@@ -318,7 +345,6 @@ function calculateRateCom(Amt: number, AmtYT: number): number {
   const ratio = Amt / targetMonth;
   
   if (AmtYT < TARGET_THRESHOLD) {
-    // กลุ่ม A (เป้าปี < 50 ล้าน)
     if (ratio < 0.60) return 0;
     if (ratio < 0.85) return 0.5;
     if (ratio < 1.00) return 1.0;
@@ -326,7 +352,6 @@ function calculateRateCom(Amt: number, AmtYT: number): number {
     if (ratio < 1.30) return 2.0;
     return 2.5;
   } else {
-    // กลุ่ม B (เป้าปี >= 50 ล้าน)
     if (ratio < 0.60) return 0;
     if (ratio < 0.85) return 0.5;
     if (ratio < 1.00) return 1.0;
@@ -336,12 +361,18 @@ function calculateRateCom(Amt: number, AmtYT: number): number {
   }
 }
 
-function calculatePP(Amt: number, PBH: number, PBI: number): number {
-  return round2(Amt - PBH - PBI);
+/**
+ * ✅ PP (display) = PB - PBI  (ตรง Legacy)
+ */
+function calculatePP(Amt: number, PBI: number): number {
+  return round2(Amt - PBI);
 }
 
-function calculateAmtPoint(PP: number, RateCom: number): number {
-  return round2((PP * RateCom) / 100);
+/**
+ * ✅ AmtPoint (ค่าคอม MP) = (PB - PBH) × rate / 100  (ตรง Legacy)
+ */
+function calculateAmtPoint(Amt: number, PBH: number, RateCom: number): number {
+  return round2(((Amt - PBH) * RateCom) / 100);
 }
 
 function calculateComPBI(PBI: number, RateCom: number): number {
@@ -369,10 +400,11 @@ interface TransformParams {
   targetData: TargetData[];
   rankingData: RankingResult[];
   productGroupData: ProductGroupResult[];
+  spData: SPSalesData[];
 }
 
 function transformToReport(params: TransformParams): SalesReportData | null {
-  const { mainData, groupHData, groupIData, targetData, rankingData, productGroupData } = params;
+  const { mainData, groupHData, groupIData, targetData, rankingData, spData } = params;
 
   if (!mainData || mainData.length === 0) {
     return null;
@@ -381,46 +413,42 @@ function transformToReport(params: TransformParams): SalesReportData | null {
   const main = mainData[0];
   const codeG = main.CodeG;
 
-  // ดึงข้อมูลจาก results
   const groupH = groupHData[0] || { SaleAmt: 0, Amt: 0, CuMS: 0 };
   const groupI = groupIData[0] || { SaleAmt: 0, Amt: 0, CuMS: 0 };
+  const spRow = spData[0] || { CR: 0, PB: 0, CUMS: 0 };
   
-  const PBH = toNumber(groupH.Amt);   // PB กลุ่ม H ทั้งหมด
-  const PBI = toNumber(groupI.Amt);   // PB กลุ่ม I (itemcomPI)
+  const PBH = toNumber(groupH.Amt);
+  const PBI = toNumber(groupI.Amt);
   const AmtYT = toNumber(targetData[0]?.AmtYT);
   const ranking = rankingData[0] || { rankCR: 0, rankPB: 0, rankCUMS: 0, totalSales: 0 };
 
-  // ค่าพื้นฐาน
   const salesCR = toNumber(main.SaleAmt);
   const salesPB = toNumber(main.Amt);
   const AmtSP = toNumber(main.AmtSP);
   const CUMS = toNumber(main.CuMS);
 
-  // Target
+  // ✅ SP Values (จาก rptSale3 WHERE DocSP='2')
+  const CRSP = toNumber(spRow.CR);
+  const PBSP = toNumber(spRow.PB);
+  const CUMSSP = toNumber(spRow.CUMS);
+
   const targetMonth = AmtYT > 0 ? round2(AmtYT / 12) : 0;
   const pctOfTarget = targetMonth > 0 ? round2((salesPB / targetMonth) * 100) : 0;
   
-  // RateCom (แก้ไข Bug แล้ว)
   const RateComNum = calculateRateCom(salesPB, AmtYT);
   
-  // Commission calculations
-  const PP = calculatePP(salesPB, PBH, PBI);
-  const AmtPoint = calculateAmtPoint(PP, RateComNum);
+  // ✅ Commission calculations (ตรง Legacy 100%)
+  const PP = calculatePP(salesPB, PBI);
+  const AmtPoint = calculateAmtPoint(salesPB, PBH, RateComNum);
   const ComPBI = calculateComPBI(PBI, RateComNum);
   const ComPBH = calculateComPBH(PBH, RateComNum);
   const SumCOMSP = calculateSumCOMSP(AmtSP, AmtPoint, ComPBI, ComPBH);
 
-  // ===== Product Breakdown (H1, H2, MP, SP) =====
-  // จาก project เก่า:
-  // - PBH1 = PBH - PBI (กลุ่ม H ที่ไม่ใช่ I)
-  // - PBH2 = PBI (กลุ่ม I)
-  // - MP = PB - PBH (ยอดที่ไม่ใช่กลุ่ม H)
-  
-  const PBH1 = round2(PBH - PBI);  // กลุ่ม H ลบ กลุ่ม I
-  const PBH2 = PBI;                 // กลุ่ม I
-  const PBMP = round2(salesPB - PBH); // MP = PB - กลุ่ม H ทั้งหมด
+  // ===== Product Breakdown =====
+  const PBH1 = round2(PBH - PBI);
+  const PBH2 = PBI;
+  const PBMP = round2(salesPB - PBH);
 
-  // CR และ CUMS ของแต่ละกลุ่ม
   const CRH = toNumber(groupH.SaleAmt);
   const CRI = toNumber(groupI.SaleAmt);
   const CRH1 = round2(CRH - CRI);
@@ -431,7 +459,7 @@ function transformToReport(params: TransformParams): SalesReportData | null {
   const CUMSH1 = round2(CUMSH - CUMSI);
   const CUMSMP = round2(CUMS - CUMSH);
 
-  // สร้าง Product Summary
+  // ✅ Product Summary (SP จาก rptSale3, ไม่รวมใน Total)
   const productSummary: ProductSummary[] = [
     {
       code: 'H1',
@@ -466,11 +494,11 @@ function transformToReport(params: TransformParams): SalesReportData | null {
     {
       code: 'SP',
       label: 'SP (ยาพิเศษ)',
-      CR: 0,  // SP ไม่มี CR แยก
+      CR: CRSP,
       ratioCR: 0,
-      PB: 0,  // SP ไม่มี PB แยก
+      PB: PBSP,
       ratioPB: 0,
-      CUMS: 0,
+      CUMS: CUMSSP,
       ratioCUMS: 0,
     },
     {
@@ -500,16 +528,13 @@ function transformToReport(params: TransformParams): SalesReportData | null {
     targetMonth,
     pctOfTarget,
     
-    // Rankings
     rankCR: toNumber(ranking.rankCR),
     rankPB: toNumber(ranking.rankPB),
     rankCUMS: toNumber(ranking.rankCUMS),
     totalSales: toNumber(ranking.totalSales),
     
-    // Product breakdown
     productSummary,
     
-    // Commission detail
     PP,
     PBI,
     PBH,
@@ -517,7 +542,6 @@ function transformToReport(params: TransformParams): SalesReportData | null {
     ComPBI,
     ComPBH,
     
-    // Product values
     PBH1,
     PBH2,
     PBMP,
