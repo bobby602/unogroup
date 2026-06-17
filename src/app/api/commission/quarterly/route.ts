@@ -390,8 +390,8 @@ function transformToReport(params: TransformParams): QuarterlyCommissionData | n
   const RateCom = calculateRateCom(quarterlyPB, targetQuarter, AmtYT);
   const achievementLevel = getAchievementLevel(RateCom);
   
-  // Commission ไตรมาส
-  const quarterlyCommission = calculateCommission(PBH1Quarterly, PBH2Quarterly, PBMPQuarterly, RateCom);
+  // Commission ไตรมาส (เริ่มจากยอดรวมก้อนไตรมาส แล้วคิดใหม่จากผลรวมรายเดือนหลัง floor ด้านล่าง)
+  let quarterlyCommission = calculateCommission(PBH1Quarterly, PBH2Quarterly, PBMPQuarterly, RateCom);
   
   // สร้าง Map สำหรับ H1, H2 แต่ละเดือน
   const h1ByMonth = new Map<number, number>();
@@ -408,9 +408,11 @@ function transformToReport(params: TransformParams): QuarterlyCommissionData | n
     const PBH2 = h2ByMonth.get(month) || 0;
     const PBMP = round2(PB - PBH1 - PBH2);
     
-    // Rate แต่ละเดือน (ใช้ Target เดือน)
-    const rateCom = calculateRateCom(PB, targetMonth, AmtYT);
-    
+    // Rate แต่ละเดือน: floor ด้วย Rate ไตรมาส (คิดย้อนหลังให้)
+    // เดือนไหนต่ำกว่า Rate ไตรมาส → ดึงขึ้นเท่า Rate ไตรมาส, เดือนไหนสูงกว่า → คงไว้
+    const monthRate = calculateRateCom(PB, targetMonth, AmtYT);
+    const rateCom = Math.max(monthRate, RateCom);
+
     // Commission แต่ละเดือน
     const commission = calculateCommission(PBH1, PBH2, PBMP, rateCom);
     
@@ -425,6 +427,9 @@ function transformToReport(params: TransformParams): QuarterlyCommissionData | n
       commission,
     };
   });
+
+  // ยอดรวมไตรมาส = ผลรวมค่าคอมรายเดือน (หลัง floor ด้วย Rate ไตรมาส)
+  quarterlyCommission = round2(monthlyBreakdown.reduce((sum, m) => sum + m.commission, 0));
 
   return {
     NameG: toString(main.NameG),

@@ -21,13 +21,6 @@ interface TargetData {
   AmtYT: number;
 }
 
-interface QuarterlyCommissionData {
-  QNo: number;
-  QB_PB: number;
-  Q_PBH1: number;
-  Q_PBH2: number;
-}
-
 interface YearlyCommissionData {
   // ข้อมูลพนักงาน
   NameG: string;
@@ -161,73 +154,43 @@ const YEARLY_GROUP_I_QUERY = `
   GROUP BY v.CodeG
 `;
 
-/** Query 4: PB แต่ละไตรมาส */
-const QUARTERLY_PB_QUERY = `
-  SELECT 
-    CASE 
-      WHEN MONTH(Docdate) BETWEEN 1 AND 3 THEN 1
-      WHEN MONTH(Docdate) BETWEEN 4 AND 6 THEN 2
-      WHEN MONTH(Docdate) BETWEEN 7 AND 9 THEN 3
-      ELSE 4
-    END AS QNo,
-    CAST(ROUND(ISNULL(SUM(PB), 0), 2) AS DECIMAL(30,2)) AS QB_PB
+/** Query 4: PB แต่ละเดือน (12 เดือน) */
+const MONTHLY_PB_QUERY = `
+  SELECT
+    MONTH(Docdate) AS [Month],
+    CAST(ROUND(ISNULL(SUM(PB), 0), 2) AS DECIMAL(30,2)) AS PB
   FROM V802
-  WHERE CodeG = @p1 
+  WHERE CodeG = @p1
     AND YEAR(Docdate) = @p2
-  GROUP BY CASE 
-    WHEN MONTH(Docdate) BETWEEN 1 AND 3 THEN 1
-    WHEN MONTH(Docdate) BETWEEN 4 AND 6 THEN 2
-    WHEN MONTH(Docdate) BETWEEN 7 AND 9 THEN 3
-    ELSE 4
-  END
+  GROUP BY MONTH(Docdate)
 `;
 
-/** Query 5: H1 แต่ละไตรมาส */
-const QUARTERLY_H1_QUERY = `
-  SELECT 
-    CASE 
-      WHEN MONTH(v.Docdate) BETWEEN 1 AND 3 THEN 1
-      WHEN MONTH(v.Docdate) BETWEEN 4 AND 6 THEN 2
-      WHEN MONTH(v.Docdate) BETWEEN 7 AND 9 THEN 3
-      ELSE 4
-    END AS QNo,
-    CAST(ROUND(ISNULL(SUM(v.PB), 0), 2) AS DECIMAL(30,2)) AS Q_PBH1
+/** Query 5: H1 แต่ละเดือน (กลุ่ม H) */
+const MONTHLY_H1_QUERY = `
+  SELECT
+    MONTH(v.Docdate) AS [Month],
+    CAST(ROUND(ISNULL(SUM(v.PB), 0), 2) AS DECIMAL(30,2)) AS PB
   FROM V802 v
   INNER JOIN ItemG g ON v.ItemCode = g.Code
-  WHERE v.CodeG = @p1 
+  WHERE v.CodeG = @p1
     AND YEAR(v.Docdate) = @p2
     AND g.grItemCode = 'H'
     AND g.tyitem = '1'
-  GROUP BY CASE 
-    WHEN MONTH(v.Docdate) BETWEEN 1 AND 3 THEN 1
-    WHEN MONTH(v.Docdate) BETWEEN 4 AND 6 THEN 2
-    WHEN MONTH(v.Docdate) BETWEEN 7 AND 9 THEN 3
-    ELSE 4
-  END
+  GROUP BY MONTH(v.Docdate)
 `;
 
-/** Query 6: H2 แต่ละไตรมาส */
-const QUARTERLY_H2_QUERY = `
-  SELECT 
-    CASE 
-      WHEN MONTH(v.Docdate) BETWEEN 1 AND 3 THEN 1
-      WHEN MONTH(v.Docdate) BETWEEN 4 AND 6 THEN 2
-      WHEN MONTH(v.Docdate) BETWEEN 7 AND 9 THEN 3
-      ELSE 4
-    END AS QNo,
-    CAST(ROUND(ISNULL(SUM(v.PB), 0), 2) AS DECIMAL(30,2)) AS Q_PBH2
+/** Query 6: H2 แต่ละเดือน (กลุ่ม I) */
+const MONTHLY_H2_QUERY = `
+  SELECT
+    MONTH(v.Docdate) AS [Month],
+    CAST(ROUND(ISNULL(SUM(v.PB), 0), 2) AS DECIMAL(30,2)) AS PB
   FROM V802 v
   INNER JOIN ItemG g ON v.ItemCode = g.Code
-  WHERE v.CodeG = @p1 
+  WHERE v.CodeG = @p1
     AND YEAR(v.Docdate) = @p2
     AND g.grItemCode = 'I'
     AND g.tyitem = '1'
-  GROUP BY CASE 
-    WHEN MONTH(v.Docdate) BETWEEN 1 AND 3 THEN 1
-    WHEN MONTH(v.Docdate) BETWEEN 4 AND 6 THEN 2
-    WHEN MONTH(v.Docdate) BETWEEN 7 AND 9 THEN 3
-    ELSE 4
-  END
+  GROUP BY MONTH(v.Docdate)
 `;
 
 /** Query 7: Target */
@@ -302,28 +265,28 @@ async function fetchAllData(params: QueryParams) {
     yearlyData,
     yearlyH1,
     yearlyH2,
-    quarterlyPB,
-    quarterlyH1,
-    quarterlyH2,
+    monthlyPB,
+    monthlyH1,
+    monthlyH2,
     targetData
   ] = await Promise.all([
     db.$queryRawUnsafe<YearlySalesData[]>(YEARLY_SALES_QUERY, userCode, year),
     db.$queryRawUnsafe<{ CodeG: string; PBH1: number }[]>(YEARLY_GROUP_H_QUERY, userCode, year),
     db.$queryRawUnsafe<{ CodeG: string; PBH2: number }[]>(YEARLY_GROUP_I_QUERY, userCode, year),
-    db.$queryRawUnsafe<{ QNo: number; QB_PB: number }[]>(QUARTERLY_PB_QUERY, userCode, year),
-    db.$queryRawUnsafe<{ QNo: number; Q_PBH1: number }[]>(QUARTERLY_H1_QUERY, userCode, year),
-    db.$queryRawUnsafe<{ QNo: number; Q_PBH2: number }[]>(QUARTERLY_H2_QUERY, userCode, year),
+    db.$queryRawUnsafe<{ Month: number; PB: number }[]>(MONTHLY_PB_QUERY, userCode, year),
+    db.$queryRawUnsafe<{ Month: number; PB: number }[]>(MONTHLY_H1_QUERY, userCode, year),
+    db.$queryRawUnsafe<{ Month: number; PB: number }[]>(MONTHLY_H2_QUERY, userCode, year),
     db.$queryRawUnsafe<TargetData[]>(TARGET_QUERY, userCode, thaiYear),
   ]);
 
-  return { 
-    yearlyData, 
-    yearlyH1, 
-    yearlyH2, 
-    quarterlyPB,
-    quarterlyH1,
-    quarterlyH2,
-    targetData 
+  return {
+    yearlyData,
+    yearlyH1,
+    yearlyH2,
+    monthlyPB,
+    monthlyH1,
+    monthlyH2,
+    targetData
   };
 }
 
@@ -335,18 +298,18 @@ interface TransformParams {
   yearlyData: YearlySalesData[];
   yearlyH1: { CodeG: string; PBH1: number }[];
   yearlyH2: { CodeG: string; PBH2: number }[];
-  quarterlyPB: { QNo: number; QB_PB: number }[];
-  quarterlyH1: { QNo: number; Q_PBH1: number }[];
-  quarterlyH2: { QNo: number; Q_PBH2: number }[];
+  monthlyPB: { Month: number; PB: number }[];
+  monthlyH1: { Month: number; PB: number }[];
+  monthlyH2: { Month: number; PB: number }[];
   targetData: TargetData[];
   year: number;
 }
 
 function transformToReport(params: TransformParams): YearlyCommissionData | null {
-  const { 
-    yearlyData, yearlyH1, yearlyH2, 
-    quarterlyPB, quarterlyH1, quarterlyH2,
-    targetData, year 
+  const {
+    yearlyData, yearlyH1, yearlyH2,
+    monthlyPB, monthlyH1, monthlyH2,
+    targetData, year
   } = params;
 
   if (!yearlyData || yearlyData.length === 0) {
@@ -368,51 +331,61 @@ function transformToReport(params: TransformParams): YearlyCommissionData | null
   const target = targetData[0] || { AmtYT: 0 };
   const AmtYT = toNumber(target.AmtYT);
   const targetQuarter = round2(AmtYT / 4);
-  
+  const targetMonth = round2(AmtYT / 12);
+
   // Sales Group
  const salesGroup = AmtYT < TARGET_THRESHOLD ? 'A' : 'B';
-  
+
   // Achievement % ปี
   const achievementPct = AmtYT > 0 ? round2((totalPB / AmtYT) * 100) : 0;
-  
-  // RateCom ปี
+
+  // RateCom ปี (= พื้นชั้นที่ 3)
   const yearlyRateCom = calculateRateCom(totalPB, AmtYT, AmtYT);
   const achievementLevel = getAchievementLevel(yearlyRateCom);
-  
-  // Commission รวมประจำปี (คำนวณด้วย Rate ปี)
+
+  // Commission รวมประจำปี (คิดก้อนปีด้วย Rate ปี - ใช้เป็นค่าอ้างอิงในการ์ด Top up)
   const yearlyCommission = calculateCommission(PBH1Yearly, PBH2Yearly, PBMPYearly, yearlyRateCom);
-  
-  // สร้าง Maps สำหรับ quarterly data
-  const qPBMap = new Map<number, number>();
-  const qH1Map = new Map<number, number>();
-  const qH2Map = new Map<number, number>();
-  
-  quarterlyPB.forEach(q => qPBMap.set(q.QNo, toNumber(q.QB_PB)));
-  quarterlyH1.forEach(q => qH1Map.set(q.QNo, toNumber(q.Q_PBH1)));
-  quarterlyH2.forEach(q => qH2Map.set(q.QNo, toNumber(q.Q_PBH2)));
-  
-  // คำนวณ Commission แต่ละไตรมาส (ที่ได้รับไปแล้ว)
-  const quarterlyCommissions = [1, 2, 3, 4].map(qNo => {
-    const qPB = qPBMap.get(qNo) || 0;
-    const qH1 = qH1Map.get(qNo) || 0;
-    const qH2 = qH2Map.get(qNo) || 0;
-    const qMP = round2(qPB - qH1 - qH2);
-    
-    // Rate ไตรมาส
-    const qRate = calculateRateCom(qPB, targetQuarter, AmtYT);
-    
-    // Commission ไตรมาส
-    return calculateCommission(qH1, qH2, qMP, qRate);
-  });
-  
-  const [comQ1, comQ2, comQ3, comQ4] = quarterlyCommissions;
-  
-  // Commission ที่ได้รับแล้ว (รวม Q1-Q4)
+
+  // Maps รายเดือน
+  const pbByMonth = new Map<number, number>();
+  const h1ByMonth = new Map<number, number>();
+  const h2ByMonth = new Map<number, number>();
+  monthlyPB.forEach(m => pbByMonth.set(m.Month, toNumber(m.PB)));
+  monthlyH1.forEach(m => h1ByMonth.set(m.Month, toNumber(m.PB)));
+  monthlyH2.forEach(m => h2ByMonth.set(m.Month, toNumber(m.PB)));
+
+  // Rate ไตรมาส (= พื้นชั้นที่ 2) คำนวณจากยอดรวมแต่ละไตรมาส
+  const quarterPB = [0, 0, 0, 0];
+  for (let month = 1; month <= 12; month++) {
+    const qIndex = Math.ceil(month / 3) - 1;
+    quarterPB[qIndex] += pbByMonth.get(month) || 0;
+  }
+  const quarterRate = quarterPB.map(qPB => calculateRateCom(qPB, targetQuarter, AmtYT));
+
+  // คำนวณ Commission รายเดือน: rate = MAX(เดือน, ไตรมาส, ปี) แล้วรวมเป็นแต่ละไตรมาส
+  const comByQuarter = [0, 0, 0, 0];
+  for (let month = 1; month <= 12; month++) {
+    const qIndex = Math.ceil(month / 3) - 1;
+    const mPB = pbByMonth.get(month) || 0;
+    const mH1 = h1ByMonth.get(month) || 0;
+    const mH2 = h2ByMonth.get(month) || 0;
+    const mMP = round2(mPB - mH1 - mH2);
+
+    const monthRate = calculateRateCom(mPB, targetMonth, AmtYT);
+    // floor 3 ชั้น: เดือน ถูกค้ำด้วย Rate ไตรมาส และ Rate ปี เลือกตัวที่สูงสุด
+    const effectiveRate = Math.max(monthRate, quarterRate[qIndex], yearlyRateCom);
+
+    comByQuarter[qIndex] = round2(comByQuarter[qIndex] + calculateCommission(mH1, mH2, mMP, effectiveRate));
+  }
+
+  const [comQ1, comQ2, comQ3, comQ4] = comByQuarter;
+
+  // Commission ที่ได้รับแล้ว (รวม Q1-Q4 หลัง floor)
   const totalReceivedCommission = round2(comQ1 + comQ2 + comQ3 + comQ4);
-  
-  // Commission Top up (ส่วนต่าง ถ้าติดลบ = 0)
-  const commissionTopUp = yearlyCommission > totalReceivedCommission 
-    ? round2(yearlyCommission - totalReceivedCommission) 
+
+  // Commission Top up: ภายใต้กฎ floor ใหม่จะเป็น 0 เสมอ (ยอดรับ >= ยอดคิดก้อนปี)
+  const commissionTopUp = yearlyCommission > totalReceivedCommission
+    ? round2(yearlyCommission - totalReceivedCommission)
     : 0;
   
   // รางวัลพิเศษระดับตำนาน

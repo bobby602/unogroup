@@ -22,6 +22,9 @@ import {
   Truck,
   StickyNote,
 } from 'lucide-react';
+// [ปิดชั่วคราว - phase ยังไม่ใช้] feature ส่งภาพ LINE / print ใบ PO
+// เปิดคืน: ลบคอมเมนต์ import บรรทัดล่าง + การใช้งาน <SendToLineButton /> ด้านล่าง
+// import { SendToLineButton } from '@/components/orders/SendToLineButton';
 
 // =============================================================================
 // TYPES
@@ -223,17 +226,22 @@ export default function OrderDetailPage() {
               )}
             </div>
 
-            {/* Refresh button */}
-            <button
-              onClick={fetchData}
-              disabled={isLoading}
-              className="flex items-center justify-center w-10 h-10 rounded-lg
-                         bg-white/10 hover:bg-white/20 transition-colors
-                         disabled:opacity-50 disabled:cursor-not-allowed"
-              title="รีเฟรช"
-            >
-              <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
-            </button>
+            {/* Actions: Send to LINE + Refresh */}
+            <div className="flex items-center gap-2">
+              {/* [ปิดชั่วคราว - phase ยังไม่ใช้] ปุ่มส่งภาพ LINE / print ใบ PO
+                  เปิดคืน: ลบคอมเมนต์บรรทัดล่าง + import ด้านบนไฟล์ */}
+              {/* <SendToLineButton orderNo={orderNo} /> */}
+              <button
+                onClick={fetchData}
+                disabled={isLoading}
+                className="flex items-center justify-center w-10 h-10 rounded-lg
+                           bg-white/10 hover:bg-white/20 transition-colors
+                           disabled:opacity-50 disabled:cursor-not-allowed"
+                title="รีเฟรช"
+              >
+                <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
           </div>
         </div>
       </div>

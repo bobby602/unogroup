@@ -17,7 +17,8 @@ import {
   DollarSign,
   List,
   Settings,
-  BarChart3, // เพิ่ม icon สำหรับรายงานการขาย
+  BarChart3,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -26,10 +27,13 @@ import { Button } from "@/components/ui/button";
 // =============================================================================
 const navLinks = [
   { href: "/dashboard", label: "หน้าหลัก", icon: Home },
-  { href: "/dashboard/report-sale", label: "รายงานการขาย", icon: BarChart3 }, 
+  { href: "/dashboard/report-sale", label: "รายงานการขาย", icon: BarChart3 },
   { href: "/dashboard/points/detail", label: "ประวัติลูกค้า", icon: Award },
   { href: "/dashboard/commission/monthly", label: "ค่าคอมมิชชั่น", icon: DollarSign },
   { href: "/dashboard/price-list", label: "Price List", icon: List },
+  // [ปิดชั่วคราว - phase ยังไม่ใช้] feature ส่งภาพ LINE / print ใบ PO
+  // เปิดคืน: ลบคอมเมนต์บรรทัดล่างนี้
+  // { href: "/dashboard/line-send", label: "ส่งภาพ LINE", icon: MessageCircle },
 ];
 
 export function Navbar() {
